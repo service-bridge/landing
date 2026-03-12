@@ -124,6 +124,9 @@ export function DirectRpcSection() {
       demo={
         <motion.div variants={fadeInUp}>
           <CodePanel title="architecture · checkout → payments.charge">
+            <div className="absolute top-2.5 right-4">
+              <Badge tone="border-blue-400/20 bg-blue-400/[0.08] text-blue-400">direct · 0 proxy hops</Badge>
+            </div>
             <div ref={diagramRef} className="p-5 space-y-4">
               {/* Traditional mesh */}
               <div className="rounded-xl border border-red-500/[0.15] bg-red-500/[0.03] p-4">
