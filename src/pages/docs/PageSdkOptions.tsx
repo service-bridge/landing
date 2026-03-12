@@ -27,8 +27,14 @@ const sb = servicebridge(
     queueMaxSize: 1_000,
     queueOverflow: "drop-oldest",
     heartbeatIntervalMs: 10_000,
+    workerTransport: "tls",
     captureLogs: true,
     adminUrl: "http://127.0.0.1:14444",
+    workerTLS: {
+      caCert: process.env.SERVICEBRIDGE_CA_PEM,
+      cert: process.env.SERVICEBRIDGE_CERT_PEM,
+      key: process.env.SERVICEBRIDGE_KEY_PEM,
+    },
   },
 );`,
           go: `import servicebridge "github.com/service-bridge/go"
@@ -68,17 +74,33 @@ sb = ServiceBridge(
       <H2 id="options-table">All options</H2>
       <ParamTable
         rows={[
-          { name: "timeout", type: "number (ms)", default: "30000", desc: "Default timeout for SDK operations. Can be overridden per-call in rpc() opts." },
-          { name: "retries", type: "number", default: "3", desc: "Default retry count for rpc(). 0 = no retry." },
-          { name: "retryDelay", type: "number (ms)", default: "300", desc: "Base exponential backoff delay between retries." },
-          { name: "discoveryRefreshMs", type: "number (ms)", default: "10000", desc: "How often to refresh worker endpoint lists from the registry." },
-          { name: "queueMaxSize", type: "number", default: "1000", desc: "Max operations to buffer in the offline queue when the control plane is unreachable." },
-          { name: "queueOverflow", type: '"drop-oldest" | "drop-newest" | "error"', default: '"drop-oldest"', desc: "Overflow strategy when offline queue is full." },
-          { name: "heartbeatIntervalMs", type: "number (ms)", default: "10000", desc: "How often workers send heartbeats to the control plane." },
-          { name: "captureLogs", type: "boolean", default: "true", desc: "Auto-capture console.*/log.*/logging.* calls and forward to the runtime." },
-          { name: "adminUrl", type: "string", default: "derived from url", desc: "HTTP admin base URL. Used for TLS provisioning and management API calls." },
-          { name: "skipTls / SkipTLS", type: "boolean", default: "false", desc: "Disable mTLS provisioning. For local development only." },
-          { name: "workerTLS / WorkerTLS", type: "object", desc: "Explicit cert/key/CA for worker mTLS. Overrides auto-provisioning." },
+          { name: "timeout (Node)", type: "number (ms)", default: "30000", desc: "Default timeout for SDK operations. Can be overridden per-call in rpc() opts." },
+          { name: "retries (Node)", type: "number", default: "3", desc: "Default retry count for rpc(). 0 = no retry." },
+          { name: "retryDelay (Node)", type: "number (ms)", default: "300", desc: "Base exponential backoff delay between retries." },
+          { name: "discoveryRefreshMs / DiscoveryRefreshMs / discovery_refresh_ms", type: "number (ms)", default: "10000", desc: "How often endpoint lists are refreshed from runtime registry." },
+          { name: "queueMaxSize / QueueMaxSize / queue_max_size", type: "number", default: "1000", desc: "Max operations buffered in the offline queue while control plane is unavailable." },
+          { name: "queueOverflow / QueueOverflow / queue_overflow", type: '"drop-oldest" | "drop-newest" | "error"', default: '"drop-oldest"', desc: "Overflow strategy when offline queue is full." },
+          { name: "heartbeatIntervalMs / HeartbeatIntervalMs / heartbeat_interval_ms", type: "number (ms)", default: "10000", desc: "Heartbeat period for worker registrations." },
+          { name: "captureLogs / CaptureLogs / capture_logs", type: "boolean", default: "true", desc: "Auto-capture logs and forward them to ServiceBridge runtime." },
+          { name: "adminUrl / AdminURL / admin_url", type: "string", default: "derived from gRPC URL", desc: "HTTP admin base URL used by TLS provisioning and management calls." },
+          { name: "workerTransport (Node)", type: '"tls"', default: '"tls"', desc: "Worker server transport type." },
+          { name: "workerTLS (Node)", type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }", desc: "Explicit mTLS materials for the worker gRPC server." },
+          { name: "skip_tls (Python)", type: "boolean", default: "false", desc: "Disable mTLS auto-provisioning for local development." },
+          { name: "Logger (Go)", type: "func(format string, args ...any)", default: "log.Printf", desc: "Custom logger function for SDK internals." },
+        ]}
+      />
+
+      <H2 id="cross-sdk-parity">Cross-SDK parity notes</H2>
+      <P>
+        Core API categories are aligned across all SDKs: constructor, RPC, events, jobs, workflows,
+        streams, startup/shutdown, HTTP middleware, tracing, and typed errors.
+      </P>
+      <ParamTable
+        rows={[
+          { name: "Node-only constructor defaults", type: "timeout/retries/retryDelay", desc: "Go/Python configure retry and timeout per-call." },
+          { name: "Node-only handler hints", type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch", desc: "Accepted by Node API as hints; currently not strict runtime limits." },
+          { name: "Node-only serve fields", type: "instanceId/weight/transport/tls", desc: "Go/Python expose host + SkipTLS/skip_tls only." },
+          { name: "watchRun key default", type: 'Node: "default"; Go/Python: ""', desc: "Pass key explicitly for portable behavior." },
         ]}
       />
 

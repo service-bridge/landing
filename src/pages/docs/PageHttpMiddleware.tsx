@@ -58,7 +58,7 @@ app.listen(3000);`,
           { name: "client", type: "ServiceBridgeService", desc: "The SDK client instance." },
           { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to skip — no span, no catalog registration." },
           { name: "propagateTraceHeader", type: "boolean", default: "true", desc: "Set x-trace-id on every response." },
-          { name: "autoRegister", type: "boolean", default: "false", desc: "Register route pattern in catalog on first request hit." },
+          { name: "autoRegister", type: "boolean", default: "true", desc: "Register route pattern in catalog on first request hit." },
         ]}
       />
 
@@ -95,8 +95,8 @@ await app.register(servicebridgePlugin, {
   autoRegister: true,
 });
 
-// wrapHandler is required — Fastify doesn't carry async-local context into handlers
-// without it, downstream SDK calls won't inherit the HTTP trace span
+// Use wrapHandler when handler code calls request.servicebridge.rpc()/event()
+// so downstream SDK calls inherit the HTTP trace span
 app.get("/users/:id", wrapHandler(async (request, reply) => {
   const user = await request.servicebridge.rpc("users/get", {
     id: (request.params as { id: string }).id,
@@ -107,9 +107,9 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
       />
 
       <Callout type="warning">
-        Always use <Mono>wrapHandler()</Mono> in Fastify. Without it, SDK calls inside the handler
-        run outside the async-local trace context — they still work, but won't be linked to the
-        HTTP span in the trace waterfall.
+        Use <Mono>wrapHandler()</Mono> for Fastify handlers that call <Mono>request.servicebridge.rpc()</Mono> or <Mono>event()</Mono>.
+        Without it, SDK calls still work, but run outside async-local trace context and won't be
+        linked to the HTTP span in the trace waterfall.
       </Callout>
 
       {/* ── FastAPI ──────────────────────────────────────────────── */}

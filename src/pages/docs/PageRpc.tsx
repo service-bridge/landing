@@ -40,9 +40,9 @@ export function PageRpc() {
           { name: "payload", type: "any", default: "undefined", desc: "JSON-serialisable request payload." },
           { name: "timeout", type: "number (ms)", default: "30000", desc: "Per-attempt timeout. The whole call may take up to timeout × retries ms." },
           { name: "retries", type: "number", default: "3", desc: "Retry count on transient failures. Each retry uses exponential backoff." },
-          { name: "retryDelay", type: "number (ms)", default: "300", desc: "Base backoff delay. Formula: delay × 2^(attempt-1)." },
+          { name: "retryDelay (Node)", type: "number (ms)", default: "300", desc: "Base backoff delay. Formula: delay × 2^(attempt-1)." },
           { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request." },
-          { name: "parentSpanId", type: "string", default: "auto", desc: "Override the parent span ID." },
+          { name: "parentSpanId (Node)", type: "string", default: "auto", desc: "Override the parent span ID." },
         ]}
       />
 
@@ -109,8 +109,8 @@ try {
 if err != nil {
   var sbErr *servicebridge.ServiceBridgeError
   if errors.As(err, &sbErr) {
-    log.Printf("component=%s op=%s severity=%s retryable=%v",
-      sbErr.Component, sbErr.Operation, sbErr.Severity, sbErr.Retryable)
+    log.Printf("component=%s op=%s severity=%s retryable=%v code=%v",
+      sbErr.Component, sbErr.Operation, sbErr.Severity, sbErr.Retryable, sbErr.Code)
   }
 }`,
           py: `from service_bridge import ServiceBridgeError
@@ -144,7 +144,7 @@ func (c *Client) HandleRpc(fn string, handler func(ctx context.Context, payload 
 
 // With RpcContext (stream + trace)
 func (c *Client) HandleRpcWithOpts(fn string, handler func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error), opts *HandleRpcOpts) *Client`,
-          py: `@sb.handle_rpc(fn: str, *, allowed_callers: list[str] = [], schema: dict | None = None)
+          py: `@sb.handle_rpc(fn: str, *, allowed_callers: list[str] | None = None, schema: RpcSchemaOpts | None = None)
 async def handler(payload: dict, ctx = None) -> dict: ...`,
         }}
       />
@@ -153,13 +153,17 @@ async def handler(payload: dict, ctx = None) -> dict: ...`,
       <ParamTable
         rows={[
           { name: "fn", type: "string", desc: "Handler name. Callers reference it as service/fn." },
-          { name: "allowedCallers", type: "string[]", desc: "If non-empty, only listed service names can call this handler. Enforced via mTLS peer CN." },
+          { name: "allowedCallers / allowed_callers", type: "string[]", desc: "If non-empty, only listed service names can call this handler. Enforced via mTLS peer CN." },
           { name: "schema", type: "RpcSchemaOpts", desc: "Enable binary Protobuf encoding for this function. See Protobuf schema section below." },
-          { name: "timeout", type: "number (ms)", desc: "Handler execution timeout hint (accepted by runtime, not yet enforced client-side)." },
-          { name: "retryable", type: "boolean", default: "true", desc: "Hint to callers whether the call is safe to retry." },
-          { name: "concurrency", type: "number", desc: "Worker-side concurrency limit hint." },
+          { name: "timeout (Node)", type: "number (ms)", desc: "Handler execution timeout hint (accepted by runtime, not yet enforced client-side)." },
+          { name: "retryable (Node)", type: "boolean", default: "true", desc: "Hint to callers whether the call is safe to retry." },
+          { name: "concurrency (Node)", type: "number", desc: "Worker-side concurrency limit hint." },
         ]}
       />
+      <Callout type="info">
+        Cross-SDK parity: <Mono>allowedCallers</Mono>/<Mono>allowed_callers</Mono> and <Mono>schema</Mono> are available in all SDKs.
+        Node-only <Mono>timeout</Mono>/<Mono>retryable</Mono>/<Mono>concurrency</Mono> are currently hint fields.
+      </Callout>
 
       <H3 id="handle-basic">Basic handler</H3>
       <MultiCodeBlock
@@ -282,17 +286,17 @@ async def charge(payload: dict) -> dict:
     },
   },
 )`,
-          py: `from service_bridge import RpcSchemaOpts, RpcFieldOpts
+          py: `from service_bridge import RpcSchemaOpts, RpcFieldDef
 
 @sb.handle_rpc("payments/charge", schema=RpcSchemaOpts(
     input={
-        "user_id":  RpcFieldOpts(type="string", id=1),
-        "amount":   RpcFieldOpts(type="int64",  id=2),
-        "currency": RpcFieldOpts(type="string", id=3),
+        "user_id":  RpcFieldDef(type="string", id=1),
+        "amount":   RpcFieldDef(type="int64",  id=2),
+        "currency": RpcFieldDef(type="string", id=3),
     },
     output={
-        "ok":    RpcFieldOpts(type="bool",   id=1),
-        "tx_id": RpcFieldOpts(type="string", id=2),
+        "ok":    RpcFieldDef(type="bool",   id=1),
+        "tx_id": RpcFieldDef(type="string", id=2),
     },
 ))
 async def charge(payload: dict) -> dict:
@@ -383,7 +387,7 @@ res = await sb.rpc(
           go: `type RpcContext struct {
   TraceID string
   SpanID  string
-  Stream  StreamWriter // .Write(data, key) / .End(key)
+  Stream  *StreamWriter // .Write(data, key)
 }`,
           py: `# ctx is passed as the second positional argument to the handler
 # ctx.trace_id  — current trace ID

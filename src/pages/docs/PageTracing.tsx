@@ -122,9 +122,11 @@ const traceId = res.headers.get("x-trace-id");
 traceID := r.Header.Get("X-Trace-Id")  // incoming from upstream
 // or from response:
 resp.Header.Get("X-Trace-Id")`,
-          py: `# From a FastAPI/Flask response (middleware sets it automatically)
-# Access via request state:
-trace_id = request.state.trace_id`,
+          py: `# FastAPI middleware exposes trace IDs on request.state
+trace_id = request.state.servicebridge_trace_id
+
+# Flask middleware exposes trace IDs on g
+trace_id = g.trace_id`,
         }}
       />
 

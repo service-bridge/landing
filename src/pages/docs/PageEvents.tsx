@@ -41,7 +41,7 @@ export function PageEvents() {
           { name: "idempotencyKey", type: "string", desc: "Deduplication key — runtime rejects duplicates per (producer_service, key) pair." },
           { name: "headers", type: "Record<string, string>", desc: "Custom metadata forwarded to all consumers via EventContext.refs.headers." },
           { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate publishing with the consumer trace." },
-          { name: "parentSpanId", type: "string", default: "auto", desc: "Override parent span ID." },
+          { name: "parentSpanId (Node)", type: "string", default: "auto", desc: "Override parent span ID." },
         ]}
       />
 
@@ -116,24 +116,28 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
       <ParamTable
         rows={[
           { name: "pattern / topic", type: "string", desc: 'Topic pattern. Use * for single-segment wildcard: "orders.*" matches "orders.created" but not "orders.created.sub".' },
-          { name: "groupName", type: "string", default: "<service>:<pattern>", desc: "Consumer group name. All instances sharing this name receive load-balanced delivery." },
-          { name: "concurrency", type: "number", desc: "Max concurrent handler executions per worker (reserved, not yet enforced)." },
-          { name: "prefetch", type: "number", desc: "Messages to pre-fetch from the runtime (reserved, not yet enforced)." },
-          { name: "retryPolicyJson", type: "string (JSON)", desc: "JSON retry policy. See Retry policy section below." },
-          { name: "filterExpr", type: "string", desc: "Server-side filter expression. Non-matching messages are never delivered to this group." },
+          { name: "groupName / GroupName / group_name", type: "string", default: "Node: <service>:<pattern>; Go/Python: <service>.<topic>", desc: "Consumer group name. All instances sharing this name receive load-balanced delivery." },
+          { name: "concurrency (Node)", type: "number", desc: "Max concurrent handler executions per worker (reserved, not yet enforced)." },
+          { name: "prefetch (Node)", type: "number", desc: "Messages to pre-fetch from the runtime (reserved, not yet enforced)." },
+          { name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json", type: "string (JSON)", desc: "JSON retry policy. See Retry policy section below." },
+          { name: "filterExpr / FilterExpr / filter_expr", type: "string", desc: "Server-side filter expression. Non-matching messages are never delivered to this group." },
         ]}
       />
+      <Callout type="info">
+        Cross-SDK parity: <Mono>groupName/group_name</Mono>, retry policy, and <Mono>filterExpr/filter_expr</Mono> are available in all SDKs.
+        Node-only <Mono>concurrency</Mono>/<Mono>prefetch</Mono> are currently hint fields.
+      </Callout>
 
       <H3 id="handle-event-ctx">EventContext</H3>
       <ParamTable
         rows={[
           { name: "ctx.retry(delayMs?)", type: "method", desc: "Schedule redelivery with optional delay (overrides computed backoff for this attempt)." },
           { name: "ctx.reject(reason)", type: "method", desc: "Reject permanently — moves to DLQ immediately, bypassing remaining retry attempts." },
-          { name: "ctx.refs.topic", type: "string", desc: "The actual topic that matched the pattern." },
-          { name: "ctx.refs.groupName", type: "string", desc: "This consumer group's name." },
-          { name: "ctx.refs.messageId", type: "string", desc: "Queue message ID (ULID)." },
-          { name: "ctx.refs.attempt", type: "string", desc: "Current delivery attempt number (1-indexed)." },
-          { name: "ctx.refs.headers", type: "string (JSON)", desc: "JSON string of headers set by the publisher." },
+          { name: "ctx.refs.topic (Node/Go) / ctx.topic (Python)", type: "string", desc: "The actual topic that matched the pattern." },
+          { name: "ctx.refs.groupName (Node/Go) / ctx.group_name (Python)", type: "string", desc: "This consumer group's name." },
+          { name: "ctx.refs.messageId (Node/Go) / ctx.message_id (Python)", type: "string", desc: "Queue message ID." },
+          { name: "ctx.refs.attempt (Node/Go) / ctx.attempt (Python)", type: "number", desc: "Current delivery attempt number (1-indexed)." },
+          { name: "ctx.refs.headers (Node/Go) / ctx.headers (Python)", type: "Node: string(JSON), Go: map[string]string, Python: dict[str,str]", desc: "Headers set by publisher." },
           { name: "ctx.stream.write(data, key)", type: "method", desc: "Append a real-time chunk to the run stream (visible in dashboard, consumable via watchRun)." },
         ]}
       />
@@ -153,7 +157,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
   }, nil)`,
           py: `@sb.handle_event("orders.*")
 async def on_order(payload: dict, ctx: EventContext) -> None:
-    print("received", ctx.topic, ctx.refs.attempt, payload.get("order_id"))`,
+    print("received", ctx.topic, ctx.attempt, payload.get("order_id"))`,
         }}
       />
 
@@ -227,7 +231,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
   // Attempt 1 → 5 s, attempt 2 → 10 s, attempt 3 → 20 s … up to 60 s`,
           go: `policy := \`{"maxAttempts":5,"baseDelayMs":5000,"factor":2,"maxDelayMs":60000,"jitter":0.2}\`
 svc.HandleEvent("payments.*", handler,
-  &servicebridge.HandleEventOpts{RetryPolicyJson: policy})`,
+  &servicebridge.HandleEventOpts{RetryPolicyJSON: policy})`,
           py: `import json
 policy = json.dumps({
     "maxAttempts": 5,

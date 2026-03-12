@@ -94,7 +94,7 @@ async def on_fulfilled(payload: dict, ctx) -> None:
       />
 
       {/* ── workflow() ───────────────────────────────────────────── */}
-      <H2 id="workflow-start">workflow() — start a run</H2>
+      <H2 id="workflow-start">workflow() — register definition</H2>
 
       <H3 id="workflow-signature">Signature</H3>
       <MultiCodeBlock
@@ -104,17 +104,21 @@ async def on_fulfilled(payload: dict, ctx) -> None:
           py: `async def workflow(name: str, steps: list[WorkflowStep]) -> str`,
         }}
       />
+      <P>
+        Returns the workflow definition ID. Calling <Mono>workflow()</Mono> with an existing name
+        updates that definition in place.
+      </P>
 
       <H3 id="step-fields">WorkflowStep fields</H3>
       <ParamTable
         rows={[
-          { name: "id", type: "string", desc: "Unique step identifier within this workflow run." },
+          { name: "id", type: "string", desc: "Unique step identifier within this workflow definition." },
           { name: "type", type: '"rpc" | "event" | "event_wait" | "sleep" | "workflow"', desc: "Step execution type." },
-          { name: "ref", type: "string", desc: 'RPC: "service/method". Event/event_wait: topic pattern. Sleep: duration in ms as string. Workflow: child workflow name.' },
+          { name: "ref", type: "string", desc: 'Required for "rpc", "event", "event_wait", and "workflow". RPC: "service/method". Event/event_wait: topic pattern. Workflow: child workflow name.' },
           { name: "deps", type: "string[]", default: "[]", desc: "Step IDs that must complete before this step runs. Steps with no shared deps run in parallel." },
-          { name: "payload", type: "any", desc: "Static payload for RPC/event steps. Overrides the chained output from deps." },
-          { name: "if", type: "string", desc: "Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps)." },
-          { name: "timeoutMs", type: "number", desc: "Step-level timeout (rpc, event_wait). event_wait fails with 'event_wait timeout exceeded' if no matching event arrives." },
+          { name: "if / If / if_expr", type: "string", desc: "Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps)." },
+          { name: "timeoutMs / TimeoutMs / timeout_ms", type: "number", desc: "Step-level timeout for rpc and event_wait steps." },
+          { name: "durationMs / DurationMs / duration_ms", type: "number", desc: 'Required for "sleep" steps. Pause duration in milliseconds.' },
         ]}
       />
 
@@ -129,21 +133,21 @@ async def on_fulfilled(payload: dict, ctx) -> None:
         <li><strong className="text-foreground">2+ deps</strong> — step receives <Mono>{"{ depId: depOutput, ... }"}</Mono> map</li>
       </ul>
       <P>
-        Use static <Mono>payload</Mono> to override chained input for a specific step. Use the{" "}
-        <Mono>if</Mono> field to inspect chained input and conditionally skip a step.
+        Use the <Mono>if</Mono> field (<Mono>if_expr</Mono> in Python) to inspect chained input
+        and conditionally skip a step.
       </P>
 
       {/* ── Main example ─────────────────────────────────────────── */}
       <H3 id="workflow-example">Order fulfillment workflow</H3>
       <MultiCodeBlock
         code={{
-          ts: `const workflowId = await sb.workflow("order.fulfillment", [
+          ts: `const workflowDefinitionId = await sb.workflow("order.fulfillment", [
   { id: "reserve",  type: "rpc",        ref: "inventory/reserve" },
   { id: "charge",   type: "rpc",        ref: "payments/charge",    deps: ["reserve"] },
   { id: "wait_dlv", type: "event_wait", ref: "shipping.delivered", deps: ["charge"], timeoutMs: 86_400_000 },
   { id: "notify",   type: "event",      ref: "orders.fulfilled",   deps: ["wait_dlv"] },
 ]);`,
-          go: `workflowID, err := svc.Workflow(ctx, "order.fulfillment", []servicebridge.WorkflowStep{
+          go: `workflowDefinitionID, err := svc.Workflow(ctx, "order.fulfillment", []servicebridge.WorkflowStep{
   {ID: "reserve",  Type: "rpc",        Ref: "inventory/reserve"},
   {ID: "charge",   Type: "rpc",        Ref: "payments/charge",    Deps: []string{"reserve"}},
   {ID: "wait_dlv", Type: "event_wait", Ref: "shipping.delivered", Deps: []string{"charge"}, TimeoutMs: 86_400_000},
@@ -310,17 +314,17 @@ workflow_id = await sb.workflow("order.fulfillment", [
         code={{
           ts: `await sb.workflow("trial.expiry", [
   { id: "send_reminder", type: "rpc",   ref: "emails/send-trial-reminder" },
-  { id: "wait_7d",       type: "sleep", ref: "604800000",                    deps: ["send_reminder"] },
+  { id: "wait_7d",       type: "sleep", durationMs: 604_800_000,             deps: ["send_reminder"] },
   { id: "expire",        type: "rpc",   ref: "billing/expire-trial",         deps: ["wait_7d"] },
 ]);`,
           go: `svc.Workflow(ctx, "trial.expiry", []servicebridge.WorkflowStep{
   {ID: "send_reminder", Type: "rpc",   Ref: "emails/send-trial-reminder"},
-  {ID: "wait_7d",       Type: "sleep", Ref: "604800000",                   Deps: []string{"send_reminder"}},
+  {ID: "wait_7d",       Type: "sleep", DurationMs: 604_800_000,            Deps: []string{"send_reminder"}},
   {ID: "expire",        Type: "rpc",   Ref: "billing/expire-trial",        Deps: []string{"wait_7d"}},
 })`,
           py: `await sb.workflow("trial.expiry", [
     WorkflowStep(id="send_reminder", type="rpc",   ref="emails/send-trial-reminder"),
-    WorkflowStep(id="wait_7d",       type="sleep", ref="604800000",                   deps=["send_reminder"]),
+    WorkflowStep(id="wait_7d",       type="sleep", duration_ms=604_800_000,           deps=["send_reminder"]),
     WorkflowStep(id="expire",        type="rpc",   ref="billing/expire-trial",        deps=["wait_7d"]),
 ])`,
         }}

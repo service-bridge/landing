@@ -1,5 +1,5 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import { Callout, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
 
 export function PageStreaming() {
   return (
@@ -13,7 +13,8 @@ export function PageStreaming() {
       {/* ── How it works ─────────────────────────────────────────── */}
       <H2 id="how-it-works">How it works</H2>
       <P>
-        Every handler execution creates a <strong>run</strong> with a unique <Mono>runId</Mono>.
+        Every handler execution writes into a <strong>run stream</strong> identified by{" "}
+        <Mono>runId</Mono> (typically a trace ID).
         From inside the handler, call <Mono>ctx.stream.write(data, key)</Mono> to push chunks into
         that run's stream. Any process with the <Mono>runId</Mono> can subscribe via{" "}
         <Mono>watchRun()</Mono> — live or from the beginning. Chunks are persisted in PostgreSQL
@@ -22,7 +23,8 @@ export function PageStreaming() {
       <P>
         Stream keys act as named lanes within a run. A handler can write to <Mono>"output"</Mono>,
         <Mono>"progress"</Mono>, and <Mono>"log"</Mono> simultaneously — consumers filter by key.
-        Two handlers in the same trace cannot share a stream key; keys are scoped per run.
+        Multiple handlers in the same run can write to the same key; chunks remain ordered by
+        stream sequence.
       </P>
 
       {/* ── Getting runId ────────────────────────────────────────── */}
@@ -51,7 +53,7 @@ const rpcPromise = sb.rpc("ai/generate", { prompt: "Hello" }, { traceId });
 // Use the same ID to watch the stream immediately
 for await (const evt of sb.watchRun(traceId, { key: "output", fromSequence: 0 })) {
   if (evt.type === "chunk") process.stdout.write((evt.data as { token: string }).token);
-  if (evt.done) break;
+  if (evt.type === "run_complete") break;
 }
 
 await rpcPromise; // wait for the final return value`,
@@ -195,17 +197,20 @@ async def on_order(payload: dict, ctx) -> None:
         code={{
           ts: `watchRun(runId: string, opts?: WatchRunOpts): AsyncIterable<RunStreamEvent>`,
           go: `func (c *Client) WatchRun(ctx context.Context, runID string, opts *WatchRunOpts) (<-chan RunStreamEvent, error)`,
-          py: `def watch_run(run_id: str, opts: WatchRunOpts | None = None) -> AsyncIterator[RunStreamEvent]`,
+          py: `async def watch_run(run_id: str, opts: WatchRunOpts | None = None) -> AsyncIterator[RunStreamEvent]`,
         }}
       />
 
       <H3 id="watch-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "key", type: "string", default: '"default"', desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".' },
-          { name: "fromSequence", type: "number", default: "0", desc: "Replay from this sequence cursor. 0 = replay all past chunks, then follow live." },
+          { name: "key / Key / key", type: "string", default: '"default" (Node), "" (Go/Python)', desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".' },
+          { name: "fromSequence / FromSequence / from_sequence", type: "number", default: "0", desc: "Replay from this sequence cursor. 0 = replay all past chunks, then follow live." },
         ]}
       />
+      <Callout type="info">
+        To avoid cross-SDK default differences, always pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example, <Mono>"output"</Mono>).
+      </Callout>
 
       {/* ── LLM streaming ────────────────────────────────────────── */}
       <H2 id="llm-streaming">LLM token streaming</H2>
@@ -220,9 +225,12 @@ for await (const evt of sb.watchRun(traceId, { key: "output", fromSequence: 0 })
   if (evt.type === "chunk") {
     process.stdout.write((evt.data as { token: string }).token ?? "");
   }
-  if (evt.done) break;
+  if (evt.type === "run_complete") break;
 }`,
-          go: `ch, err := svc.WatchRun(ctx, runId, &servicebridge.WatchRunOpts{
+          go: `traceID := uuid.New().String()
+go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "ai/generate", payload, nil)
+
+ch, err := svc.WatchRun(ctx, traceID, &servicebridge.WatchRunOpts{
   Key:          "output",
   FromSequence: 0,
 })
@@ -232,10 +240,14 @@ for event := range ch {
   if token, ok := data["token"].(string); ok { fmt.Print(token) }
   if event.Done { break }
 }`,
-          py: `from service_bridge import WatchRunOpts
+          py: `import asyncio, uuid
+from service_bridge import WatchRunOpts
 
-async for event in sb.watch_run(run_id, WatchRunOpts(key="output", from_sequence=0)):
-    if token := event.data.get("token"):
+trace_id = str(uuid.uuid4())
+asyncio.create_task(sb.rpc("ai/generate", {"prompt": "Write a poem"}, trace_id=trace_id))
+
+async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequence=0)):
+    if isinstance(event.data, dict) and (token := event.data.get("token")):
         print(token, end="", flush=True)
     if event.done:
         break`,
@@ -270,7 +282,7 @@ app.post("/api/generate", async (req, res) => {
     if (evt.type === "chunk") {
       res.write(\`data: \${JSON.stringify(evt.data)}\\n\\n\`);
     }
-    if (evt.done) break;
+    if (evt.type === "run_complete") break;
   }
 
   res.end();
@@ -344,9 +356,13 @@ sb.handleRpc("reports/generate", async (payload, ctx) => {
 });
 
 // Caller — watch progress key
-for await (const evt of sb.watchRun(runId, { key: "progress" })) {
+import { randomUUID } from "crypto";
+const payload = { reportId: "rpt_42" };
+const traceId = randomUUID();
+void sb.rpc("reports/generate", payload, { traceId });
+for await (const evt of sb.watchRun(traceId, { key: "progress" })) {
   updateProgressBar((evt.data as { pct: number }).pct);
-  if (evt.done) break;
+  if (evt.type === "run_complete") break;
 }`,
           go: `// Handler
 svc.HandleRpcWithOpts("reports/generate",
@@ -363,7 +379,10 @@ svc.HandleRpcWithOpts("reports/generate",
   }, nil)
 
 // Caller — watch progress key
-ch, _ := svc.WatchRun(ctx, runID, &servicebridge.WatchRunOpts{Key: "progress"})
+traceID := uuid.New().String()
+payload := map[string]any{"report_id": "rpt_42"}
+go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "reports/generate", payload, nil)
+ch, _ := svc.WatchRun(ctx, traceID, &servicebridge.WatchRunOpts{Key: "progress"})
 for evt := range ch {
   var data map[string]any
   json.Unmarshal(evt.Data, &data)
@@ -383,8 +402,12 @@ async def generate(payload: dict, ctx) -> dict:
     return {"ok": True}
 
 # Caller — watch progress key
+import asyncio, uuid
 from service_bridge import WatchRunOpts
-async for evt in sb.watch_run(run_id, WatchRunOpts(key="progress")):
+payload = {"report_id": "rpt_42"}
+trace_id = str(uuid.uuid4())
+asyncio.create_task(sb.rpc("reports/generate", payload, trace_id=trace_id))
+async for evt in sb.watch_run(trace_id, WatchRunOpts(key="progress")):
     update_progress_bar(evt.data["pct"])
     if evt.done:
         break`,
@@ -393,16 +416,31 @@ async for evt in sb.watch_run(run_id, WatchRunOpts(key="progress")):
 
       {/* ── RunStreamEvent shape ─────────────────────────────────── */}
       <H2 id="event-shape">RunStreamEvent shape</H2>
-      <DocCodeBlock
-        lang="ts"
-        code={`interface RunStreamEvent {
+      <MultiCodeBlock
+        code={{
+          ts: `interface RunStreamEvent {
   type: "chunk" | "run_complete"; // "run_complete" on the final event
-  data: unknown;                  // JSON payload from stream.write()
+  runId: string;                  // watched run identifier
   key: string;                    // stream key ("output", "progress", ...)
   sequence: number;               // monotonic sequence — use in fromSequence to resume
-  done: boolean;                  // true when the handler has returned
+  data: unknown;                  // JSON payload from stream.write()
   runStatus?: string;             // set on run_complete: "success" | "error" | "cancelled"
-}`}
+}`,
+          go: `type RunStreamEvent struct {
+  Sequence  int64
+  Key       string
+  Data      json.RawMessage
+  Done      bool
+  RunStatus string
+}`,
+          py: `@dataclass
+class RunStreamEvent:
+    sequence: int
+    key: str
+    data: Any
+    done: bool
+    run_status: str = ""`,
+        }}
       />
 
       {/* ── Replay ───────────────────────────────────────────────── */}

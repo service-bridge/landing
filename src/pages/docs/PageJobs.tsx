@@ -58,12 +58,12 @@ await sb.serve()`,
       <H3 id="schedule-opts">ScheduleOpts</H3>
       <ParamTable
         rows={[
-          { name: "cron", type: "string", desc: 'Standard 5-field cron expression, e.g. "0 * * * *" (hourly). Mutually exclusive with delay.' },
-          { name: "delay", type: "number (ms)", default: "0", desc: "One-shot execution after N milliseconds. Mutually exclusive with cron." },
-          { name: "timezone", type: "string", default: "UTC", desc: "IANA timezone for cron evaluation, e.g. America/New_York." },
-          { name: "misfire", type: '"fire_now" | "skip"', default: '"fire_now"', desc: 'Behaviour when a scheduled tick was missed. "fire_now" runs immediately on recovery; "skip" drops the missed tick.' },
-          { name: "via", type: '"rpc" | "event" | "workflow"', default: '"rpc"', desc: "How the job triggers the target — as an RPC call, event publish, or workflow start." },
-          { name: "retryPolicyJson", type: "string (JSON)", desc: "JSON retry policy. Default is 1 attempt with no retry." },
+          { name: "cron / Cron", type: "string", desc: 'Standard 5-field cron expression, e.g. "0 * * * *" (hourly). Mutually exclusive with delay.' },
+          { name: "delay / DelayMs / delay_ms", type: "number (ms)", default: "0", desc: "One-shot execution after N milliseconds. Mutually exclusive with cron." },
+          { name: "timezone / Timezone", type: "string", default: "UTC", desc: "IANA timezone for cron evaluation, e.g. America/New_York." },
+          { name: "misfire / Misfire", type: '"fire_now" | "skip"', default: '"fire_now"', desc: 'Behaviour when a scheduled tick was missed. "fire_now" runs immediately on recovery; "skip" drops the missed tick.' },
+          { name: "via / Via", type: '"rpc" | "event" | "workflow"', default: '"rpc"', desc: "How the job triggers the target — as an RPC call, event publish, or workflow start." },
+          { name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json", type: "string (JSON)", desc: "JSON retry policy. Default is single-attempt: maxAttempts=1, baseDelayMs=1000, factor=2, maxDelayMs=60000, jitter=0." },
         ]}
       />
 
@@ -170,8 +170,8 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       <H2 id="job-workflow">Trigger a workflow</H2>
       <P>
         Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. This is the
-        primary way to trigger workflows — a dedicated <Mono>runWorkflow()</Mono> helper is on the
-        roadmap but not yet available.
+        primary way to trigger workflows. There is no dedicated{" "}
+        <Mono>runWorkflow()</Mono> helper in the SDK.
       </P>
       <MultiCodeBlock
         code={{
@@ -221,7 +221,7 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
           go: `svc.Job(ctx, "billing/collect", servicebridge.ScheduleOpts{
   Cron:            "0 * * * *",
   Via:             "rpc",
-  RetryPolicyJson: \`{"maxAttempts":3,"baseDelayMs":10000,"factor":2}\`,
+  RetryPolicyJSON: \`{"maxAttempts":3,"baseDelayMs":10000,"factor":2}\`,
 })`,
           py: `import json
 await sb.job("billing/collect", ScheduleOpts(
