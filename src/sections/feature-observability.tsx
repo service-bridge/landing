@@ -4,8 +4,8 @@ import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { CodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
+import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
-import { MiniCard } from "../ui/MiniCard";
 
 const GRAFANA_CODE = `# Grafana datasource — point at ServiceBridge directly
 # No Prometheus operator, no Loki cluster, no Promtail
@@ -24,75 +24,12 @@ datasources:
     # {trace_id="a1b2c3d4"}`;
 
 const METRIC_GROUPS = [
-  {
-    label: "RPC",
-    tone: "text-blue-400",
-    bg: "bg-blue-500/[0.07]",
-    border: "border-blue-500/20",
-    metrics: [
-      "servicebridge_rpc_calls_total",
-      "servicebridge_rpc_duration_p95_ms",
-      "servicebridge_rpc_duration_p99_ms",
-      "servicebridge_rpc_error_rate",
-    ],
-  },
-  {
-    label: "Events",
-    tone: "text-emerald-400",
-    bg: "bg-emerald-500/[0.07]",
-    border: "border-emerald-500/20",
-    metrics: [
-      "servicebridge_queue_messages_total",
-      "servicebridge_deliveries_total",
-      "servicebridge_dlq_depth",
-      "servicebridge_delivery_duration_p99_ms",
-    ],
-  },
-  {
-    label: "Jobs",
-    tone: "text-amber-400",
-    bg: "bg-amber-500/[0.07]",
-    border: "border-amber-500/20",
-    metrics: [
-      "servicebridge_jobs_registered",
-      "servicebridge_job_executions_total",
-      "servicebridge_job_duration_p99_ms",
-    ],
-  },
-  {
-    label: "Workflows",
-    tone: "text-fuchsia-400",
-    bg: "bg-fuchsia-500/[0.07]",
-    border: "border-fuchsia-500/20",
-    metrics: [
-      "servicebridge_workflows_registered",
-      "servicebridge_workflow_runs_total",
-      "servicebridge_workflow_duration_p99_ms",
-    ],
-  },
-  {
-    label: "Resources",
-    tone: "text-cyan-400",
-    bg: "bg-cyan-500/[0.07]",
-    border: "border-cyan-500/20",
-    metrics: [
-      "servicebridge_cpu_percent",
-      "servicebridge_ram_mb",
-      "servicebridge_db_size_mb",
-      "servicebridge_active_sessions",
-    ],
-  },
-  {
-    label: "Traces",
-    tone: "text-violet-400",
-    bg: "bg-violet-500/[0.07]",
-    border: "border-violet-500/20",
-    metrics: [
-      "servicebridge_traces_total",
-      "servicebridge_trace_error_rate",
-      "servicebridge_traces_24h",
-    ],
-  },
+  { label: "RPC", tone: "text-blue-400", metrics: ["rpc_calls_total", "rpc_duration_p95_ms", "rpc_duration_p99_ms", "rpc_error_rate"] },
+  { label: "Events", tone: "text-emerald-400", metrics: ["queue_messages_total", "deliveries_total", "dlq_depth", "delivery_duration_p99_ms"] },
+  { label: "Jobs", tone: "text-amber-400", metrics: ["jobs_registered", "job_executions_total", "job_duration_p99_ms"] },
+  { label: "Workflows", tone: "text-fuchsia-400", metrics: ["workflow_runs_total", "workflow_duration_p99_ms"] },
+  { label: "Resources", tone: "text-cyan-400", metrics: ["cpu_percent", "ram_mb", "db_size_mb", "active_sessions"] },
+  { label: "Traces", tone: "text-violet-400", metrics: ["traces_total", "trace_error_rate", "traces_24h"] },
 ] as const;
 
 const LOGQL_EXAMPLES = [
@@ -103,193 +40,92 @@ const LOGQL_EXAMPLES = [
 ];
 
 export function ObservabilitySection() {
-  const content = (
-    <div className="space-y-6">
-      {/* Prometheus metrics panel */}
-      <CodePanel title="prometheus metrics">
-        <div className="px-5 py-4">
-          <div className="flex items-center justify-between gap-3 mb-4">
-            <div>
-              <p className="type-overline-mono text-muted-foreground">prometheus metrics</p>
-              <p className="mt-2 type-body-sm text-zinc-300">
-                30+ metric families across all primitives.
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <Badge tone="border-orange-500/20 bg-orange-500/[0.08] text-orange-300">
-                GET /metrics
-              </Badge>
-              <Badge tone="border-surface-border bg-surface text-zinc-400">
-                15s cache
-              </Badge>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {METRIC_GROUPS.map((group) => (
-              <Card key={group.label}>
-                <div className={cn("rounded-xl border p-4", group.bg, group.border)}>
-                  <p className={cn("type-overline-mono mb-2.5", group.tone)}>{group.label}</p>
-                  <div className="space-y-1">
-                    {group.metrics.map((m) => (
-                      <div
-                        key={m}
-                        className="flex items-center gap-2 rounded-xl bg-black/20 px-2.5 py-1.5"
-                      >
-                        <span className={cn("w-1 h-1 rounded-full shrink-0", group.bg)} />
-                        <code className="type-overline-mono text-zinc-300">{m}</code>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          <div className="mt-4 flex items-center gap-4 p-3 bg-code-chrome rounded-xl">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="type-overline-mono text-zinc-500">
-                All metrics labeled by{" "}
-                <span className="text-zinc-300">service</span>,{" "}
-                <span className="text-zinc-300">operation</span>,{" "}
-                <span className="text-zinc-300">status</span>
-              </span>
-            </div>
-            <div className="ml-auto">
-              <Badge tone="border-surface-border bg-surface text-zinc-500">
-                HTTP 503 when DB unavailable
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </CodePanel>
-
-      {/* Loki API */}
-      <Card>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="type-overline-mono text-muted-foreground">loki-compatible api</p>
-            <h3 className="mt-2 type-subsection-title">
-              LogQL queries, zero Loki infra.
-            </h3>
-            <p className="mt-2 type-body text-muted-foreground">
-              Add ServiceBridge as a Loki datasource in Grafana. Query by service, level,
-              trace ID, or span ID. Results come from PostgreSQL — no Promtail, no agent.
-            </p>
-          </div>
-          <Badge tone="border-cyan-500/20 bg-cyan-500/[0.08] text-cyan-300">
-            Loki API
-          </Badge>
-        </div>
-
-        {/* LogQL examples */}
-        <div className="mt-5 rounded-2xl border border-surface-border bg-code p-4">
-          <p className="type-overline-mono text-muted-foreground mb-3">supported logql matchers</p>
-          <div className="space-y-2">
-            {LOGQL_EXAMPLES.map((ex) => (
-              <div
-                key={ex.query}
-                className="flex items-center gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2"
-              >
-                <code className="type-body-sm text-cyan-300 shrink-0">{ex.query}</code>
-                <span className="type-overline-mono text-zinc-500 min-w-0 truncate">{ex.desc}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-surface-border bg-surface p-3">
-            <p className="type-overline-mono text-muted-foreground">labels</p>
-            <p className="type-body-sm text-cyan-300 mt-1">service · level · trace_id</p>
-          </div>
-          <div className="rounded-xl border border-surface-border bg-surface p-3">
-            <p className="type-overline-mono text-muted-foreground">direction</p>
-            <p className="type-body-sm text-blue-300 mt-1">forward / backward</p>
-          </div>
-          <div className="rounded-xl border border-surface-border bg-surface p-3">
-            <p className="type-overline-mono text-muted-foreground">limit</p>
-            <p className="type-body-sm text-emerald-300 mt-1">up to 5000 lines</p>
-          </div>
-        </div>
-      </Card>
-
-      {/* Grafana config */}
-      <CodePanel title="grafana datasource config">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-surface-border bg-code-chrome">
-          <p className="type-overline-mono text-muted-foreground">datasources.yaml</p>
-          <Badge tone="border-primary/20 bg-primary/[0.08] text-primary">
-            zero extra services
-          </Badge>
-        </div>
-        <div className="p-4">
-          <CodeBlock code={GRAFANA_CODE} filename="datasources.yaml" />
-        </div>
-      </CodePanel>
-
-      {/* Storage note */}
-      <Card>
-        <div className="flex items-center gap-4">
-          <div className="rounded-xl bg-violet-500/10 p-2.5 shrink-0">
-            <Database className="w-4 h-4 text-violet-400" />
-          </div>
-          <div>
-            <p className="type-subsection-title">PostgreSQL-backed</p>
-            <p className="type-body-sm text-muted-foreground mt-0.5">
-              Metrics computed from live data on each scrape (15s cache). Logs stored in{" "}
-              <code className="text-foreground/70">log_entries</code> with 3-day default
-              retention.
-            </p>
-          </div>
-        </div>
-      </Card>
-    </div>
-  );
-
-  const miniCards = (
-    <>
-      <MiniCard
-        icon={BarChart2}
-        title="30+ metric families"
-        desc="RPC, events, jobs, workflows, traces, resources, logs, and security — all in one /metrics endpoint."
-        iconClassName="text-orange-400"
-      />
-      <MiniCard
-        icon={ScrollText}
-        title="Native log collection"
-        desc="SDK patches console.log / log / slog automatically. No Promtail, no FluentBit, no log shipper."
-        iconClassName="text-cyan-400"
-      />
-      <MiniCard
-        icon={Eye}
-        title="Trace+log correlation"
-        desc="Logs carry trace_id and span_id. Expand any span in the waterfall to see correlated log lines."
-        iconClassName="text-violet-400"
-      />
-      <MiniCard
-        icon={Database}
-        title="One data store"
-        desc="Metrics, logs, and traces all in PostgreSQL. Standard backups, no separate time-series DB."
-        iconClassName="text-primary"
-      />
-    </>
-  );
-
   return (
     <FeatureSection
       id="observability"
       eyebrow="Metrics & Logs"
-      title={
+      title={<>Grafana connects. No extra infrastructure.</>}
+      subtitle="ServiceBridge exposes a Prometheus-compatible /metrics endpoint and a Loki-compatible log API — point Grafana directly at the same host, no Prometheus operator or Loki cluster needed."
+      content={
+        <div className="space-y-4">
+          <CodePanel title="grafana datasource config">
+            <div className="px-4 py-3 flex items-center justify-between border-b border-surface-border bg-code-chrome">
+              <p className="type-overline-mono text-muted-foreground">datasources.yaml</p>
+              <Badge tone="border-primary/20 bg-primary/[0.08] text-primary">zero extra services</Badge>
+            </div>
+            <div className="p-4">
+              <CodeBlock code={GRAFANA_CODE} filename="datasources.yaml" />
+            </div>
+          </CodePanel>
+
+          <Card>
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <p className="type-overline-mono text-muted-foreground">loki-compatible api</p>
+                <p className="mt-2 type-subsection-title">LogQL queries, zero Loki infra.</p>
+              </div>
+              <Badge tone="border-cyan-500/20 bg-cyan-500/[0.08] text-cyan-300">Loki API</Badge>
+            </div>
+            <div className="space-y-1.5">
+              {LOGQL_EXAMPLES.map((ex) => (
+                <div key={ex.query} className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-2">
+                  <code className="type-body-sm text-cyan-300 shrink-0">{ex.query}</code>
+                  <span className="type-overline-mono text-zinc-500 min-w-0 truncate">{ex.desc}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      }
+      demo={
+        <div className="space-y-4">
+          <CodePanel title="prometheus metrics · 30+ families">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-surface-border bg-code-chrome">
+              <p className="type-overline-mono text-muted-foreground">GET /metrics</p>
+              <div className="flex items-center gap-2">
+                <Badge tone="border-orange-500/20 bg-orange-500/[0.08] text-orange-300">GET /metrics</Badge>
+                <Badge tone="border-surface-border bg-surface text-zinc-400">15s cache</Badge>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              {METRIC_GROUPS.map((group) => (
+                <div key={group.label} className="flex items-start gap-3">
+                  <p className={cn("type-overline-mono w-20 shrink-0 pt-0.5", group.tone)}>{group.label}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 min-w-0">
+                    {group.metrics.map((m) => (
+                      <code key={m} className="type-overline-mono text-zinc-400">
+                        servicebridge_{m}
+                      </code>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CodePanel>
+
+          <Card>
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-violet-500/10 p-2 shrink-0">
+                <Database className="w-4 h-4 text-violet-400" />
+              </div>
+              <div>
+                <p className="type-subsection-title">PostgreSQL-backed</p>
+                <p className="type-body-sm text-muted-foreground mt-0.5">
+                  Metrics computed on each scrape (15s cache). Logs stored with 3-day default retention.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
+      }
+      cards={
         <>
-          Grafana connects.{" "}
-          <span className="text-gradient">No extra infrastructure.</span>
+          <FeatureCard variant="compact" icon={BarChart2} title="30+ metric families" description="RPC, events, jobs, workflows, traces, resources, logs — all in one /metrics endpoint." iconClassName="text-orange-400" />
+          <FeatureCard variant="compact" icon={ScrollText} title="Native log collection" description="SDK patches console.log / log / slog automatically. No Promtail, no FluentBit, no log shipper." iconClassName="text-cyan-400" />
+          <FeatureCard variant="compact" icon={Eye} title="Trace+log correlation" description="Logs carry trace_id and span_id. Expand any span in the waterfall to see correlated log lines." iconClassName="text-violet-400" />
+          <FeatureCard variant="compact" icon={Database} title="One data store" description="Metrics, logs, and traces all in PostgreSQL. Standard backups, no separate time-series DB." iconClassName="text-primary" />
         </>
       }
-      subtitle="ServiceBridge exposes a Prometheus-compatible /metrics endpoint and a Loki-compatible log API — point Grafana directly at the same host, no Prometheus operator or Loki cluster needed."
-      content={content}
-      demo={<></>}
-      cards={miniCards}
     />
   );
 }

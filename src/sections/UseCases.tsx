@@ -14,7 +14,7 @@ import { SectionHeader } from "../ui/SectionHeader";
 function ServiceNode({
   label,
   sub,
-  colorClass = "border-white/[0.08] bg-white/[0.03] text-zinc-200",
+  colorClass = "border-surface-border bg-surface text-zinc-200",
   className,
 }: {
   label: string;
@@ -185,7 +185,7 @@ function RpcDiagram() {
       </div>
 
       {/* Control-plane box */}
-      <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 pt-6">
+      <div className="relative rounded-xl border border-surface-border bg-surface p-4 pt-6">
         <p className="absolute -top-2.5 left-4 type-overline-mono text-muted-foreground bg-background px-1.5">
           control plane — discovery only
         </p>
@@ -734,8 +734,8 @@ export function UseCasesSection() {
               className={cn(
                 "group relative text-left rounded-xl border p-4 cursor-pointer transition-all duration-200",
                 activeId === uc.id
-                  ? "border-white/[0.12] bg-white/[0.04]"
-                  : "border-white/[0.05] bg-transparent hover:border-white/[0.09] hover:bg-white/[0.02]"
+                  ? "border-white/[0.12] bg-surface"
+                  : "border-surface-border bg-transparent hover:border-white/[0.09] hover:bg-surface"
               )}
             >
               <div
@@ -770,9 +770,9 @@ export function UseCasesSection() {
         {/* Diagram panel */}
         <motion.div
           variants={fadeInUp}
-          className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden"
+          className="rounded-2xl border border-surface-border bg-surface overflow-hidden"
         >
-          <div className="flex items-start gap-3 px-6 py-4 border-b border-white/[0.06]">
+          <div className="flex items-start gap-3 px-6 py-4 border-b border-surface-border">
             <div
               className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center ring-1 ring-white/[0.06] shrink-0 mt-0.5",

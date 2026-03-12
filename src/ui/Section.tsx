@@ -13,7 +13,8 @@ export function Section({ id, children, className }: SectionProps) {
     <AnimatedSection
       id={id}
       className={cn(
-        "border-t border-white/[0.04] py-24",
+        "border-t py-24",
+        "border-[color:hsl(var(--section-border))]",
         className
       )}
     >

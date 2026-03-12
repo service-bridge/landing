@@ -21,6 +21,7 @@ import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { Eyebrow } from "../ui/Eyebrow";
+import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
 
 const REPLACES = [
@@ -176,7 +177,7 @@ export function ReplacesSection() {
         >
           Simplify your stack
         </Eyebrow>
-        <h2 className="text-gradient font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
           Ten tools in. One platform out.
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
@@ -187,16 +188,17 @@ export function ReplacesSection() {
 
       <motion.div variants={fadeInUp} className="mx-auto mb-14 grid max-w-lg grid-cols-3 gap-3">
         {[
-          { value: "10→1", label: "infrastructure pieces" },
-          { value: "0ms", label: "proxy overhead" },
-          { value: "100%", label: "calls traced" },
+          { value: "10→1", label: "infrastructure pieces", title: "10→1" },
+          { value: "0ms", label: "proxy overhead", title: "0ms" },
+          { value: "100%", label: "calls traced", title: "100%" },
         ].map((stat) => (
-          <Card key={stat.label} className="px-3 py-4 text-center">
-            <p className="font-display text-xl font-bold tabular-nums text-foreground">
-              {stat.value}
-            </p>
-            <p className="text-2xs mt-1 leading-tight text-muted-foreground">{stat.label}</p>
-          </Card>
+          <FeatureCard
+            key={stat.label}
+            variant="stat"
+            stat={stat.value}
+            title={stat.title}
+            description={stat.label}
+          />
         ))}
       </motion.div>
 
@@ -276,7 +278,7 @@ export function ReplacesSection() {
                 {REPLACES.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center gap-3 px-5 py-2.5 transition-colors duration-150 hover:bg-white/[0.02]"
+                    className="flex items-center gap-3 px-5 py-2.5 transition-colors duration-150 hover:bg-surface"
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
                     <item.icon className={cn("h-3.5 w-3.5 flex-shrink-0", item.color)} />
@@ -301,11 +303,10 @@ export function ReplacesSection() {
           >
             vs Traditional Service Mesh
           </Eyebrow>
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            The sidecar tax is real.{" "}
-            <span className="text-gradient">ServiceBridge doesn't collect it.</span>
+          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+            The sidecar tax is real. ServiceBridge doesn't collect it.
           </h2>
-          <p className="type-body-sm mx-auto mt-4 max-w-2xl leading-relaxed">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             Istio and Linkerd inject a proxy into every pod — adding memory overhead, latency hops,
             and operational complexity with every service you deploy. And a mesh still leaves you
             without Kafka, Temporal, Jaeger, and Alertmanager. ServiceBridge replaces all of it.
@@ -313,25 +314,30 @@ export function ReplacesSection() {
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Card className="border-red-500/15 bg-red-500/[0.04] px-5 py-4 text-center">
-            <p className="font-display text-2xl font-bold tabular-nums text-red-400">250 MB</p>
-            <p className="type-body-sm mt-1 leading-snug">Envoy sidecar memory per pod</p>
-            <p className="text-2xs mt-1.5 font-mono text-red-400/50">= 250 GB RAM at 1,000 pods</p>
-          </Card>
-          <Card className="border-orange-500/15 bg-orange-500/[0.04] px-5 py-4 text-center">
-            <p className="font-display text-2xl font-bold tabular-nums text-orange-400">×4 hops</p>
-            <p className="type-body-sm mt-1 leading-snug">
-              Every service call crosses 4 proxy boundaries
-            </p>
-            <p className="text-2xs mt-1.5 font-mono text-orange-400/50">+1–5 ms overhead per hop</p>
-          </Card>
-          <Card className="border-amber-500/15 bg-amber-500/[0.04] px-5 py-4 text-center">
-            <p className="font-display text-2xl font-bold tabular-nums text-amber-400">+8 tools</p>
-            <p className="type-body-sm mt-1 leading-snug">
-              Kafka, Temporal, Jaeger, Loki, Alertmanager…
-            </p>
-            <p className="text-2xs mt-1.5 font-mono text-amber-400/50">still not in the mesh</p>
-          </Card>
+          <FeatureCard
+            variant="stat"
+            stat="250 MB"
+            title="250 MB"
+            description="Envoy sidecar memory per pod"
+            statLabel="= 250 GB RAM at 1,000 pods"
+            className="border-red-500/15 bg-red-500/[0.04]"
+          />
+          <FeatureCard
+            variant="stat"
+            stat="×4 hops"
+            title="×4 hops"
+            description="Every service call crosses 4 proxy boundaries"
+            statLabel="+1–5 ms overhead per hop"
+            className="border-orange-500/15 bg-orange-500/[0.04]"
+          />
+          <FeatureCard
+            variant="stat"
+            stat="+8 tools"
+            title="+8 tools"
+            description="Kafka, Temporal, Jaeger, Loki, Alertmanager…"
+            statLabel="still not in the mesh"
+            className="border-amber-500/15 bg-amber-500/[0.04]"
+          />
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-code">

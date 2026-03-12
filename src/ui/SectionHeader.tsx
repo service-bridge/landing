@@ -1,23 +1,40 @@
 import { motion } from "framer-motion";
 import type React from "react";
 import { fadeInUp } from "../components/animations";
+import { cn } from "../lib/utils";
 import { Eyebrow } from "./Eyebrow";
 
 interface SectionHeaderProps {
   eyebrow?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  align?: "center" | "left";
 }
 
-export function SectionHeader({ eyebrow, title, subtitle }: SectionHeaderProps) {
+export function SectionHeader({
+  eyebrow,
+  title,
+  subtitle,
+  align = "center",
+}: SectionHeaderProps) {
+  const titleClasses = "font-display font-bold tracking-tight text-3xl sm:text-4xl";
+
+  const containerClasses = cn(
+    "mb-16",
+    align === "center" ? "text-center" : "text-left"
+  );
+
   return (
-    <motion.div variants={fadeInUp} className="mb-16 text-center">
+    <motion.div variants={fadeInUp} className={containerClasses}>
       {eyebrow && <Eyebrow variant="plain">{eyebrow}</Eyebrow>}
-      <h2 className="text-gradient text-3xl font-bold tracking-tight font-display sm:text-4xl">
-        {title}
-      </h2>
+      <h2 className={titleClasses}>{title}</h2>
       {subtitle && (
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+        <p
+          className={cn(
+            "mt-4 text-lg text-muted-foreground",
+            align === "center" ? "mx-auto max-w-2xl" : "max-w-2xl"
+          )}
+        >
           {subtitle}
         </p>
       )}

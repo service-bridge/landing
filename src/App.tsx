@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { BookOpen, ChevronDown, Github, Menu, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandMark } from "./components/BrandMark";
 import { RunFlowSection } from "./components/RunFlow";
 import { LanguageProvider } from "./lib/language-context";
 import { cn } from "./lib/utils";
 import DocsPage from "./pages/DocsPage";
+import HashPasswordPage from "./pages/HashPasswordPage";
 import { ArchitectureSection } from "./sections/Architecture";
 import { CodeSection } from "./sections/Code";
 import { FeaturesSection } from "./sections/Features";
@@ -27,63 +28,67 @@ import { ReplacesSection } from "./sections/Replaces";
 import { UseCasesSection } from "./sections/UseCases";
 import { Button } from "./ui/button";
 
-const PRIMARY_NAV_LINKS = [
+const NAV_LINKS = [
   { label: "Why", href: "#replaces" },
-  { label: "Use Cases", href: "#use-cases" },
-  { label: "Live Runs", href: "#runs" },
-  { label: "Code", href: "#code" },
   { label: "Architecture", href: "#architecture" },
   { label: "Get Started", href: "#start" },
 ] as const;
 
-function DesktopFeatureMenu({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+function FeaturesDropdown({ onClose }: { onClose: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const openMenu  = () => { clearTimeout(closeTimer.current); setOpen(true); };
+  const closeMenu = () => { closeTimer.current = setTimeout(() => setOpen(false), 120); };
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   return (
-    <div className="group relative">
-      <div className="flex items-center gap-1">
-        <a
-          href="#features"
-          className="type-label text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Features
-        </a>
-        <button
-          type="button"
-          onClick={() => onOpenChange(!open)}
-          aria-expanded={open}
-          aria-label="Toggle features menu"
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
-        >
-          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-        </button>
-      </div>
+    <div ref={ref} className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenu}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex items-center gap-1 type-label transition-colors",
+          open ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        Features
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", open && "rotate-180")} />
+      </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18 }}
-            className="absolute left-0 top-full z-50 w-[340px] pt-3"
+            initial={{ opacity: 0, y: 8, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-0 top-full z-50 pt-3"
           >
-            <div className="rounded-2xl border border-white/[0.08] bg-background/95 p-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
-              <div className="space-y-1">
+            <div className="w-[480px] rounded-2xl border border-surface-border bg-background/95 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl">
+              <div className="grid grid-cols-2 gap-0.5">
                 {FEATURE_MENU_ITEMS.map((item) => (
                   <a
                     key={item.href}
                     href={item.href}
-                    className="block rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-white/[0.06] hover:bg-white/[0.03]"
+                    onClick={() => { setOpen(false); onClose(); }}
+                    className="rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.04]"
                   >
-                    <span className="block type-label font-semibold font-display">
+                    <span className="block text-sm font-semibold font-display text-foreground/90">
                       {item.label}
                     </span>
-                    <span className="block type-body-sm">{item.desc}</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>
                   </a>
                 ))}
               </div>
@@ -91,94 +96,29 @@ function DesktopFeatureMenu({
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="pointer-events-none invisible absolute left-0 top-full z-40 w-[340px] pt-3 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
-        <div className="rounded-2xl border border-white/[0.08] bg-background/95 p-2 shadow-2xl shadow-black/30 backdrop-blur-xl">
-          <div className="space-y-1">
-            {FEATURE_MENU_ITEMS.map((item) => (
-              <a
-                key={`${item.href}-hover`}
-                href={item.href}
-                className="block rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-white/[0.06] hover:bg-white/[0.03]"
-              >
-                <span className="block type-label font-semibold font-display">{item.label}</span>
-                <span className="block type-body-sm">{item.desc}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
 
-function MobileFeatureMenu({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-2">
-      <div className="flex items-center justify-between gap-2">
-        <a href="#features" className="flex-1 rounded-xl px-3 py-2 type-label text-foreground">
-          Features
-        </a>
-        <button
-          type="button"
-          onClick={() => onOpenChange(!open)}
-          aria-expanded={open}
-          aria-label="Toggle feature links"
-          className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-white/[0.04] hover:text-foreground"
-        >
-          <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
-        </button>
-      </div>
+type Page = "landing" | "docs" | "hash-password";
 
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="px-2 pb-1 pt-1 type-overline text-zinc-500">10 detailed blocks</div>
-            <div className="space-y-1 px-1 pb-1">
-              {FEATURE_MENU_ITEMS.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="block rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.03]"
-                >
-                  <span className="block type-label font-semibold font-display">{item.label}</span>
-                  <span className="block type-body-sm">{item.desc}</span>
-                </a>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+function hashToPage(hash: string): Page {
+  if (hash === "#docs") return "docs";
+  if (hash === "#hash-password") return "hash-password";
+  return "landing";
 }
 
 function useHashPage() {
-  const [page, setPage] = useState<"landing" | "docs">(() =>
-    window.location.hash === "#docs" ? "docs" : "landing"
-  );
+  const [page, setPage] = useState<Page>(() => hashToPage(window.location.hash));
 
   useEffect(() => {
-    const handler = () => {
-      setPage(window.location.hash === "#docs" ? "docs" : "landing");
-    };
+    const handler = () => setPage(hashToPage(window.location.hash));
     window.addEventListener("hashchange", handler);
     return () => window.removeEventListener("hashchange", handler);
   }, []);
 
-  const navigateTo = useCallback((nextPage: "landing" | "docs") => {
-    window.location.hash = nextPage === "docs" ? "#docs" : "";
+  const navigateTo = useCallback((nextPage: Page) => {
+    window.location.hash = nextPage === "landing" ? "" : `#${nextPage}`;
     setPage(nextPage);
     window.scrollTo({ top: 0 });
   }, []);
@@ -190,7 +130,6 @@ export default function App() {
   const { page, navigateTo } = useHashPage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [featureMenuOpen, setFeatureMenuOpen] = useState(false);
   const [mobileFeatureMenuOpen, setMobileFeatureMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -202,7 +141,6 @@ export default function App() {
 
   useEffect(() => {
     const closeMenus = () => {
-      setFeatureMenuOpen(false);
       setMobileMenuOpen(false);
       setMobileFeatureMenuOpen(false);
     };
@@ -213,6 +151,9 @@ export default function App() {
 
   if (page === "docs") {
     return <DocsPage onBack={() => navigateTo("landing")} />;
+  }
+  if (page === "hash-password") {
+    return <HashPasswordPage onBack={() => navigateTo("landing")} />;
   }
 
   return (
@@ -227,10 +168,11 @@ export default function App() {
         )}
       >
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          {/* Logo */}
           <button
             type="button"
             onClick={() => navigateTo("landing")}
-            className="flex cursor-pointer items-center gap-2.5 type-subsection-title font-display"
+            className="flex cursor-pointer items-center gap-2.5 type-subsection-title font-display shrink-0"
           >
             <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
               <BrandMark className="h-4 w-4" />
@@ -238,9 +180,10 @@ export default function App() {
             <span>ServiceBridge</span>
           </button>
 
-          <nav className="hidden items-center gap-8 md:flex">
-            <DesktopFeatureMenu open={featureMenuOpen} onOpenChange={setFeatureMenuOpen} />
-            {PRIMARY_NAV_LINKS.map((link) => (
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-7 md:flex">
+            <FeaturesDropdown onClose={() => {}} />
+            {NAV_LINKS.map((link) => (
               <a
                 key={link.label}
                 href={link.href}
@@ -249,28 +192,23 @@ export default function App() {
                 {link.label}
               </a>
             ))}
-            <button
-              type="button"
-              onClick={() => navigateTo("docs")}
-              className="type-label text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Docs
-            </button>
           </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
+          {/* Desktop CTAs */}
+          <div className="hidden items-center gap-2 md:flex">
             <a href="https://github.com/esurkov1/connectr" target="_blank" rel="noreferrer">
-              <Button variant="outline" size="sm" className="gap-2 cursor-pointer">
+              <Button variant="ghost" size="sm" className="gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground">
                 <Github className="h-4 w-4" />
                 GitHub
               </Button>
             </a>
-            <Button size="sm" className="gap-2 cursor-pointer" onClick={() => navigateTo("docs")}>
+            <Button size="sm" className="gap-1.5 cursor-pointer" onClick={() => navigateTo("docs")}>
               <BookOpen className="h-3.5 w-3.5" />
               Docs
             </Button>
           </div>
 
+          {/* Mobile hamburger */}
           <button
             type="button"
             className="p-2 md:hidden"
@@ -281,6 +219,7 @@ export default function App() {
           </button>
         </div>
 
+        {/* Mobile menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -289,50 +228,74 @@ export default function App() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden border-t border-border/50 bg-background/95 backdrop-blur-xl md:hidden"
             >
-              <div className="container mx-auto space-y-3 px-4 py-4">
-                <MobileFeatureMenu
-                  open={mobileFeatureMenuOpen}
-                  onOpenChange={setMobileFeatureMenuOpen}
-                />
+              <div className="container mx-auto space-y-2 px-4 py-4">
+                {/* Features accordion */}
+                <div className="rounded-xl border border-surface-border bg-surface overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setMobileFeatureMenuOpen(!mobileFeatureMenuOpen)}
+                    className="flex w-full items-center justify-between px-4 py-3 type-label text-foreground"
+                  >
+                    Features
+                    <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", mobileFeatureMenuOpen && "rotate-180")} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {mobileFeatureMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden border-t border-surface-border"
+                      >
+                        <div className="grid grid-cols-2 gap-0.5 p-2">
+                          {FEATURE_MENU_ITEMS.map((item) => (
+                            <a
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => { setMobileMenuOpen(false); setMobileFeatureMenuOpen(false); }}
+                              className="rounded-lg px-3 py-2 hover:bg-white/[0.04]"
+                            >
+                              <span className="block text-sm font-semibold font-display text-foreground/90">{item.label}</span>
+                              <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-                {PRIMARY_NAV_LINKS.map((link) => (
+                {NAV_LINKS.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
-                    className="block rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 type-label text-muted-foreground transition-colors hover:text-foreground"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setMobileFeatureMenuOpen(false);
-                    }}
+                    className="block rounded-xl border border-surface-border bg-surface px-4 py-3 type-label text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => { setMobileMenuOpen(false); setMobileFeatureMenuOpen(false); }}
                   >
                     {link.label}
                   </a>
                 ))}
 
-                <a
-                  href="https://github.com/esurkov1/connectr"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 type-label text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setMobileFeatureMenuOpen(false);
-                  }}
-                >
-                  GitHub
-                </a>
-
-                <button
-                  type="button"
-                  className="block w-full rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left type-label text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setMobileFeatureMenuOpen(false);
-                    navigateTo("docs");
-                  }}
-                >
-                  Docs
-                </button>
+                <div className="flex gap-2 pt-1">
+                  <a
+                    href="https://github.com/esurkov1/connectr"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button variant="outline" size="sm" className="w-full gap-2 cursor-pointer">
+                      <Github className="h-4 w-4" /> GitHub
+                    </Button>
+                  </a>
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2 cursor-pointer"
+                    onClick={() => { setMobileMenuOpen(false); navigateTo("docs"); }}
+                  >
+                    <BookOpen className="h-3.5 w-3.5" /> Docs
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}

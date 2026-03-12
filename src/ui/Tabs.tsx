@@ -24,7 +24,7 @@ export function TabStrip<T extends string>({
   return (
     <div
       className={cn(
-        "flex gap-0.5 rounded-lg bg-white/[0.03] p-0.5 w-fit",
+        "flex gap-0.5 rounded-lg bg-surface p-0.5 w-fit",
         className,
       )}
     >

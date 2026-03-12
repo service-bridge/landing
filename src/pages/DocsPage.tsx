@@ -498,9 +498,9 @@ docker compose up -d
       <CodeBlock
         filename="terminal"
         lang="bash"
-        code={`npm install @servicebridge/sdk
+        code={`npm install @service-bridge/node
 # or
-bun add @servicebridge/sdk`}
+bun add @service-bridge/node`}
       />
       <Callout type="tip">
         Use a service key from the UI. In development, <Mono>dev-service-key</Mono> is auto-created.
@@ -520,7 +520,7 @@ function PageQuickStart() {
       <P>Register handlers and start the service:</P>
       <CodeBlock
         filename="my-service.ts"
-        code={`import { servicebridge } from "@servicebridge/sdk";
+        code={`import { servicebridge } from "@service-bridge/node";
 
 const sb = servicebridge(
   "127.0.0.1:14445",
@@ -646,7 +646,7 @@ function PagePrimitives() {
             desc: "Multi-step saga as code. Chain rpc and event steps. Automatic retry, state, and failure handling.",
           },
         ].map((p) => (
-          <div key={p.name} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={p.name} className="rounded-lg border border-surface-border bg-surface p-4">
             <p
               className={cn(
                 "text-sm font-semibold mb-1.5",
@@ -998,10 +998,10 @@ sb.handleEvent("payment.*", async (payload, ctx) => {
       />
 
       <H2 id="topic-wildcards">Topic Wildcards</H2>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06] my-4">
+      <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm font-mono">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
               <th className="px-4 py-2.5">Pattern</th>
               <th className="px-4 py-2.5">Matches</th>
               <th className="px-4 py-2.5">Does not match</th>
@@ -1397,7 +1397,7 @@ function PageRealtimeStreams() {
       </p>
       <CodeBlock
         filename="ai-service.ts"
-        code={`import { servicebridge } from "@servicebridge/sdk";
+        code={`import { servicebridge } from "@service-bridge/node";
 
 const sb = servicebridge("api.example.com:14445", SERVICE_KEY, "ai");
 
@@ -1434,7 +1434,7 @@ sb.handleEvent("ai.generate", async (payload, ctx) => {
       </p>
       <CodeBlock
         filename="subscriber.ts"
-        code={`import { servicebridge } from "@servicebridge/sdk";
+        code={`import { servicebridge } from "@service-bridge/node";
 
 const sb = servicebridge("api.example.com:14445", SERVICE_KEY);
 
@@ -1577,19 +1577,19 @@ function PageExpress() {
       <PageHeader
         title="Express"
         badge="HTTP Integration"
-        description="The @servicebridge/http package provides middleware for Express to propagate trace context from incoming HTTP requests into ServiceBridge calls."
+        description="The @service-bridge/node/express package provides middleware for Express to propagate trace context from incoming HTTP requests into ServiceBridge calls."
       />
       <CodeBlock
         filename="express-app.ts"
         code={`import express from "express";
-import { servicebridge } from "@servicebridge/sdk";
-import { servicebridgeMiddleware } from "@servicebridge/http";
+import { servicebridge } from "@service-bridge/node";
+import { servicebridgeMiddleware } from "@service-bridge/node/express";
 
 const sb = servicebridge("127.0.0.1:14445", serviceKey, "api-gateway");
 await sb.serve();
 
 const app = express();
-app.use(servicebridgeMiddleware(sb));  // injects trace context
+app.use(servicebridgeMiddleware({ client: sb }));  // injects trace context
 
 app.post("/orders", async (req, res) => {
   // sb.rpc() automatically carries the HTTP trace headers
@@ -1599,7 +1599,7 @@ app.post("/orders", async (req, res) => {
       />
       <P>To extract trace context from arbitrary headers manually:</P>
       <CodeBlock
-        code={`import { extractTraceFromHeaders } from "@servicebridge/http";
+        code={`import { extractTraceFromHeaders } from "@service-bridge/node/express";
 
 const traceCtx = extractTraceFromHeaders(req.headers);
 const result = await sb.rpc("fn", payload, { traceId: traceCtx.traceId });`}
@@ -1619,17 +1619,17 @@ function PageFastify() {
       <CodeBlock
         filename="fastify-app.ts"
         code={`import Fastify from "fastify";
-import { servicebridge } from "@servicebridge/sdk";
-import { servicebridgePlugin, wrapHandler } from "@servicebridge/http";
+import { servicebridge } from "@service-bridge/node";
+import { servicebridgePlugin, wrapHandler } from "@service-bridge/node/fastify";
 
 const sb = servicebridge("127.0.0.1:14445", serviceKey, "api-gateway");
 await sb.serve();
 
 const app = Fastify();
-await app.register(servicebridgePlugin, { sb });
+await app.register(servicebridgePlugin, { client: sb });
 
-app.post("/orders", wrapHandler(sb, async (req, reply) => {
-  const order = await sb.rpc("orders.create", req.body);
+app.post("/orders", wrapHandler(async (req, reply) => {
+  const order = await req.servicebridge.rpc("orders.create", req.body);
   reply.send(order);
 }));`}
       />
@@ -1670,7 +1670,7 @@ function PageTracing() {
             "Each step creates a child span. Failed steps show the error and retry chain",
           ],
         ].map(([title, desc]) => (
-          <div key={title} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={title} className="rounded-2xl border border-surface-border bg-surface p-4">
             <p className="text-sm font-semibold text-foreground mb-1.5">{title}</p>
             <p className="text-xs text-zinc-500 leading-relaxed">{desc}</p>
           </div>
@@ -1690,7 +1690,7 @@ function PageManualSpans() {
       />
       <CodeBlock
         filename="spans.ts"
-        code={`import { servicebridge, getTraceContext, runWithTraceContext } from "@servicebridge/sdk";
+        code={`import { servicebridge, getTraceContext, runWithTraceContext } from "@service-bridge/node";
 
 // Start an HTTP span (e.g. in a middleware)
 const span = sb.startHttpSpan({
@@ -1946,7 +1946,7 @@ function PageReliability() {
       <div className="overflow-x-auto rounded-xl border border-white/[0.06] my-5">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
               <th className="px-4 py-2.5">Primitive</th>
               <th className="px-4 py-2.5">Guarantee</th>
               <th className="px-4 py-2.5">On server outage</th>
@@ -2049,10 +2049,10 @@ function PageServiceKeys() {
       </P>
 
       <H2 id="capabilities">Capabilities</H2>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06] my-4">
+      <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
               <th className="px-4 py-2.5 font-semibold">Capability</th>
               <th className="px-4 py-2.5 font-semibold">Allows</th>
             </tr>
@@ -2066,7 +2066,7 @@ function PageServiceKeys() {
               ["jobs", "Register jobs"],
               ["workflows", "Register workflows"],
             ].map(([capability, desc]) => (
-              <tr key={capability} className="hover:bg-white/[0.02] text-zinc-300">
+              <tr key={capability} className="hover:bg-surface text-zinc-300">
                 <td className="px-4 py-2.5 font-mono text-xs text-violet-400">{capability}</td>
                 <td className="px-4 py-2.5 text-xs text-zinc-400">{desc}</td>
               </tr>
@@ -2085,10 +2085,10 @@ function PageServiceKeys() {
         comma-separated patterns with single-segment wildcard <Mono>*</Mono> (e.g.{" "}
         <Mono>orders.*</Mono>).
       </P>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06] my-4">
+      <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
               <th className="px-4 py-2.5 font-semibold">Policy field</th>
               <th className="px-4 py-2.5 font-semibold">Enforced at</th>
               <th className="px-4 py-2.5 font-semibold">What it controls</th>
@@ -2263,10 +2263,10 @@ sb.handleEvent("orders.*", handler, {
 });`}
       />
       <P>Supported operators:</P>
-      <div className="overflow-x-auto rounded-xl border border-white/[0.06] my-4">
+      <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm font-mono">
           <thead>
-            <tr className="border-b border-white/[0.06] text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
               <th className="px-4 py-2.5">Operator</th>
               <th className="px-4 py-2.5">Meaning</th>
               <th className="px-4 py-2.5">Works on</th>
@@ -2344,7 +2344,7 @@ function PageAlertsOverview() {
           ["3", "Channel types", "UI push via WebSocket, Telegram Bot API, custom Webhook"],
           ["30s", "Evaluation interval", "Rules are evaluated every 30 seconds on the server"],
         ].map(([num, label, desc]) => (
-          <div key={label} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+          <div key={label} className="rounded-2xl border border-surface-border bg-surface p-4">
             <p className="text-2xl font-bold font-display text-primary mb-1">{num}</p>
             <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
             <p className="text-xs text-zinc-500 leading-relaxed">{desc}</p>
@@ -2814,7 +2814,7 @@ function Sidebar({
       {/* Footer */}
       <div className="px-3 py-3 border-t border-border/50">
         <a
-          href="https://github.com/esurkov1/connectr"
+          href="https://github.com/service-bridge/sdk"
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-2.5 px-3 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"

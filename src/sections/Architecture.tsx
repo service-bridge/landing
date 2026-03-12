@@ -20,7 +20,7 @@ const LEGEND = [
 
 function ServiceBox({ name }: { name: string }) {
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4 text-center">
+    <div className="rounded-xl border border-surface-border bg-surface p-4 text-center">
       <Server className="w-5 h-5 mx-auto mb-2 text-zinc-500" />
       <p className="text-sm font-semibold font-display text-zinc-300">{name}</p>
       <div className="mt-2 flex flex-col gap-1 items-center">
@@ -46,7 +46,7 @@ export function ArchitectureSection() {
       />
 
       <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 sm:p-8 md:p-10">
+        <div className="rounded-2xl border border-surface-border bg-surface p-6 sm:p-8 md:p-10">
           {/* Security banner */}
           <div className="mb-5 rounded-xl border border-violet-500/20 bg-violet-500/[0.04] px-4 py-3 flex items-center gap-3">
             <ShieldCheck className="w-4 h-4 text-violet-400 shrink-0" />
@@ -92,7 +92,7 @@ export function ArchitectureSection() {
                   {PRIMITIVES.map((m) => (
                     <span
                       key={m}
-                      className="text-3xs font-mono text-muted-foreground bg-white/[0.03] rounded px-1.5 py-0.5"
+                      className="text-3xs font-mono text-muted-foreground bg-surface rounded px-1.5 py-0.5"
                     >
                       {m}
                     </span>
@@ -118,7 +118,7 @@ export function ArchitectureSection() {
           </div>
 
           {/* Legend */}
-          <div className="mt-8 pt-6 border-t border-white/[0.06] grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs">
+          <div className="mt-8 pt-6 border-t border-surface-border grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs">
             {LEGEND.map((item) => (
               <div key={item.label}>
                 <p className={cn("type-subsection-title font-mono", item.color)}>{item.value}</p>

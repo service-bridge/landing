@@ -1,16 +1,16 @@
 import { motion, useInView } from "framer-motion";
 import { Radio, Terminal, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { fadeInUp } from "../components/animations";
 import type { CodeLangs } from "../lib/language-context";
 import { Card } from "../ui/Card";
 import { MultiCodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
+import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
 const WRITER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "@service-bridge/node";
 
 const sb = servicebridge("api.example.com:14445", SERVICE_KEY, "ai");
 
@@ -28,7 +28,6 @@ sb.handleEvent("ai.generate", async (payload, ctx) => {
 svc.HandleEvent("ai.generate",
     func(ctx context.Context, p json.RawMessage,
         ec *servicebridge.EventContext) error {
-        // Stream tokens to any subscriber in real-time
         for _, token := range llm.Stream(ctx, getPrompt(p)) {
             _ = ec.Stream.Write(ctx,
                 map[string]any{"token": token}, "output")
@@ -42,17 +41,15 @@ svc = ServiceBridge("api.example.com:14445", SERVICE_KEY, "ai")
 
 @svc.handle_event("ai.generate")
 async def on_generate(payload: dict, ctx) -> None:
-    # Stream tokens to any subscriber in real-time
     async for token in llm.stream(payload["prompt"]):
         await ctx.stream.write({"token": token}, "output")`,
 };
 
 const READER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "@service-bridge/node";
 
 const sb = servicebridge("api.example.com:14445", SERVICE_KEY);
 
-// Trigger and watch
 const runId = await sb.event("ai.generate", { prompt });
 
 for await (const chunk of sb.watchRun(runId, { key: "output" })) {
@@ -63,7 +60,6 @@ for await (const chunk of sb.watchRun(runId, { key: "output" })) {
   go: `svc := servicebridge.New(
     "api.example.com:14445", os.Getenv("SERVICE_KEY"), "", nil)
 
-// Trigger and watch
 runID, _ := svc.Event(ctx, "ai.generate",
     map[string]any{"prompt": prompt}, nil)
 
@@ -78,7 +74,6 @@ for ev := range events {
 
 svc = ServiceBridge("api.example.com:14445", SERVICE_KEY)
 
-# Trigger and watch
 run_id, _ = await svc.event("ai.generate", {"prompt": prompt})
 
 async for chunk in svc.watch_run(
@@ -114,7 +109,6 @@ function LiveTerminal() {
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [visibleLines, setVisibleLines] = useState<typeof STREAM_LINES>([]);
 
-  // Single stable ref — no new closures on each loop iteration
   const ctrl = useRef<{ cancelled: boolean; timer: ReturnType<typeof setTimeout> | null }>({
     cancelled: false,
     timer: null,
@@ -122,16 +116,13 @@ function LiveTerminal() {
 
   useEffect(() => {
     if (!inView) return;
-
     const c = ctrl.current;
     c.cancelled = false;
     let i = 0;
 
     const tick = () => {
       if (c.cancelled) return;
-
       if (i >= STREAM_LINES.length) {
-        // Show completed state, then clear and restart
         c.timer = setTimeout(() => {
           if (c.cancelled) return;
           setVisibleLines([]);
@@ -140,11 +131,8 @@ function LiveTerminal() {
         }, PAUSE_AFTER_MS);
         return;
       }
-
       const line = STREAM_LINES[i];
-      if (line != null) {
-        setVisibleLines((prev) => [...prev, line]);
-      }
+      if (line != null) setVisibleLines((prev) => [...prev, line]);
       i++;
       c.timer = setTimeout(tick, INTERVAL_MS);
     };
@@ -160,18 +148,21 @@ function LiveTerminal() {
     };
   }, [inView]);
 
+  const isLive = visibleLines.length > 0 && visibleLines.length < STREAM_LINES.length;
+  const isDone = visibleLines.length === STREAM_LINES.length;
+
   return (
     <div ref={ref}>
       <CodePanel>
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-surface-border bg-code-chrome">
           <span className="text-xs text-zinc-500 font-mono">run:stream:chunk — output</span>
-          {visibleLines.length > 0 && visibleLines.length < STREAM_LINES.length && (
+          {isLive && (
             <span className="ml-auto flex items-center gap-1.5 text-3xs text-amber-400 font-mono">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
               live
             </span>
           )}
-          {visibleLines.length === STREAM_LINES.length && (
+          {isDone && (
             <span className="ml-auto flex items-center gap-1.5 text-3xs text-emerald-400 font-mono">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
               complete
@@ -180,25 +171,23 @@ function LiveTerminal() {
         </div>
 
         <div className="p-4 font-mono text-xs space-y-0.5 min-h-[200px]">
-          {visibleLines
-            .filter((line): line is (typeof STREAM_LINES)[number] => line != null && "seq" in line)
-            .map((line, idx, arr) => (
-              <motion.div
-                key={line.seq}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.18 }}
-                className="flex gap-3 leading-5"
-              >
-                <span className="text-zinc-600 select-none w-6 text-right shrink-0">
-                  {String(line.seq).padStart(4, "0")}
-                </span>
-                <span className={idx === arr.length - 1 ? "text-emerald-400" : "text-zinc-300"}>
-                  {line.text}
-                </span>
-              </motion.div>
-            ))}
-          {visibleLines.length < STREAM_LINES.length && visibleLines.length > 0 && (
+          {visibleLines.map((line, idx, arr) => (
+            <motion.div
+              key={line.seq}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.18 }}
+              className="flex gap-3 leading-5"
+            >
+              <span className="text-zinc-600 select-none w-6 text-right shrink-0">
+                {String(line.seq).padStart(4, "0")}
+              </span>
+              <span className={idx === arr.length - 1 ? "text-emerald-400" : "text-zinc-300"}>
+                {line.text}
+              </span>
+            </motion.div>
+          ))}
+          {isLive && (
             <div className="flex gap-3 leading-5">
               <span className="text-zinc-600 select-none w-6 text-right shrink-0">
                 {String(visibleLines.length + 1).padStart(4, "0")}
@@ -219,14 +208,20 @@ export function StreamsSection() {
     <FeatureSection
       id="streams"
       eyebrow="Realtime Streams"
-      title={
-        <>
-          Stream data <span className="text-gradient">as it happens</span>
-        </>
-      }
+      title="Stream data as it happens"
       subtitle="Push incremental chunks from any handler while it executes. Subscribers — UI or SDK — receive every token the moment it's written."
       content={
-        <motion.div variants={fadeInUp} className="space-y-4">
+        <div className="space-y-4">
+          <Card>
+            <p className="type-overline-mono text-muted-foreground mb-2">how it works</p>
+            <p className="type-body-sm">
+              Any handler — event, RPC, or workflow step — can call{" "}
+              <code className="font-mono text-primary">ctx.stream.write()</code> while it runs.
+              The SDK buffers chunks in PostgreSQL and pushes them to all watchers via WebSocket.
+              Late subscribers catch up by replaying stored chunks.
+            </p>
+          </Card>
+
           <TabStrip
             size="md"
             items={[
@@ -245,26 +240,10 @@ export function StreamsSection() {
             }
             code={tab === "writer" ? WRITER_CODE : READER_CODE}
           />
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-            {[
-              { icon: Terminal, label: "Any handler", desc: "Events, RPC, workflows" },
-              { icon: Radio, label: "Named keys", desc: "output, log, progress…" },
-              { icon: Zap, label: "Replay-safe", desc: "Late subscribers catch up" },
-            ].map(({ icon: Icon, label, desc }) => (
-              <Card key={label} className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2 text-primary">
-                  <Icon className="w-4 h-4" />
-                  <span className="text-sm font-semibold">{label}</span>
-                </div>
-                <p className="type-body-sm">{desc}</p>
-              </Card>
-            ))}
-          </div>
-        </motion.div>
+        </div>
       }
       demo={
-        <motion.div variants={fadeInUp} className="space-y-4">
+        <div className="space-y-3">
           <p className="text-sm text-muted-foreground font-medium">
             Live preview — chunks arrive as the handler executes
           </p>
@@ -274,7 +253,14 @@ export function StreamsSection() {
             <code className="font-mono text-primary">sb.watchRun()</code> receive chunks through
             the same pipeline.
           </p>
-        </motion.div>
+        </div>
+      }
+      cards={
+        <>
+          <FeatureCard variant="compact" icon={Terminal} title="Any handler" description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere." iconClassName="text-zinc-400" />
+          <FeatureCard variant="compact" icon={Radio} title="Named keys" description="Use named stream keys (output, log, progress) to multiplex multiple data streams from a single run." iconClassName="text-emerald-400" />
+          <FeatureCard variant="compact" icon={Zap} title="Replay-safe" description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect." iconClassName="text-primary" />
+        </>
       }
     />
   );

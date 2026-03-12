@@ -23,6 +23,7 @@ import { fadeInUp } from "../components/animations";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
+import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
@@ -235,10 +236,10 @@ const PROD_FEATURES = [
   },
 ];
 
-function FeatureCard({ feature, className }: { feature: FeatureDef; className?: string }) {
+function LargeFeatureCard({ feature, className }: { feature: FeatureDef; className?: string }) {
   return (
     <motion.div variants={fadeInUp} className={className}>
-      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.035]">
+      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-surface">
         <div
           className={cn(
             "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100",
@@ -303,7 +304,7 @@ export function FeaturesSection() {
           <div key={group.label} className="contents">
             <CategoryDivider label={group.label} />
             {group.features.map((feature) => (
-              <FeatureCard
+              <LargeFeatureCard
                 key={feature.title}
                 feature={feature}
                 className={group.wide ? "md:col-span-3" : "md:col-span-2"}
@@ -322,20 +323,13 @@ export function FeaturesSection() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PROD_FEATURES.map((item) => (
             <motion.div key={item.title} variants={fadeInUp}>
-              <Card className="group flex items-start gap-4 transition-all duration-300 hover:border-white/[0.09] hover:bg-white/[0.03]">
-                <div
-                  className={cn(
-                    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-white/[0.06]",
-                    item.bg
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4", item.color)} />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="type-subsection-title mb-1">{item.title}</h3>
-                  <p className="type-body-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </Card>
+              <FeatureCard
+                variant="compact"
+                icon={item.icon}
+                iconClassName={item.color}
+                title={item.title}
+                description={item.desc}
+              />
             </motion.div>
           ))}
         </div>

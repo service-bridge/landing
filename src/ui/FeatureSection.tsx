@@ -10,6 +10,7 @@ interface FeatureSectionProps {
   content: React.ReactNode;
   demo: React.ReactNode;
   cards?: React.ReactNode;
+  size?: "default" | "large";
 }
 
 export function FeatureSection({
@@ -20,10 +21,11 @@ export function FeatureSection({
   content,
   demo,
   cards,
+  size = "default",
 }: FeatureSectionProps) {
   return (
     <Section id={id}>
-      <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} size={size} />
       <div className="mt-12 grid items-start gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div>{content}</div>
         <div>{demo}</div>

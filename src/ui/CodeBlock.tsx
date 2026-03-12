@@ -148,7 +148,7 @@ function highlight(
   });
 }
 
-function highlightCode(code: string, lang: SdkLang): React.ReactNode[] {
+export function highlightCode(code: string, lang: SdkLang): React.ReactNode[] {
   if (lang === "go") return highlight(code, GO_KW, "//");
   if (lang === "py") return highlight(code, PY_KW, "#");
   return highlight(code, TS_KW, "//");
@@ -231,7 +231,7 @@ export function MultiCodeBlock({
 
   return (
     <CodePanel>
-      <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
+      <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-surface px-3 py-2">
         <TabStrip size="sm" items={available} active={displayLang} onChange={setLang} />
         <CopyButton text={displayCode} />
       </div>
