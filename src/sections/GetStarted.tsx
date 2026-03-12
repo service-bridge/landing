@@ -1,7 +1,10 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { AnimatedSection, fadeInUp } from "../components/animations";
+import { fadeInUp } from "../components/animations";
 import { Button } from "../ui/button";
+import { Section } from "../ui/Section";
+import { SectionHeader } from "../ui/SectionHeader";
+import { Badge } from "../ui/Badge";
 
 const STEPS = [
   {
@@ -45,16 +48,16 @@ await sb.serve();`,
 
 export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   return (
-    <AnimatedSection className="py-24 border-t border-white/[0.04]" id="start">
-      <div className="container mx-auto px-4">
-        <motion.div variants={fadeInUp} className="text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight font-display">
+    <Section id="start">
+      <SectionHeader
+        eyebrow="Get Started"
+        title={
+          <>
             Start building in <span className="text-gradient">three steps</span>
-          </h2>
-          <p className="mt-6 text-lg text-muted-foreground max-w-xl mx-auto">
-            Run the server, install the SDK, connect your services — done.
-          </p>
-        </motion.div>
+          </>
+        }
+        subtitle="Run the server, install the SDK, connect your services — done."
+      />
 
         <motion.div variants={fadeInUp} className="mt-16 grid gap-8 max-w-3xl mx-auto">
           {STEPS.map(({ step, title, description, filename, code }) => (
@@ -66,11 +69,11 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 <div className="flex-1 w-px bg-white/[0.06] mt-3" />
               </div>
               <div className="pb-8 flex-1 min-w-0">
-                <h3 className="text-lg font-semibold font-display mb-1">{title}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{description}</p>
-                <div className="rounded-xl border border-white/[0.06] bg-[#080c18] overflow-hidden">
-                  <div className="border-b border-white/[0.06] px-4 py-2">
-                    <span className="text-xs font-mono text-zinc-500">{filename}</span>
+                <h3 className="type-subsection-title mb-1">{title}</h3>
+                <p className="type-body-sm mb-4">{description}</p>
+                <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
+                  <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5">
+                    <span className="type-overline-mono text-muted-foreground">{filename}</span>
                   </div>
                   <pre className="p-4 text-xs font-mono text-zinc-300 overflow-x-auto leading-relaxed">
                     <code>{code}</code>
@@ -102,7 +105,6 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             </Button>
           </a>
         </motion.div>
-      </div>
-    </AnimatedSection>
+    </Section>
   );
 }

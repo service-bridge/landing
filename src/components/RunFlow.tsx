@@ -2,6 +2,9 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
+import { Section } from "../ui/Section";
+import { SectionHeader } from "../ui/SectionHeader";
+import { Badge } from "../ui/Badge";
 
 type RunType = "event" | "rpc" | "job" | "workflow";
 type RunStatus = "running" | "success" | "error" | "pending";
@@ -135,8 +138,8 @@ function makeInitialRuns(): Run[] {
 export function RunFlowSection() {
   const [runs, setRuns] = useState<Run[]>(makeInitialRuns);
   const idxRef = useRef(0);
-  const sectionRef = useRef(null);
-  const isInView = useInView(sectionRef, { once: false, margin: "-100px" });
+  const contentRef = useRef(null);
+  const isInView = useInView(contentRef, { once: false, margin: "-100px" });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -209,25 +212,14 @@ export function RunFlowSection() {
   }, [isInView]);
 
   return (
-    <section ref={sectionRef} className="py-24" id="runs">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">Runs</p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
-            Every execution, tracked in real time
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Events, RPC calls, jobs and workflows — all runs are visible, filterable and inspectable
-            with full trace details.
-          </p>
-        </motion.div>
+    <Section id="runs">
+      <SectionHeader
+        eyebrow="Runs"
+        title="Every execution, tracked in real time"
+        subtitle="Events, RPC calls, jobs and workflows — all runs are visible, filterable and inspectable with full trace details."
+      />
 
+      <div ref={contentRef}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -235,16 +227,16 @@ export function RunFlowSection() {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="max-w-4xl mx-auto"
         >
-          <div className="rounded-2xl border border-white/[0.08] bg-[#080c18] overflow-hidden shadow-2xl shadow-emerald-500/[0.04]">
+          <div className="rounded-2xl border border-surface-border bg-code overflow-hidden shadow-2xl shadow-emerald-500/[0.04]">
             {/* Window chrome */}
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
+            <div className="flex items-center justify-between border-b border-surface-border bg-code-chrome px-5 py-3">
               <div className="flex items-center gap-3">
                 <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
+                  <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
                 </div>
-                <span className="text-xs font-mono text-zinc-500">ServiceBridge — Runs</span>
+                <span className="type-overline-mono text-muted-foreground">ServiceBridge — Runs</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
@@ -256,7 +248,7 @@ export function RunFlowSection() {
             </div>
 
             {/* Column headers */}
-            <div className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-2.5 text-3xs font-mono uppercase tracking-wider text-zinc-600 border-b border-white/[0.04]">
+            <div className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-2.5 type-overline-mono text-zinc-600 border-b border-white/[0.04]">
               <span>Name &amp; Service</span>
               <span>Type</span>
               <span>Status</span>
@@ -286,14 +278,12 @@ export function RunFlowSection() {
                     </div>
 
                     {/* Type badge */}
-                    <span
-                      className={cn(
-                        "inline-flex items-center px-1.5 py-0.5 rounded-md text-3xs font-medium border w-fit",
-                        TYPE_COLORS[run.type]
-                      )}
+                    <Badge
+                      tone={TYPE_COLORS[run.type]}
+                      className="w-fit"
                     >
                       {run.type}
-                    </span>
+                    </Badge>
 
                     {/* Status */}
                     <StatusCell status={run.status} />
@@ -318,7 +308,7 @@ export function RunFlowSection() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-white/[0.04] px-5 py-3 flex flex-wrap items-center justify-between gap-2 text-3xs font-mono text-zinc-600">
+            <div className="border-t border-white/[0.04] px-5 py-3 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-zinc-600">
               <span>event · rpc · job · workflow · http</span>
               <div className="flex items-center gap-4">
                 <span>
@@ -335,6 +325,6 @@ export function RunFlowSection() {
           </div>
         </motion.div>
       </div>
-    </section>
+    </Section>
   );
 }

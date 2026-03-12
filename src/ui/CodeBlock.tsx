@@ -1,93 +1,86 @@
-import type React from "react";
+import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { type CodeLangs, type FilenameLangs, type SdkLang, SDK_LANGS, useSdkLang } from "../lib/language-context";
+import { CodePanel } from "./CodePanel";
+import { TabStrip } from "./Tabs";
 
-const KW = new Set([
-  "const",
-  "let",
-  "var",
-  "async",
-  "await",
-  "import",
-  "from",
-  "export",
-  "function",
-  "return",
-  "new",
-  "true",
-  "false",
-  "null",
-  "undefined",
-  "if",
-  "else",
-  "for",
-  "of",
-  "in",
-  "while",
-  "do",
-  "break",
-  "continue",
-  "try",
-  "catch",
-  "finally",
-  "throw",
-  "interface",
-  "extends",
-  "implements",
-  "class",
-  "this",
-  "typeof",
-  "void",
-  "delete",
-  "switch",
-  "case",
-  "default",
-  "static",
-  "readonly",
-  "as",
-  "type",
+// ─── Keyword sets ─────────────────────────────────────────────────────────────
+
+const TS_KW = new Set([
+  "const", "let", "var", "async", "await", "import", "from", "export",
+  "function", "return", "new", "true", "false", "null", "undefined",
+  "if", "else", "for", "of", "in", "while", "do", "break", "continue",
+  "try", "catch", "finally", "throw", "interface", "extends", "implements",
+  "class", "this", "typeof", "void", "delete", "switch", "case", "default",
+  "static", "readonly", "as", "type",
 ]);
 
-function toStableLineEntries(code: string) {
+const GO_KW = new Set([
+  "package", "import", "func", "var", "type", "struct", "interface", "return",
+  "if", "else", "for", "range", "go", "defer", "chan", "map", "nil", "true",
+  "false", "const", "switch", "case", "break", "continue", "fallthrough",
+  "select", "default", "make", "new", "len", "cap", "append", "error",
+]);
+
+const PY_KW = new Set([
+  "def", "async", "await", "import", "from", "return", "if", "elif", "else",
+  "for", "in", "with", "as", "class", "None", "True", "False", "self",
+  "not", "and", "or", "pass", "raise", "try", "except", "finally", "lambda",
+  "yield", "break", "continue", "global", "nonlocal", "del", "is", "while",
+]);
+
+// ─── Stable line key helper ───────────────────────────────────────────────────
+
+function toStableLines(code: string) {
   return code.split("\n").reduce<Array<{ key: string; line: string }>>((acc, line) => {
-    const duplicates = acc.filter((entry) => entry.line === line).length;
-    acc.push({ key: `line-${line}-${duplicates}`, line });
+    const dups = acc.filter((e) => e.line === line).length;
+    acc.push({ key: `${line}-${dups}`, line });
     return acc;
   }, []);
 }
 
-function highlight(code: string): React.ReactNode[] {
-  return toStableLineEntries(code).map(({ key, line }) => {
+// ─── Generic token-based highlighter ─────────────────────────────────────────
+
+function highlight(
+  code: string,
+  kw: Set<string>,
+  commentChar: string,
+): React.ReactNode[] {
+  return toStableLines(code).map(({ key, line }) => {
     const parts: React.ReactNode[] = [];
     let i = 0;
     let k = 0;
     const push = (text: string, cls?: string) =>
-      parts.push(
-        <span key={k++} className={cls}>
-          {text}
-        </span>
-      );
+      parts.push(<span key={k++} className={cls}>{text}</span>);
 
     while (i < line.length) {
       const ch = line[i];
 
-      // Line comment
-      if (ch === "/" && line[i + 1] === "/") {
+      // Decorator @identifier (Python)
+      if (ch === "@" && commentChar === "#") {
+        const m = line.slice(i + 1).match(/^[A-Za-z_][A-Za-z0-9_.()]*/);
+        if (m) {
+          push(`@${m[0]}`, "text-fuchsia-300");
+          i += 1 + m[0].length;
+          continue;
+        }
+      }
+
+      // Single-line comment
+      const isLineComment =
+        (commentChar === "//" && ch === "/" && line[i + 1] === "/") ||
+        (commentChar === "#" && ch === "#");
+      if (isLineComment) {
         push(line.slice(i), "text-zinc-500 italic");
         break;
       }
 
-      // Strings — ', ", ` (scan to closing quote, handling \-escapes)
+      // Strings: ", ', `
       if (ch === '"' || ch === "'" || ch === "`") {
         let j = i + 1;
         while (j < line.length) {
-          if (line[j] === "\\") {
-            j += 2;
-            continue;
-          }
-          if (line[j] === ch) {
-            j++;
-            break;
-          }
+          if (line[j] === "\\") { j += 2; continue; }
+          if (line[j] === ch) { j++; break; }
           j++;
         }
         push(line.slice(i, j), "text-amber-300");
@@ -95,7 +88,7 @@ function highlight(code: string): React.ReactNode[] {
         continue;
       }
 
-      // Numbers (not preceded by word char)
+      // Numbers
       if (/\d/.test(ch) && (i === 0 || /\W/.test(line[i - 1]))) {
         const m = line.slice(i).match(/^\d[\d_]*(\.\d+)?(e[+-]?\d+)?/);
         if (m) {
@@ -105,7 +98,7 @@ function highlight(code: string): React.ReactNode[] {
         }
       }
 
-      // Arrow operator =>
+      // Arrow operator (TS)
       if (ch === "=" && line[i + 1] === ">") {
         push("=>", "text-violet-400");
         i += 2;
@@ -116,20 +109,19 @@ function highlight(code: string): React.ReactNode[] {
       const wm = line.slice(i).match(/^[A-Za-z_$][A-Za-z0-9_$]*/);
       if (wm) {
         const word = wm[0];
-        // Look past optional whitespace for the next char
         let j = i + word.length;
         while (j < line.length && line[j] === " ") j++;
         const next = line[j] ?? "";
 
         let cls: string;
-        if (KW.has(word)) {
+        if (kw.has(word)) {
           cls = "text-violet-400 font-medium";
         } else if (next === "(") {
-          cls = "text-sky-300"; // function / method call
+          cls = "text-sky-300";
         } else if (next === ":" && line[j + 1] !== ":") {
-          cls = "text-blue-300"; // object key or param annotation
+          cls = "text-blue-300";
         } else if (/^[A-Z]/.test(word)) {
-          cls = "text-cyan-300"; // type / class name
+          cls = "text-cyan-300";
         } else {
           cls = "text-zinc-200";
         }
@@ -139,7 +131,7 @@ function highlight(code: string): React.ReactNode[] {
         continue;
       }
 
-      // Braces / brackets — subtle colour
+      // Braces / brackets
       if ("{}()[]".includes(ch)) {
         push(ch, "text-zinc-400");
       } else {
@@ -150,12 +142,50 @@ function highlight(code: string): React.ReactNode[] {
 
     return (
       <span key={key} className="block leading-relaxed">
-        {parts}
-        {"\n"}
+        {parts}{"\n"}
       </span>
     );
   });
 }
+
+function highlightCode(code: string, lang: SdkLang): React.ReactNode[] {
+  if (lang === "go") return highlight(code, GO_KW, "//");
+  if (lang === "py") return highlight(code, PY_KW, "#");
+  return highlight(code, TS_KW, "//");
+}
+
+// ─── Lang dot colours (for filename indicator) ────────────────────────────────
+
+const LANG_DOT: Record<SdkLang, string> = {
+  ts: "bg-blue-400",
+  go: "bg-cyan-400",
+  py: "bg-yellow-400",
+};
+
+// ─── Shared copy button ───────────────────────────────────────────────────────
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(text.trim());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0"
+    >
+      {copied
+        ? <Check className="w-3 h-3 text-emerald-400" />
+        : <Copy className="w-3 h-3" />}
+      <span className={copied ? "text-emerald-400" : ""}>{copied ? "Copied" : "Copy"}</span>
+    </button>
+  );
+}
+
+// ─── Base CodeBlock ───────────────────────────────────────────────────────────
 
 export function CodeBlock({
   code,
@@ -164,32 +194,51 @@ export function CodeBlock({
 }: {
   code: string;
   filename?: string;
-  lang?: string;
+  lang?: SdkLang | "js";
 }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(code.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const displayLang: SdkLang = lang === "js" ? "ts" : (lang as SdkLang);
 
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-[#080c18] overflow-hidden my-4 text-sm">
-      {filename && (
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2">
-          <span className="text-xs font-mono text-zinc-500">{filename}</span>
-          <button
-            type="button"
-            onClick={copy}
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
-          >
-            {copied ? "Copied!" : "Copy"}
-          </button>
-        </div>
-      )}
-      <pre className="p-4 overflow-x-auto font-mono text-xs text-zinc-300">
-        <code>{lang === "ts" || lang === "js" ? highlight(code.trim()) : code.trim()}</code>
+    <CodePanel className="group relative">
+      <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
+        <CopyButton text={code} />
+      </div>
+      <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+        <code>{highlightCode(code.trim(), displayLang)}</code>
       </pre>
-    </div>
+    </CodePanel>
+  );
+}
+
+// ─── MultiCodeBlock — syncs with global language context ──────────────────────
+
+export function MultiCodeBlock({
+  code,
+  filename,
+}: {
+  code: CodeLangs;
+  filename?: FilenameLangs | string;
+}) {
+  const { lang, setLang } = useSdkLang();
+
+  const available = SDK_LANGS.filter((l) => code[l.id]);
+  const displayLang: SdkLang = code[lang] ? lang : (available[0]?.id ?? "ts");
+  const displayCode = code[displayLang] ?? code.ts;
+  const displayFilename =
+    typeof filename === "string"
+      ? filename.replace(/\.(ts|go|py)$/, `.${displayLang === "py" ? "py" : displayLang === "go" ? "go" : "ts"}`)
+      : (filename?.[displayLang] ?? filename?.ts);
+
+  return (
+    <CodePanel>
+      <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
+        <TabStrip size="sm" items={available} active={displayLang} onChange={setLang} />
+        <CopyButton text={displayCode} />
+      </div>
+
+      <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+        <code>{highlightCode(displayCode.trim(), displayLang)}</code>
+      </pre>
+    </CodePanel>
   );
 }

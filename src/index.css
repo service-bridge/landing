@@ -24,6 +24,15 @@
     --input: 230 15% 15%;
     --ring: 142 71% 45%;
     --radius: 0.625rem;
+    
+    /* Unified code block tokens */
+    --code-bg: 225 30% 5%;
+    --code-chrome: 225 25% 7%;
+    
+    /* Unified surface tokens */
+    --surface: 0 0% 100% / 0.02;
+    --surface-border: 0 0% 100% / 0.06;
+    --section-border: 0 0% 100% / 0.04;
   }
 }
 

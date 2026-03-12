@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import {
   AlertTriangle,
   Bell,
@@ -9,8 +8,10 @@ import {
   ShieldAlert,
   Webhook,
 } from "lucide-react";
-import { AnimatedSection, fadeInUp, stagger } from "../components/animations";
-import { SectionHeader } from "../ui/SectionHeader";
+import { Badge } from "../ui/Badge";
+import { Card } from "../ui/Card";
+import { CodePanel } from "../ui/CodePanel";
+import { FeatureSection } from "../ui/FeatureSection";
 
 const ALERT_CARDS = [
   {
@@ -57,122 +58,110 @@ const RULE_PREVIEW = `{
 }`;
 
 export function AlertsSection() {
-  return (
-    <AnimatedSection id="alerts" className="py-24 sm:py-32 border-t border-border/40">
-      <div className="container mx-auto px-4 sm:px-6">
-        <SectionHeader
-          eyebrow="Alerting"
-          title={
-            <>
-              Know before your <span className="text-primary">users notice</span>
-            </>
-          }
-          subtitle="Configure alert rules directly in the UI. Get notified instantly via Telegram, Webhook, or in-app push when something goes wrong."
-        />
-
-        {/* Cards */}
-        <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-          {ALERT_CARDS.map((card) => (
-            <motion.div
-              key={card.title}
-              variants={fadeInUp}
-              className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 space-y-4"
-            >
-              <div className={`inline-flex p-3 rounded-xl ${card.iconBg}`}>
-                <card.icon className={`w-5 h-5 ${card.iconColor}`} />
-              </div>
-              <div>
-                <h3 className="font-semibold text-base mb-1">{card.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{card.desc}</p>
-              </div>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {card.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-2xs font-medium text-muted-foreground"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* Bottom: flow illustration + code preview */}
-        <motion.div
-          variants={fadeInUp}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center"
-        >
-          {/* Left: flow */}
-          <div className="space-y-3">
-            {[
-              {
-                icon: AlertTriangle,
-                color: "text-amber-400 bg-amber-400/10",
-                label: "Condition triggered",
-                sublabel: "error_rate > 10% in last 5 min",
-              },
-              {
-                icon: CheckCircle2,
-                color: "text-emerald-400 bg-emerald-400/10",
-                label: "Cooldown checked",
-                sublabel: "300s since last fire — ok to proceed",
-              },
-              {
-                icon: Bell,
-                color: "text-primary bg-primary/10",
-                label: "History recorded",
-                sublabel: "alert_history INSERT",
-              },
-              {
-                icon: Send,
-                color: "text-blue-400 bg-blue-400/10",
-                label: "Channels notified",
-                sublabel: "Telegram · Webhook · UI push",
-              },
-              {
-                icon: Clock,
-                color: "text-violet-400 bg-violet-400/10",
-                label: "Cooldown armed",
-                sublabel: "Next fire allowed in 5 min",
-              },
-            ].map((step, i) => (
-              <div key={step.label} className="flex items-start gap-4">
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-lg ${step.color} flex items-center justify-center`}
-                >
-                  <step.icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 border-l border-border/40 pl-4 pb-3">
-                  <p className="text-sm font-medium">{step.label}</p>
-                  <p className="text-xs text-muted-foreground">{step.sublabel}</p>
-                </div>
-                {i < 4 && <div className="absolute ml-4 mt-8 w-px h-3 bg-border/40" />}
-              </div>
+  const content = (
+    <div className="grid gap-6">
+      {ALERT_CARDS.map((card) => (
+        <Card key={card.title}>
+          <div className={`inline-flex p-3 rounded-xl ${card.iconBg} mb-4`}>
+            <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+          </div>
+          <div>
+            <h3 className="type-subsection-title mb-2">{card.title}</h3>
+            <p className="type-body text-muted-foreground">{card.desc}</p>
+          </div>
+          <div className="flex flex-wrap gap-1.5 pt-3">
+            {card.tags.map((tag) => (
+              <Badge
+                key={tag}
+                tone="border-surface-border bg-surface text-muted-foreground"
+              >
+                {tag}
+              </Badge>
             ))}
           </div>
+        </Card>
+      ))}
+    </div>
+  );
 
-          {/* Right: rule JSON preview */}
-          <div className="rounded-2xl border border-border/60 bg-card/80 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-muted/30">
-              <div className="w-3 h-3 rounded-full bg-red-400/70" />
-              <div className="w-3 h-3 rounded-full bg-amber-400/70" />
-              <div className="w-3 h-3 rounded-full bg-emerald-400/70" />
-              <span className="ml-2 text-xs text-muted-foreground font-mono">alert rule</span>
+  const demo = (
+    <div className="space-y-6">
+      {/* Flow illustration */}
+      <div className="space-y-3">
+        {[
+          {
+            icon: AlertTriangle,
+            color: "text-amber-400 bg-amber-400/10",
+            label: "Condition triggered",
+            sublabel: "error_rate > 10% in last 5 min",
+          },
+          {
+            icon: CheckCircle2,
+            color: "text-emerald-400 bg-emerald-400/10",
+            label: "Cooldown checked",
+            sublabel: "300s since last fire — ok to proceed",
+          },
+          {
+            icon: Bell,
+            color: "text-primary bg-primary/10",
+            label: "History recorded",
+            sublabel: "alert_history INSERT",
+          },
+          {
+            icon: Send,
+            color: "text-blue-400 bg-blue-400/10",
+            label: "Channels notified",
+            sublabel: "Telegram · Webhook · UI push",
+          },
+          {
+            icon: Clock,
+            color: "text-violet-400 bg-violet-400/10",
+            label: "Cooldown armed",
+            sublabel: "Next fire allowed in 5 min",
+          },
+        ].map((step, i) => (
+          <div key={step.label} className="flex items-start gap-4">
+            <div
+              className={`flex-shrink-0 w-8 h-8 rounded-xl ${step.color} flex items-center justify-center`}
+            >
+              <step.icon className="w-4 h-4" />
             </div>
-            <pre className="p-5 text-sm font-mono leading-relaxed overflow-x-auto">
-              <code className="text-foreground/90">{RULE_PREVIEW}</code>
-            </pre>
-            <div className="px-5 py-3 border-t border-border/40 bg-muted/20 flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs text-muted-foreground">
-                Rule active — cooldown 5 min — 2 channels
-              </span>
+            <div className="flex-1 border-l border-surface-border pl-4 pb-3">
+              <p className="type-body font-medium">{step.label}</p>
+              <p className="type-body-sm text-muted-foreground">{step.sublabel}</p>
             </div>
+            {i < 4 && <div className="absolute ml-4 mt-8 w-px h-3 bg-surface-border" />}
           </div>
-        </motion.div>
+        ))}
       </div>
-    </AnimatedSection>
+
+      {/* Rule JSON preview */}
+      <CodePanel title="alert rule">
+        <pre className="p-5 type-body leading-relaxed overflow-x-auto">
+          <code className="text-foreground/90">{RULE_PREVIEW}</code>
+        </pre>
+        <div className="px-5 py-3 border-t border-surface-border bg-code-chrome flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span className="type-body-sm text-muted-foreground">
+            Rule active — cooldown 5 min — 2 channels
+          </span>
+        </div>
+      </CodePanel>
+    </div>
+  );
+
+  return (
+    <FeatureSection
+      id="alerts"
+      eyebrow="Alerting"
+      title={
+        <>
+          Know before your <span className="text-gradient">users notice</span>
+        </>
+      }
+      subtitle="Configure alert rules directly in the UI. Get notified instantly via Telegram, Webhook, or in-app push when something goes wrong."
+      content={content}
+      demo={demo}
+    />
   );
 }

@@ -3,10 +3,10 @@ import { BookOpen, ChevronDown, Github, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { BrandMark } from "./components/BrandMark";
 import { RunFlowSection } from "./components/RunFlow";
+import { LanguageProvider } from "./lib/language-context";
 import { cn } from "./lib/utils";
 import DocsPage from "./pages/DocsPage";
 import { ArchitectureSection } from "./sections/Architecture";
-import { BenchmarkSection } from "./sections/Benchmark";
 import { CodeSection } from "./sections/Code";
 import { FeaturesSection } from "./sections/Features";
 import { FooterSection } from "./sections/Footer";
@@ -14,8 +14,10 @@ import { AlertsSection } from "./sections/feature-alerts";
 import { DirectRpcSection } from "./sections/feature-direct-rpc";
 import { DiscoveryMapSection } from "./sections/feature-discovery-map";
 import { DurableEventsSection } from "./sections/feature-durable-events";
+import { HttpSection } from "./sections/feature-http";
 import { JobsSection } from "./sections/feature-jobs";
 import { FEATURE_MENU_ITEMS } from "./sections/feature-menu-items";
+import { ObservabilitySection } from "./sections/feature-observability";
 import { StreamsSection } from "./sections/feature-streams";
 import { TracingSection } from "./sections/feature-tracing";
 import { WorkflowsSection } from "./sections/feature-workflows";
@@ -29,7 +31,6 @@ const PRIMARY_NAV_LINKS = [
   { label: "Why", href: "#replaces" },
   { label: "Use Cases", href: "#use-cases" },
   { label: "Live Runs", href: "#runs" },
-  { label: "Benchmark", href: "#benchmarks" },
   { label: "Code", href: "#code" },
   { label: "Architecture", href: "#architecture" },
   { label: "Get Started", href: "#start" },
@@ -143,7 +144,7 @@ function MobileFeatureMenu({
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-2 pb-1 pt-1 type-overline text-zinc-500">8 detailed blocks</div>
+            <div className="px-2 pb-1 pt-1 type-overline text-zinc-500">10 detailed blocks</div>
             <div className="space-y-1 px-1 pb-1">
               {FEATURE_MENU_ITEMS.map((item) => (
                 <a
@@ -215,6 +216,7 @@ export default function App() {
   }
 
   return (
+    <LanguageProvider>
     <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
       <header
         className={cn(
@@ -343,21 +345,23 @@ export default function App() {
         <FeaturesSection />
         <UseCasesSection />
         <RunFlowSection />
-        <BenchmarkSection />
         <CodeSection />
         <ArchitectureSection />
         <DirectRpcSection />
+        <HttpSection />
         <DurableEventsSection />
         <StreamsSection />
         <WorkflowsSection />
         <JobsSection />
         <DiscoveryMapSection />
         <TracingSection />
+        <ObservabilitySection />
         <AlertsSection />
         <GetStartedSection onDocs={() => navigateTo("docs")} />
       </main>
 
       <FooterSection />
     </div>
+    </LanguageProvider>
   );
 }

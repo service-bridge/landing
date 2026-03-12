@@ -2,9 +2,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlarmClock, Bell, GitMerge, Radio, Waves, Zap } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { useState } from "react";
-import { AnimatedSection, fadeInUp } from "../components/animations";
+import { fadeInUp } from "../components/animations";
 import { BrandMark } from "../components/BrandMark";
 import { cn } from "../lib/utils";
+import { Badge } from "../ui/Badge";
+import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
 // ── Primitives ────────────────────────────────────────────────────────────────
@@ -22,8 +24,8 @@ function ServiceNode({
 }) {
   return (
     <div className={cn("rounded-xl border px-3 py-2.5 text-center", colorClass, className)}>
-      <p className="text-2xs font-semibold font-display leading-tight whitespace-nowrap">{label}</p>
-      {sub && <p className="text-3xs font-mono text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="type-body-sm font-semibold font-display leading-tight whitespace-nowrap">{label}</p>
+      {sub && <p className="type-overline-mono text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -37,22 +39,9 @@ function Hub({ sub, className }: { sub?: string; className?: string }) {
       )}
     >
       <BrandMark className="w-4 h-4 text-primary mx-auto mb-1" />
-      <p className="text-2xs font-bold font-display text-primary">ServiceBridge</p>
-      {sub && <p className="text-3xs font-mono text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="type-body-sm font-bold font-display text-primary">ServiceBridge</p>
+      {sub && <p className="type-overline-mono text-muted-foreground mt-0.5">{sub}</p>}
     </div>
-  );
-}
-
-function Badge({ label, colorClass }: { label: string; colorClass: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-block text-3xs font-mono font-semibold rounded-full border px-2 py-0.5",
-        colorClass
-      )}
-    >
-      {label}
-    </span>
   );
 }
 
@@ -197,12 +186,12 @@ function RpcDiagram() {
 
       {/* Control-plane box */}
       <div className="relative rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 pt-6">
-        <p className="absolute -top-2.5 left-4 text-3xs font-mono bg-background px-1.5 text-muted-foreground">
+        <p className="absolute -top-2.5 left-4 type-overline-mono text-muted-foreground bg-background px-1.5">
           control plane — discovery only
         </p>
         <div className="flex items-center gap-3">
           <div className="flex-1 space-y-1">
-            <p className="text-3xs font-mono text-zinc-500 text-right">registration</p>
+            <p className="type-overline-mono text-muted-foreground text-right">registration</p>
             <HArrow
               dotColor="bg-zinc-600"
               lineColor="border-zinc-700/50"
@@ -212,7 +201,7 @@ function RpcDiagram() {
           </div>
           <Hub sub="registry" />
           <div className="flex-1 space-y-1">
-            <p className="text-3xs font-mono text-zinc-500">endpoint lookup</p>
+            <p className="type-overline-mono text-muted-foreground">endpoint lookup</p>
             <HArrow
               dotColor="bg-zinc-600"
               lineColor="border-zinc-700/50"
@@ -225,18 +214,15 @@ function RpcDiagram() {
       </div>
 
       <div className="flex justify-center gap-1.5 flex-wrap">
-        <Badge
-          label="0 proxy hops"
-          colorClass="text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
-        />
-        <Badge
-          label="mTLS cert identity"
-          colorClass="text-violet-400 bg-violet-400/10 border-violet-400/20"
-        />
-        <Badge
-          label="round-robin LB"
-          colorClass="text-emerald-400 bg-emerald-400/10 border-emerald-400/20"
-        />
+        <Badge tone="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">
+          0 proxy hops
+        </Badge>
+        <Badge tone="text-violet-400 bg-violet-400/10 border-violet-400/20">
+          mTLS cert identity
+        </Badge>
+        <Badge tone="text-emerald-400 bg-emerald-400/10 border-emerald-400/20">
+          round-robin LB
+        </Badge>
       </div>
     </div>
   );
@@ -293,15 +279,15 @@ function EventFanOutDiagram() {
       <FanDown nodes={subscribers} dotColor="bg-blue-400" lineColor="border-blue-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge
-          label="wildcard topics"
-          colorClass="text-blue-400 bg-blue-400/10 border-blue-400/20"
-        />
-        <Badge label="DLQ + replay" colorClass="text-red-400 bg-red-400/10 border-red-400/20" />
-        <Badge
-          label="filter expressions"
-          colorClass="text-orange-400 bg-orange-400/10 border-orange-400/20"
-        />
+        <Badge tone="text-blue-400 bg-blue-400/10 border-blue-400/20">
+          wildcard topics
+        </Badge>
+        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">
+          DLQ + replay
+        </Badge>
+        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
+          filter expressions
+        </Badge>
       </div>
     </div>
   );
@@ -429,15 +415,15 @@ function StreamDiagram() {
       </div>
 
       <div className="flex justify-center gap-1.5 flex-wrap">
-        <Badge label="persisted chunks" colorClass="text-sky-400 bg-sky-400/10 border-sky-400/20" />
-        <Badge
-          label="late subscriber replay"
-          colorClass="text-cyan-400 bg-cyan-400/10 border-cyan-400/20"
-        />
-        <Badge
-          label="LLM · progress · logs"
-          colorClass="text-indigo-400 bg-indigo-400/10 border-indigo-400/20"
-        />
+        <Badge tone="text-sky-400 bg-sky-400/10 border-sky-400/20">
+          persisted chunks
+        </Badge>
+        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">
+          late subscriber replay
+        </Badge>
+        <Badge tone="text-indigo-400 bg-indigo-400/10 border-indigo-400/20">
+          LLM · progress · logs
+        </Badge>
       </div>
     </div>
   );
@@ -480,30 +466,27 @@ function WorkflowDiagram() {
       {/* Failure states */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] p-3.5 text-center">
-          <p className="text-3xs font-mono text-red-400/60 mb-1.5">on step failure</p>
-          <p className="text-xs font-semibold text-red-300">Auto Retry</p>
-          <p className="text-3xs text-muted-foreground mt-0.5">exponential backoff</p>
+          <p className="type-overline-mono text-red-400/60 mb-1.5">on step failure</p>
+          <p className="type-body-sm font-semibold text-red-300">Auto Retry</p>
+          <p className="type-overline-mono text-muted-foreground mt-0.5">exponential backoff</p>
         </div>
         <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.04] p-3.5 text-center">
-          <p className="text-3xs font-mono text-amber-400/60 mb-1.5">after max retries</p>
-          <p className="text-xs font-semibold text-amber-300">Compensation</p>
-          <p className="text-3xs text-muted-foreground mt-0.5">rollback steps</p>
+          <p className="type-overline-mono text-amber-400/60 mb-1.5">after max retries</p>
+          <p className="type-body-sm font-semibold text-amber-300">Compensation</p>
+          <p className="type-overline-mono text-muted-foreground mt-0.5">rollback steps</p>
         </div>
       </div>
 
       <div className="flex justify-center gap-1.5 flex-wrap">
-        <Badge
-          label="code-defined steps"
-          colorClass="text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/20"
-        />
-        <Badge
-          label="state in PostgreSQL"
-          colorClass="text-violet-400 bg-violet-400/10 border-violet-400/20"
-        />
-        <Badge
-          label="full step trace"
-          colorClass="text-cyan-400 bg-cyan-400/10 border-cyan-400/20"
-        />
+        <Badge tone="text-fuchsia-400 bg-fuchsia-400/10 border-fuchsia-400/20">
+          code-defined steps
+        </Badge>
+        <Badge tone="text-violet-400 bg-violet-400/10 border-violet-400/20">
+          state in PostgreSQL
+        </Badge>
+        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">
+          full step trace
+        </Badge>
       </div>
     </div>
   );
@@ -533,19 +516,19 @@ function ScheduledDiagram() {
       {/* Triggers — compact centred box */}
       <div className="flex justify-center">
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-6 py-3 text-center">
-          <p className="text-2xs font-semibold font-display text-amber-300 leading-tight">
+          <p className="type-body-sm font-semibold font-display text-amber-300 leading-tight">
             Cron Triggers
           </p>
-          <p className="text-3xs font-mono text-muted-foreground mt-0.5 mb-3">2 active schedules</p>
+          <p className="type-overline-mono text-muted-foreground mt-0.5 mb-3">2 active schedules</p>
           <div className="flex justify-center gap-6">
             <div className="text-center">
-              <p className="text-xs font-mono font-semibold text-amber-200">*/5 min</p>
-              <p className="text-3xs text-muted-foreground mt-0.5">interval job</p>
+              <p className="type-body-sm font-mono font-semibold text-amber-200">*/5 min</p>
+              <p className="type-overline-mono text-muted-foreground mt-0.5">interval job</p>
             </div>
             <div className="w-px bg-amber-500/20" />
             <div className="text-center">
-              <p className="text-xs font-mono font-semibold text-amber-200">0 8 * * *</p>
-              <p className="text-3xs text-muted-foreground mt-0.5">daily report</p>
+              <p className="type-body-sm font-mono font-semibold text-amber-200">0 8 * * *</p>
+              <p className="type-overline-mono text-muted-foreground mt-0.5">daily report</p>
             </div>
           </div>
         </div>
@@ -568,18 +551,15 @@ function ScheduledDiagram() {
       <FanDown nodes={workers} dotColor="bg-amber-400" lineColor="border-amber-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge
-          label="cron + one-shot"
-          colorClass="text-amber-400 bg-amber-400/10 border-amber-400/20"
-        />
-        <Badge
-          label="misfire handling"
-          colorClass="text-orange-400 bg-orange-400/10 border-orange-400/20"
-        />
-        <Badge
-          label="round-robin dispatch"
-          colorClass="text-yellow-400 bg-yellow-400/10 border-yellow-400/20"
-        />
+        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">
+          cron + one-shot
+        </Badge>
+        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
+          misfire handling
+        </Badge>
+        <Badge tone="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">
+          round-robin dispatch
+        </Badge>
       </div>
     </div>
   );
@@ -609,10 +589,10 @@ function AlertsDiagram() {
       {/* Rules box — compact centred box */}
       <div className="flex justify-center">
         <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] px-6 py-3 text-center">
-          <p className="text-2xs font-semibold font-display text-red-300 leading-tight">
+          <p className="type-body-sm font-semibold font-display text-red-300 leading-tight">
             Alert Rules
           </p>
-          <p className="text-3xs font-mono text-muted-foreground mt-0.5 mb-3">
+          <p className="type-overline-mono text-muted-foreground mt-0.5 mb-3">
             condition evaluator
           </p>
           <div className="flex flex-wrap justify-center gap-1.5">
@@ -645,18 +625,15 @@ function AlertsDiagram() {
       <FanDown nodes={channels} dotColor="bg-red-400" lineColor="border-red-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge
-          label="6 condition types"
-          colorClass="text-red-400 bg-red-400/10 border-red-400/20"
-        />
-        <Badge
-          label="storm cooldown"
-          colorClass="text-orange-400 bg-orange-400/10 border-orange-400/20"
-        />
-        <Badge
-          label="multi-channel"
-          colorClass="text-amber-400 bg-amber-400/10 border-amber-400/20"
-        />
+        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">
+          6 condition types
+        </Badge>
+        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
+          storm cooldown
+        </Badge>
+        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">
+          multi-channel
+        </Badge>
       </div>
     </div>
   );
@@ -739,7 +716,7 @@ export function UseCasesSection() {
   if (!active) return null;
 
   return (
-    <AnimatedSection className="container mx-auto px-4 py-24" id="use-cases">
+    <Section id="use-cases">
       <SectionHeader
         eyebrow="Use Cases"
         title="Built for every communication pattern"
@@ -771,7 +748,7 @@ export function UseCasesSection() {
               </div>
               <p
                 className={cn(
-                  "text-xs font-semibold font-display transition-colors",
+                  "type-body-sm font-semibold font-display transition-colors",
                   activeId === uc.id
                     ? "text-foreground"
                     : "text-muted-foreground group-hover:text-foreground/70"
@@ -805,8 +782,8 @@ export function UseCasesSection() {
               <active.icon className={cn("w-4 h-4", active.iconColor)} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold font-display">{active.label}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed max-w-xl">
+              <h3 className="type-subsection-title">{active.label}</h3>
+              <p className="type-body-sm text-muted-foreground mt-0.5 leading-relaxed max-w-xl">
                 {active.desc}
               </p>
             </div>
@@ -826,6 +803,6 @@ export function UseCasesSection() {
           </AnimatePresence>
         </motion.div>
       </div>
-    </AnimatedSection>
+    </Section>
   );
 }

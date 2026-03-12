@@ -2,12 +2,17 @@ export const FEATURE_MENU_ITEMS = [
   {
     label: "Direct RPC",
     href: "#direct-rpc",
-    desc: "zero-hop gRPC path",
+    desc: "zero-hop gRPC, mTLS, round-robin",
+  },
+  {
+    label: "HTTP Middleware",
+    href: "#http",
+    desc: "Express, Fastify, Gin, FastAPI auto-trace",
   },
   {
     label: "Durable Events",
     href: "#durable-events",
-    desc: "retries, DLQ, replay",
+    desc: "fan-out, retries, DLQ, replay",
   },
   {
     label: "Realtime Streams",
@@ -17,22 +22,27 @@ export const FEATURE_MENU_ITEMS = [
   {
     label: "Workflows",
     href: "#workflows",
-    desc: "multi-step saga runtime",
+    desc: "parallel DAG, conditions, sleep, event wait",
   },
   {
     label: "Jobs",
     href: "#jobs",
-    desc: "cron and delayed runs",
+    desc: "cron, delayed, workflow-triggered",
   },
   {
     label: "Discovery + Maps",
     href: "#service-discovery",
-    desc: "registry, topology, connections",
+    desc: "O(1) lookup, service map, connections",
   },
   {
     label: "Unified Tracing",
     href: "#tracing",
-    desc: "run waterfall per request",
+    desc: "waterfall per request, retries, fan-out",
+  },
+  {
+    label: "Metrics & Logs",
+    href: "#observability",
+    desc: "Prometheus /metrics, Loki-compatible API",
   },
   {
     label: "Smart Alerts",

@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { Lock, Server, ShieldCheck, Zap } from "lucide-react";
-import { AnimatedSection, fadeInUp } from "../components/animations";
+import { fadeInUp } from "../components/animations";
 import { BrandMark } from "../components/BrandMark";
 import { cn } from "../lib/utils";
+import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
 const SERVICES_LEFT = ["Service A", "Service B"];
@@ -37,7 +38,7 @@ function ServiceBox({ name }: { name: string }) {
 
 export function ArchitectureSection() {
   return (
-    <AnimatedSection className="container mx-auto px-4 py-24" id="architecture">
+    <Section id="architecture">
       <SectionHeader
         eyebrow="Architecture"
         title="How ServiceBridge works"
@@ -120,13 +121,13 @@ export function ArchitectureSection() {
           <div className="mt-8 pt-6 border-t border-white/[0.06] grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs">
             {LEGEND.map((item) => (
               <div key={item.label}>
-                <p className={cn("font-semibold font-mono", item.color)}>{item.value}</p>
-                <p className="text-muted-foreground mt-0.5">{item.label}</p>
+                <p className={cn("type-subsection-title font-mono", item.color)}>{item.value}</p>
+                <p className="type-body-sm text-muted-foreground mt-0.5">{item.label}</p>
               </div>
             ))}
           </div>
         </div>
       </motion.div>
-    </AnimatedSection>
+    </Section>
   );
 }

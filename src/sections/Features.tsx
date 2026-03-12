@@ -1,27 +1,29 @@
 import { motion } from "framer-motion";
 import {
   Activity,
+  BarChart2,
   Clock,
   Cpu,
   Database,
   Eye,
+  GitMerge,
   Globe,
   KeySquare,
   Lock,
   Network,
   Radio,
-  RefreshCcw,
-  Server,
   Shield,
-  ShieldCheck,
   SlidersHorizontal,
   Waves,
   Workflow,
   Zap,
 } from "lucide-react";
 import type React from "react";
-import { AnimatedSection, fadeInUp } from "../components/animations";
+import { fadeInUp } from "../components/animations";
 import { cn } from "../lib/utils";
+import { Badge } from "../ui/Badge";
+import { Card } from "../ui/Card";
+import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
 type FeatureDef = {
@@ -45,7 +47,7 @@ type FeatureGroup = {
 const FEATURE_GROUPS: FeatureGroup[] = [
   {
     label: "Communication",
-    wide: false,
+    wide: true,
     features: [
       {
         title: "Direct RPC",
@@ -66,6 +68,15 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         badgeColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
       },
       {
+        title: "HTTP Middleware",
+        desc: "One middleware — every inbound request gets a span, downstream rpc() calls inherit trace context, and routes appear in the HTTP catalog automatically. Works with Express, Fastify, Gin, Echo, Chi, FastAPI, and Flask. No handler changes needed.",
+        icon: Globe,
+        iconBg: "bg-indigo-500/10",
+        iconColor: "text-indigo-400",
+        badge: "Express, Fastify, Gin, FastAPI",
+        badgeColor: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
+      },
+      {
         title: "Realtime Streams",
         desc: "Push incremental chunks from any handler as it executes. Fans out to UI and SDK over gRPC server-streaming. Chunks persisted to PostgreSQL — late subscribers replay history. Perfect for LLM outputs, progress bars, and live logs.",
         icon: Waves,
@@ -74,34 +85,43 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         badge: "LLM, progress, logs",
         badgeColor: "text-red-400 bg-red-400/10 border-red-400/20",
       },
+      {
+        title: "Service Discovery",
+        desc: "No Consul, no etcd, no DNS glue. Workers register themselves and the control plane takes it from there — endpoint resolution is instant, dead instances drop out automatically. gRPC native load balancing across replicas with connection pooling, no custom logic needed.",
+        icon: Network,
+        iconBg: "bg-cyan-500/10",
+        iconColor: "text-cyan-400",
+        badge: "1000+ services, zero DB",
+        badgeColor: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+      },
+      {
+        title: "Service Map & Connections",
+        desc: "A live map of your entire system — every service, its health, replica count, and resource usage at a glance. Drill into any service to see who calls it, what it calls, and per-replica logs. Connections tab shows every edge with error rate and p95 latency. Updates in real time, no refresh needed.",
+        icon: GitMerge,
+        iconBg: "bg-violet-500/10",
+        iconColor: "text-violet-400",
+        badge: "realtime, replica-aware",
+        badgeColor: "text-violet-400 bg-violet-400/10 border-violet-400/20",
+      },
     ],
   },
   {
     label: "Orchestration",
-    wide: false,
+    wide: true,
     features: [
       {
         title: "Workflows",
-        desc: "Define multi-step sagas as code. Chain RPC and event steps. Runtime handles execution, retries, and state persistence.",
+        desc: "Multi-step sagas defined as code. Chain RPC calls, event publishes, event waits, sleeps, and child workflows into a DAG — independent steps run in parallel, dependent ones wait. State is checkpointed in PostgreSQL on every step, so a restart never loses progress. Every run is fully traced.",
         icon: Workflow,
         iconBg: "bg-fuchsia-500/10",
         iconColor: "text-fuchsia-400",
       },
       {
         title: "Built-in Jobs",
-        desc: "Distributed cron scheduling and delayed one-shot jobs. Misfire handling. Execute via RPC, event, or workflow step.",
+        desc: "Cron and one-shot delayed jobs — no external scheduler needed. Each job can trigger an RPC call, publish an event, or kick off a workflow. Configurable retry policy with backoff, timezone support, and misfire handling when the runtime was down.",
         icon: Clock,
         iconBg: "bg-amber-500/10",
         iconColor: "text-amber-400",
-      },
-      {
-        title: "Service Discovery + Maps",
-        desc: "Workers register on serve(). Callers resolve endpoints lazily via LookupFunction — O(1) from in-memory hub, zero DB load. UI renders live service map and connections map from the same topology data.",
-        icon: Globe,
-        iconBg: "bg-emerald-500/10",
-        iconColor: "text-emerald-400",
-        badge: "1000+ services · zero DB",
-        badgeColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
       },
     ],
   },
@@ -111,16 +131,16 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     features: [
       {
         title: "Granular Access Policy",
-        desc: "Beyond capabilities, each service key carries fine-grained traffic rules: which topics to publish/subscribe, which functions to register or call, and which services can call yours. Enforced at three layers — control plane, SDK, and worker — with mTLS cert CN checks for caller identity.",
+        desc: "Each service gets a scoped key — define what it can do (RPC, events, jobs, workflows), which topics it can publish or subscribe to, which functions it can call or register, and which services are allowed to reach it. Policy is enforced at five independent layers from the control plane down to the worker handler.",
         icon: KeySquare,
         iconBg: "bg-violet-500/10",
         iconColor: "text-violet-400",
-        badge: "3-layer enforcement",
+        badge: "5-layer enforcement",
         badgeColor: "text-violet-400 bg-violet-400/10 border-violet-400/20",
       },
       {
         title: "Auto mTLS",
-        desc: "Full mutual TLS on both control plane and data plane. Certs are issued when you create a service key in the UI — store cert, key, and CA once; transport is tls-only.",
+        desc: "The SDK generates a keypair locally — the private key never leaves the process. A cert with CN bound to the service name is provisioned automatically, making caller identity cryptographic rather than header-based. No cert-manager, no Vault PKI, no sidecar. Every service-to-service connection is mTLS from the first call.",
         icon: Lock,
         iconBg: "bg-teal-500/10",
         iconColor: "text-teal-400",
@@ -131,7 +151,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   },
   {
     label: "Observability",
-    wide: true,
+    wide: false,
     features: [
       {
         title: "Unified Tracing",
@@ -141,6 +161,15 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconColor: "text-cyan-400",
         badge: "100% runs traced",
         badgeColor: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+      },
+      {
+        title: "Logs & Metrics",
+        desc: "Logs captured automatically, shown in the built-in UI, and correlated to traces by span ID — expand any span in the waterfall to see its log lines inline. Prometheus /metrics (30+ families) and Loki-compatible log API let Grafana connect directly; no exporter sidecar, no Promtail, no Loki cluster needed.",
+        icon: BarChart2,
+        iconBg: "bg-orange-500/10",
+        iconColor: "text-orange-400",
+        badge: "Prometheus & Loki export",
+        badgeColor: "text-orange-400 bg-orange-400/10 border-orange-400/20",
       },
       {
         title: "Smart Alerts",
@@ -198,122 +227,78 @@ const PROD_FEATURES = [
     desc: "All state in PostgreSQL. No Redis, no external queues. Standard backups work.",
   },
   {
-    icon: Globe,
-    color: "text-orange-400",
-    bg: "bg-orange-500/10",
-    title: "HTTP Framework Support",
-    desc: "Express middleware and Fastify plugin for automatic trace propagation.",
-  },
-  {
     icon: KeySquare,
     color: "text-yellow-400",
     bg: "bg-yellow-500/10",
     title: "Rate Limiting",
     desc: "Token bucket rate limiting per service on event publishing. Configurable RPS and burst.",
   },
-  {
-    icon: ShieldCheck,
-    color: "text-violet-400",
-    bg: "bg-violet-500/10",
-    title: "3-Layer Caller Enforcement",
-    desc: "allowed_callers enforced at registry, SDK, and worker handler. mTLS cert CN provides cryptographic identity.",
-  },
-  {
-    icon: RefreshCcw,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    title: "DLQ Replay",
-    desc: "Dead-letter entries can be batch-replayed from the UI or via gRPC ReplayDLQ without any manual SQL.",
-  },
-  {
-    icon: Server,
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/10",
-    title: "Zero-DB Endpoint Discovery",
-    desc: "LookupFunction reads from an in-memory hub snapshot — zero PostgreSQL queries at any call rate. Endpoint data stays fresh via Heartbeat-driven updates.",
-  },
-  {
-    icon: Network,
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    title: "gRPC Native Load Balancing",
-    desc: "One gRPC channel per function via Custom Name Resolver. Round-robin across replicas, connection pooling, and dead-worker detection handled natively by gRPC — no custom logic.",
-  },
 ];
 
 function FeatureCard({ feature, className }: { feature: FeatureDef; className?: string }) {
   return (
-    <motion.div
-      variants={fadeInUp}
-      className={cn(
-        "group relative flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 overflow-hidden",
-        "hover:border-white/[0.12] hover:bg-white/[0.035] transition-all duration-300",
-        className
-      )}
-    >
-      <div
-        className={cn(
-          "pointer-events-none absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500",
-          feature.iconBg
-        )}
-      />
-      <div className="relative flex flex-col h-full">
+    <motion.div variants={fadeInUp} className={className}>
+      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.035]">
         <div
           className={cn(
-            "inline-flex items-center justify-center w-10 h-10 rounded-xl mb-5 ring-1 ring-white/[0.06]",
+            "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100",
             feature.iconBg
           )}
-        >
-          <feature.icon className={cn("w-5 h-5", feature.iconColor)} />
-        </div>
-        <div className="flex items-start gap-2 mb-2 flex-wrap">
-          <h3 className="text-base font-semibold font-display leading-snug">{feature.title}</h3>
-          {feature.badge && (
-            <span
-              className={cn(
-                "inline-block text-3xs font-mono font-semibold rounded-full border px-2 py-0.5 leading-normal",
-                feature.badgeColor
-              )}
-            >
-              {feature.badge}
-            </span>
+        />
+        <div className="relative flex h-full flex-col">
+          <div
+            className={cn(
+              "mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-white/[0.06]",
+              feature.iconBg
+            )}
+          >
+            <feature.icon className={cn("h-5 w-5", feature.iconColor)} />
+          </div>
+          <div className="mb-2 flex flex-wrap items-start gap-2">
+            <h3 className="type-subsection-title leading-snug">{feature.title}</h3>
+            {feature.badge && (
+              <Badge tone={feature.badgeColor}>{feature.badge}</Badge>
+            )}
+          </div>
+          <p className="type-body-sm flex-1 leading-relaxed">{feature.desc}</p>
+          {feature.stat && (
+            <div className="mt-5 flex items-baseline gap-1.5 border-t border-surface-border pt-4">
+              <span
+                className={cn(
+                  "font-display text-3xl font-bold tabular-nums",
+                  feature.iconColor
+                )}
+              >
+                {feature.stat}
+              </span>
+              <span className="type-body-sm">{feature.statLabel}</span>
+            </div>
           )}
         </div>
-        <p className="text-sm text-muted-foreground leading-relaxed flex-1">{feature.desc}</p>
-        {feature.stat && (
-          <div className="mt-5 pt-4 border-t border-white/[0.06] flex items-baseline gap-1.5">
-            <span className={cn("text-3xl font-bold font-display tabular-nums", feature.iconColor)}>
-              {feature.stat}
-            </span>
-            <span className="text-xs text-muted-foreground">{feature.statLabel}</span>
-          </div>
-        )}
-      </div>
+      </Card>
     </motion.div>
   );
 }
 
 function CategoryDivider({ label }: { label: string }) {
   return (
-    <div className="col-span-full flex items-center gap-4 mt-2 first:mt-0">
-      <span className="text-2xs font-mono uppercase tracking-widest text-zinc-500 shrink-0">
-        {label}
-      </span>
-      <div className="flex-1 h-px bg-white/[0.05]" />
+    <div className="col-span-full mt-2 flex items-center gap-4 first:mt-0">
+      <span className="type-overline-mono shrink-0">{label}</span>
+      <div className="h-px flex-1 bg-white/[0.05]" />
     </div>
   );
 }
 
 export function FeaturesSection() {
   return (
-    <AnimatedSection className="container mx-auto px-4 py-24" id="features">
+    <Section id="features">
       <SectionHeader
         eyebrow="Features"
         title="Everything you need — production-ready out of the box"
         subtitle="One Go binary + PostgreSQL. mTLS, tracing, retries, DLQ, failover — built in, not bolted on."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 max-w-5xl mx-auto">
+      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-6">
         {FEATURE_GROUPS.map((group) => (
           <div key={group.label} className="contents">
             <CategoryDivider label={group.label} />
@@ -328,37 +313,33 @@ export function FeaturesSection() {
         ))}
       </div>
 
-      <motion.div variants={fadeInUp} className="mt-12 max-w-5xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-px bg-white/[0.06]" />
-          <span className="text-2xs font-mono uppercase tracking-widest text-zinc-500">
-            Production-grade infrastructure
-          </span>
-          <div className="flex-1 h-px bg-white/[0.06]" />
+      <motion.div variants={fadeInUp} className="mx-auto mt-12 max-w-5xl">
+        <div className="mb-6 flex items-center gap-4">
+          <div className="h-px flex-1 bg-surface-border" />
+          <span className="type-overline-mono">Production-grade infrastructure</span>
+          <div className="h-px flex-1 bg-surface-border" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PROD_FEATURES.map((item) => (
-            <motion.div
-              key={item.title}
-              variants={fadeInUp}
-              className="group flex items-start gap-4 rounded-xl border border-white/[0.05] bg-white/[0.015] p-4 hover:border-white/[0.09] hover:bg-white/[0.03] transition-all duration-300"
-            >
-              <div
-                className={cn(
-                  "inline-flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ring-1 ring-white/[0.06]",
-                  item.bg
-                )}
-              >
-                <item.icon className={cn("w-4 h-4", item.color)} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold font-display mb-1">{item.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
-              </div>
+            <motion.div key={item.title} variants={fadeInUp}>
+              <Card className="group flex items-start gap-4 transition-all duration-300 hover:border-white/[0.09] hover:bg-white/[0.03]">
+                <div
+                  className={cn(
+                    "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ring-1 ring-white/[0.06]",
+                    item.bg
+                  )}
+                >
+                  <item.icon className={cn("h-4 w-4", item.color)} />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="type-subsection-title mb-1">{item.title}</h3>
+                  <p className="type-body-sm leading-relaxed">{item.desc}</p>
+                </div>
+              </Card>
             </motion.div>
           ))}
         </div>
       </motion.div>
-    </AnimatedSection>
+    </Section>
   );
 }

@@ -1,87 +1,357 @@
 import { motion, useInView } from "framer-motion";
 import {
   Activity,
-  ArrowRight,
+  Ban,
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
-  Clock,
+  ChevronRight,
+  Clock3,
   Eye,
+  GitBranch,
   Globe,
+  Hourglass,
   Radio,
   RefreshCcw,
-  Workflow,
   XCircle,
   Zap,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
+import { Badge } from "../ui/Badge";
+import { CodePanel } from "../ui/CodePanel";
+import { FeatureSection } from "../ui/FeatureSection";
 import { MiniCard } from "../ui/MiniCard";
+import { TabStrip } from "../ui/Tabs";
 
-interface TraceSpan {
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+type SpanType = "http" | "rpc" | "event" | "delivery" | "workflow" | "job" | "sleep" | "attempt";
+type SpanStatus = "success" | "error" | "running" | "pending";
+type Outcome = "ack" | "reject" | "dlq" | null;
+
+interface WSpan {
   id: string;
   name: string;
   service: string;
-  type: "rpc" | "event" | "delivery" | "job" | "workflow" | "http";
-  status: "success" | "error" | "pending" | "retry";
+  type: SpanType;
+  status: SpanStatus;
   startPct: number;
   widthPct: number;
   durationMs: number;
   depth: number;
   isLast: boolean;
   parentLines: boolean[];
-  children?: TraceSpan[];
+  outcome?: Outcome;
+  retryCount?: number;
+  attempt?: number;
+  condition?: string;
+  children?: WSpan[];
 }
 
-const TRACE_SPANS: TraceSpan[] = [
+// ─── Type config (mirrors spanClassifier.ts) ─────────────────────────────────
+
+const TYPE_CFG: Record<
+  SpanType,
+  { icon: React.ElementType; color: string; bg: string; bar: string; label: string }
+> = {
+  http: {
+    icon: Globe,
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
+    bar: "bg-indigo-500/85",
+    label: "http",
+  },
+  rpc: {
+    icon: Zap,
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
+    bar: "bg-blue-500/85",
+    label: "rpc",
+  },
+  event: {
+    icon: Radio,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    bar: "bg-emerald-500/85",
+    label: "event",
+  },
+  delivery: {
+    icon: Radio,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    bar: "bg-emerald-400/85",
+    label: "delivery",
+  },
+  workflow: {
+    icon: GitBranch,
+    color: "text-fuchsia-400",
+    bg: "bg-fuchsia-500/10",
+    bar: "bg-fuchsia-500/85",
+    label: "workflow",
+  },
+  job: {
+    icon: CalendarClock,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    bar: "bg-amber-500/85",
+    label: "job",
+  },
+  sleep: {
+    icon: Hourglass,
+    color: "text-slate-400",
+    bg: "bg-slate-500/10",
+    bar: "bg-slate-400/85",
+    label: "sleep",
+  },
+  attempt: {
+    icon: RefreshCcw,
+    color: "text-orange-400",
+    bg: "bg-orange-500/10",
+    bar: "bg-orange-500/85",
+    label: "attempt",
+  },
+};
+
+function getBarColor(status: SpanStatus): string {
+  if (status === "error") return "bg-red-500/75";
+  if (status === "running") return "bg-amber-400/75 animate-pulse";
+  if (status === "pending") return "bg-amber-400/50";
+  return "";
+}
+
+function StatusIcon({ status }: { status: SpanStatus }) {
+  if (status === "error") return <XCircle className="w-3 h-3 text-red-400 shrink-0" />;
+  if (status === "running") return <Clock3 className="w-3 h-3 text-amber-400 animate-pulse shrink-0" />;
+  if (status === "pending") return <Clock3 className="w-3 h-3 text-amber-400/60 shrink-0" />;
+  return <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />;
+}
+
+function OutcomePill({ outcome }: { outcome: Outcome }) {
+  if (!outcome) return null;
+  const cfg = {
+    ack: { icon: CheckCircle2, tone: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", label: "ack" },
+    reject: { icon: XCircle, tone: "text-amber-400 bg-amber-500/10 border-amber-500/20", label: "reject" },
+    dlq: { icon: Ban, tone: "text-rose-400 bg-rose-500/10 border-rose-500/20", label: "dlq" },
+  }[outcome];
+  const Icon = cfg.icon;
+  return (
+    <Badge tone={cfg.tone}>
+      <Icon className="w-2.5 h-2.5" />
+      {cfg.label}
+    </Badge>
+  );
+}
+
+// ─── Span row (mirrors SpanRow.tsx visual) ────────────────────────────────────
+
+const BASE_PAD = 10;
+const DEPTH_PAD = 14;
+
+function TraceRow({ span, index, revealed }: { span: WSpan; index: number; revealed: boolean }) {
+  const cfg = TYPE_CFG[span.type];
+  const Icon = cfg.icon;
+  const hasChildren = span.children && span.children.length > 0;
+  const barColor = getBarColor(span.status) || cfg.bar;
+  const nameColor =
+    span.status === "error"
+      ? "text-red-400"
+      : span.status === "running"
+        ? "text-amber-300"
+        : span.status === "pending"
+          ? "text-zinc-500"
+          : "text-zinc-200";
+
+  const leftPad = BASE_PAD + span.depth * DEPTH_PAD;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={revealed ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
+      transition={{ duration: 0.25, delay: index * 0.04 }}
+      className="group hover:bg-surface transition-colors"
+    >
+      {/* Name column */}
+      <div className="grid [grid-template-columns:44%_1fr]">
+        <div
+          className="relative flex items-center gap-1.5 py-1.5 pr-2 border-r border-surface-border"
+          style={{ paddingLeft: `${leftPad}px` }}
+        >
+          {/* Tree connector lines */}
+          {span.parentLines.map((hasLine, li) => (
+            <span
+              key={`${span.id}-pl-${li}`}
+              className="absolute top-0 bottom-0 w-px"
+              style={{
+                left: `${BASE_PAD + li * DEPTH_PAD + DEPTH_PAD / 2}px`,
+                background: hasLine ? "rgba(113,113,122,0.3)" : "transparent",
+              }}
+            />
+          ))}
+          {span.depth > 0 && (
+            <>
+              <span
+                className="absolute top-0 w-px"
+                style={{
+                  left: `${BASE_PAD + (span.depth - 1) * DEPTH_PAD + DEPTH_PAD / 2}px`,
+                  height: "50%",
+                  background: "rgba(113,113,122,0.3)",
+                }}
+              />
+              {!span.isLast && (
+                <span
+                  className="absolute bottom-0 w-px"
+                  style={{
+                    left: `${BASE_PAD + (span.depth - 1) * DEPTH_PAD + DEPTH_PAD / 2}px`,
+                    height: "50%",
+                    background: "rgba(113,113,122,0.3)",
+                  }}
+                />
+              )}
+              <span
+                className="absolute"
+                style={{
+                  left: `${BASE_PAD + (span.depth - 1) * DEPTH_PAD + DEPTH_PAD / 2}px`,
+                  top: "50%",
+                  width: `${DEPTH_PAD / 2}px`,
+                  height: "1px",
+                  background: "rgba(113,113,122,0.3)",
+                }}
+              />
+            </>
+          )}
+
+          {/* Expand icon or dot */}
+          {hasChildren ? (
+            <ChevronDown className="w-3 h-3 text-zinc-600 shrink-0" />
+          ) : (
+            <span
+              className={cn(
+                "w-1.5 h-1.5 rounded-full ring-1 ring-code shrink-0",
+                span.status === "error"
+                  ? "bg-red-400"
+                  : span.status === "running"
+                    ? "bg-amber-400 animate-pulse"
+                    : span.status === "pending"
+                      ? "bg-zinc-600"
+                      : "bg-emerald-500"
+              )}
+            />
+          )}
+
+          {/* Type icon */}
+          <span className={cn("rounded p-0.5 shrink-0", cfg.bg)}>
+            <Icon className={cn("w-2.5 h-2.5", cfg.color)} />
+          </span>
+
+          {/* Name */}
+          <span className={cn("type-body-sm truncate flex-1", nameColor)}>
+            {span.name}
+          </span>
+
+          {/* Service badge */}
+          <Badge tone={cn(cfg.bg, cfg.color)}>
+            {span.service}
+          </Badge>
+        </div>
+
+        {/* Waterfall bar column */}
+          <div className="relative flex items-center px-2 py-1.5">
+          {/* Bar track */}
+          <div className="absolute inset-x-2 h-3 rounded-full bg-surface">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={revealed ? { width: `${Math.max(span.widthPct, 0.8)}%` } : { width: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.04 + 0.1, ease: "easeOut" }}
+              className={cn("absolute h-full rounded-full", barColor)}
+              style={{ left: `${span.startPct}%` }}
+            />
+          </div>
+
+          {/* Right side: duration + status + outcome */}
+          <div className="absolute right-2 flex items-center gap-1.5">
+            {span.retryCount && (
+              <span className="inline-flex items-center gap-0.5 type-overline-mono text-orange-400">
+                <RefreshCcw className="w-2.5 h-2.5" />
+                {span.retryCount}
+              </span>
+            )}
+            {span.attempt && (
+              <span className="type-overline-mono text-orange-400">#{span.attempt}</span>
+            )}
+            <span className="type-overline-mono text-zinc-600 bg-surface px-1 py-0.5 rounded-2xl tabular-nums">
+              {span.durationMs}ms
+            </span>
+            <StatusIcon status={span.status} />
+            <OutcomePill outcome={span.outcome ?? null} />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function flattenSpans(spans: WSpan[]): WSpan[] {
+  const result: WSpan[] = [];
+  for (const s of spans) {
+    result.push(s);
+    if (s.children) result.push(...flattenSpans(s.children));
+  }
+  return result;
+}
+
+// ─── Tab data ────────────────────────────────────────────────────────────────
+
+const HTTP_TRACE: WSpan[] = [
   {
-    id: "1",
-    name: "POST /api/orders",
+    id: "h1",
+    name: "http:POST /checkout",
     service: "gateway",
     type: "http",
     status: "success",
     startPct: 0,
     widthPct: 100,
-    durationMs: 142,
+    durationMs: 187,
     depth: 0,
     isLast: true,
     parentLines: [],
     children: [
       {
-        id: "2",
-        name: "orders.create",
+        id: "h2",
+        name: "rpc:orders.create",
         service: "orders",
         type: "rpc",
         status: "success",
-        startPct: 2,
-        widthPct: 28,
-        durationMs: 42,
+        startPct: 1,
+        widthPct: 30,
+        durationMs: 56,
         depth: 1,
         isLast: false,
         parentLines: [false],
         children: [
           {
-            id: "2a",
-            name: "db.insert",
+            id: "h2a",
+            name: "rpc:db.insertOrder",
             service: "orders",
             type: "rpc",
             status: "success",
-            startPct: 4,
-            widthPct: 18,
+            startPct: 3,
+            widthPct: 15,
             durationMs: 28,
             depth: 2,
             isLast: false,
             parentLines: [false, false],
           },
           {
-            id: "2b",
-            name: "workflow: order.fulfillment",
-            service: "orders",
-            type: "workflow",
+            id: "h2b",
+            name: "rpc:inventory.reserve",
+            service: "inventory",
+            type: "rpc",
             status: "success",
-            startPct: 24,
-            widthPct: 4,
-            durationMs: 6,
+            startPct: 18,
+            widthPct: 12,
+            durationMs: 22,
             depth: 2,
             isLast: true,
             parentLines: [false, true],
@@ -89,96 +359,101 @@ const TRACE_SPANS: TraceSpan[] = [
         ],
       },
       {
-        id: "3",
-        name: "event: order.created",
+        id: "h3",
+        name: "event:order.created",
         service: "orders",
         type: "event",
         status: "success",
-        startPct: 32,
-        widthPct: 60,
-        durationMs: 85,
+        startPct: 33,
+        widthPct: 58,
+        durationMs: 108,
         depth: 1,
         isLast: false,
         parentLines: [false],
         children: [
           {
-            id: "4",
-            name: "payment.charge",
+            id: "h4",
+            name: "rpc:payments.charge",
             service: "payments",
             type: "delivery",
             status: "success",
-            startPct: 32,
-            widthPct: 24,
-            durationMs: 34,
-            depth: 2,
-            isLast: false,
-            parentLines: [false, false],
-          },
-          {
-            id: "5",
-            name: "send.confirmation",
-            service: "notify",
-            type: "delivery",
-            status: "success",
             startPct: 34,
-            widthPct: 36,
+            widthPct: 28,
             durationMs: 52,
             depth: 2,
             isLast: false,
             parentLines: [false, false],
+            outcome: "ack",
+          },
+          {
+            id: "h5",
+            name: "event.deliver:notify",
+            service: "notify",
+            type: "delivery",
+            status: "success",
+            startPct: 48,
+            widthPct: 20,
+            durationMs: 37,
+            depth: 2,
+            isLast: false,
+            parentLines: [false, false],
+            outcome: "ack",
             children: [
               {
-                id: "6",
-                name: "email.send",
+                id: "h5a",
+                name: "attempt:email.send",
                 service: "mailer",
-                type: "rpc",
-                status: "retry",
-                startPct: 36,
-                widthPct: 18,
-                durationMs: 28,
+                type: "attempt",
+                status: "error",
+                startPct: 50,
+                widthPct: 8,
+                durationMs: 15,
                 depth: 3,
                 isLast: false,
                 parentLines: [false, false, false],
+                attempt: 1,
               },
               {
-                id: "7",
-                name: "email.send",
+                id: "h5b",
+                name: "attempt:email.send",
                 service: "mailer",
-                type: "rpc",
+                type: "attempt",
                 status: "success",
-                startPct: 58,
-                widthPct: 10,
-                durationMs: 12,
+                startPct: 60,
+                widthPct: 8,
+                durationMs: 14,
                 depth: 3,
                 isLast: true,
                 parentLines: [false, false, true],
+                attempt: 2,
               },
             ],
           },
           {
-            id: "8",
-            name: "analytics.track",
+            id: "h6",
+            name: "event.deliver:analytics",
             service: "analytics",
             type: "delivery",
             status: "success",
-            startPct: 32,
-            widthPct: 5,
-            durationMs: 8,
+            startPct: 34,
+            widthPct: 6,
+            durationMs: 11,
             depth: 2,
             isLast: true,
             parentLines: [false, true],
+            outcome: "ack",
           },
         ],
       },
       {
-        id: "9",
-        name: "cache.invalidate",
+        id: "h7",
+        name: "rpc:cache.invalidate",
         service: "orders",
         type: "rpc",
         status: "success",
-        startPct: 94,
+        startPct: 93,
         widthPct: 5,
-        durationMs: 6,
+        durationMs: 9,
         depth: 1,
         isLast: true,
         parentLines: [true],
@@ -187,169 +462,411 @@ const TRACE_SPANS: TraceSpan[] = [
   },
 ];
 
-const TYPE_ICONS: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  rpc: { icon: Zap, color: "text-blue-400", bg: "bg-blue-500/10" },
-  event: { icon: Radio, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-  delivery: { icon: ArrowRight, color: "text-cyan-400", bg: "bg-cyan-500/10" },
-  job: { icon: Clock, color: "text-amber-400", bg: "bg-amber-500/10" },
-  workflow: { icon: Workflow, color: "text-fuchsia-400", bg: "bg-fuchsia-500/10" },
-  http: { icon: Globe, color: "text-orange-400", bg: "bg-orange-500/10" },
-};
-
-function flattenSpans(spans: TraceSpan[]): TraceSpan[] {
-  const result: TraceSpan[] = [];
-  for (const s of spans) {
-    result.push(s);
-    if (s.children) result.push(...flattenSpans(s.children));
-  }
-  return result;
-}
-
-function getBarColor(status: string) {
-  if (status === "error") return "bg-red-500/80";
-  if (status === "retry") return "bg-amber-400/80";
-  if (status === "pending") return "bg-amber-400/60";
-  return "bg-emerald-500/80";
-}
-
-function getDotColor(status: string) {
-  if (status === "error") return "bg-red-400";
-  if (status === "retry") return "bg-amber-400";
-  if (status === "pending") return "bg-amber-400";
-  return "bg-emerald-500";
-}
-
-function SpanStatusIcon({ status }: { status: string }) {
-  if (status === "error") return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-  if (status === "retry") return <RefreshCcw className="w-3.5 h-3.5 text-amber-400" />;
-  if (status === "pending") return <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />;
-  return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
-}
-
-function TraceSpanRow({ span, index }: { span: TraceSpan; index: number }) {
-  const hasChildren = span.children && span.children.length > 0;
-  const typeCfg = TYPE_ICONS[span.type] || TYPE_ICONS.rpc;
-  const indent = span.depth * 24 + 8;
-  const parentLineSegments = span.parentLines.reduce<Array<{ key: string; hasLine: boolean }>>(
-    (acc, hasLine) => {
-      const duplicates = acc.filter((segment) => segment.hasLine === hasLine).length;
-      acc.push({ key: `${span.id}-line-${hasLine ? "on" : "off"}-${duplicates}`, hasLine });
-      return acc;
-    },
-    []
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.3, delay: index * 0.06 }}
-      className="rounded-lg transition-colors duration-200 mb-0.5 hover:bg-white/[0.03]"
-    >
-      <div className="flex items-center gap-0 py-2 px-3">
-        {parentLineSegments.map(({ key, hasLine }) => (
-          <div key={key} className="flex-shrink-0 w-6 self-stretch relative">
-            {hasLine && (
-              <div className="absolute left-[11px] inset-y-0 border-l border-zinc-700/60" />
-            )}
-          </div>
-        ))}
-        {span.depth > 0 && (
-          <div className="flex-shrink-0 w-6 self-stretch relative">
-            <div className="absolute left-[11px] top-0 bottom-1/2 border-l border-zinc-700/60" />
-            {!span.isLast && (
-              <div className="absolute left-[11px] top-1/2 bottom-0 border-l border-zinc-700/60" />
-            )}
-            <div className="absolute left-[11px] top-1/2 w-[13px] border-t border-zinc-700/60" />
-          </div>
-        )}
-        {hasChildren ? (
-          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-zinc-500">
-            <ChevronDown className="w-3.5 h-3.5" />
-          </div>
-        ) : (
-          <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-            <div
-              className={cn("w-2 h-2 rounded-full ring-2 ring-[#080c18]", getDotColor(span.status))}
-            />
-          </div>
-        )}
-        <div className="flex-1 min-w-0 flex items-center gap-2 ml-1.5">
-          <span
-            className={cn(
-              "text-xs font-medium truncate tracking-tight",
-              span.status === "error"
-                ? "text-red-400"
-                : span.status === "retry"
-                  ? "text-amber-400"
-                  : "text-zinc-200"
-            )}
-          >
-            {span.name}
-          </span>
-          <span
-            className={cn(
-              "text-3xs px-1.5 py-0 h-4 rounded font-mono flex items-center shrink-0",
-              typeCfg.bg,
-              typeCfg.color
-            )}
-          >
-            {span.service}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-          <span className="text-2xs text-zinc-500 font-mono tabular-nums bg-white/[0.03] px-1.5 py-0.5 rounded">
-            {span.durationMs}ms
-          </span>
-          <SpanStatusIcon status={span.status} />
-        </div>
-      </div>
-      <div
-        className="h-2 bg-white/[0.04] rounded-full mx-3 mb-2 overflow-hidden relative"
-        style={{ marginLeft: `${indent + (span.depth > 0 ? span.depth * 24 + 36 : 28)}px` }}
-      >
-        <motion.div
-          initial={{ width: 0 }}
-          whileInView={{ width: `${Math.max(span.widthPct, 1)}%` }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: index * 0.06 + 0.2, ease: "easeOut" }}
-          className={cn("absolute h-full rounded-full shadow-sm", getBarColor(span.status))}
-          style={{ left: `${span.startPct}%` }}
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-const HIGHLIGHTS = [
+const RPC_TRACE: WSpan[] = [
   {
-    icon: Activity,
-    title: "Cross-service waterfall",
-    desc: "HTTP, RPC, events, workflows, and retries — full execution path in one interactive view.",
-  },
-  {
-    icon: RefreshCcw,
-    title: "Retry group visualization",
-    desc: "Retry chains show attempt count, recovered errors, and delivery stats. See retry → success inline.",
-  },
-  {
-    icon: Eye,
-    title: "Live span updates",
-    desc: "Running spans animate in real-time. Status changes push via WebSocket instantly.",
+    id: "r1",
+    name: "rpc:payments.charge",
+    service: "payments",
+    type: "rpc",
+    status: "success",
+    startPct: 0,
+    widthPct: 100,
+    durationMs: 243,
+    depth: 0,
+    isLast: true,
+    parentLines: [],
+    retryCount: 2,
+    children: [
+      {
+        id: "r1a",
+        name: "attempt:payments.charge",
+        service: "payments",
+        type: "attempt",
+        status: "error",
+        startPct: 1,
+        widthPct: 26,
+        durationMs: 63,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+        attempt: 1,
+      },
+      {
+        id: "r1b",
+        name: "attempt:payments.charge",
+        service: "payments",
+        type: "attempt",
+        status: "error",
+        startPct: 30,
+        widthPct: 26,
+        durationMs: 64,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+        attempt: 2,
+        children: [
+          {
+            id: "r1b1",
+            name: "rpc:stripe.charge",
+            service: "stripe-adapter",
+            type: "rpc",
+            status: "error",
+            startPct: 32,
+            widthPct: 22,
+            durationMs: 54,
+            depth: 2,
+            isLast: true,
+            parentLines: [false, true],
+          },
+        ],
+      },
+      {
+        id: "r1c",
+        name: "attempt:payments.charge",
+        service: "payments",
+        type: "attempt",
+        status: "success",
+        startPct: 60,
+        widthPct: 38,
+        durationMs: 91,
+        depth: 1,
+        isLast: true,
+        parentLines: [true],
+        attempt: 3,
+        children: [
+          {
+            id: "r1c1",
+            name: "rpc:stripe.charge",
+            service: "stripe-adapter",
+            type: "rpc",
+            status: "success",
+            startPct: 62,
+            widthPct: 32,
+            durationMs: 77,
+            depth: 2,
+            isLast: true,
+            parentLines: [true, true],
+          },
+        ],
+      },
+    ],
   },
 ];
 
+const EVENT_TRACE: WSpan[] = [
+  {
+    id: "e1",
+    name: "event:order.created",
+    service: "orders",
+    type: "event",
+    status: "success",
+    startPct: 0,
+    widthPct: 100,
+    durationMs: 312,
+    depth: 0,
+    isLast: true,
+    parentLines: [],
+    children: [
+      {
+        id: "e2",
+        name: "event.deliver:analytics.track",
+        service: "analytics",
+        type: "delivery",
+        status: "success",
+        startPct: 2,
+        widthPct: 8,
+        durationMs: 25,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+        outcome: "ack",
+      },
+      {
+        id: "e3",
+        name: "event.deliver:notify.email",
+        service: "notify",
+        type: "delivery",
+        status: "success",
+        startPct: 2,
+        widthPct: 22,
+        durationMs: 69,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+        outcome: "ack",
+        children: [
+          {
+            id: "e3a",
+            name: "attempt:notify.email",
+            service: "notify",
+            type: "attempt",
+            status: "error",
+            startPct: 4,
+            widthPct: 8,
+            durationMs: 25,
+            depth: 2,
+            isLast: false,
+            parentLines: [false, false],
+            attempt: 1,
+          },
+          {
+            id: "e3b",
+            name: "attempt:notify.email",
+            service: "notify",
+            type: "attempt",
+            status: "success",
+            startPct: 14,
+            widthPct: 9,
+            durationMs: 28,
+            depth: 2,
+            isLast: true,
+            parentLines: [false, true],
+            attempt: 2,
+          },
+        ],
+      },
+      {
+        id: "e4",
+        name: "event.deliver:billing.invoice",
+        service: "billing",
+        type: "delivery",
+        status: "error",
+        startPct: 2,
+        widthPct: 95,
+        durationMs: 296,
+        depth: 1,
+        isLast: true,
+        parentLines: [true],
+        outcome: "dlq",
+        children: [
+          {
+            id: "e4a",
+            name: "attempt:billing.invoice",
+            service: "billing",
+            type: "attempt",
+            status: "error",
+            startPct: 4,
+            widthPct: 14,
+            durationMs: 44,
+            depth: 2,
+            isLast: false,
+            parentLines: [true, false],
+            attempt: 1,
+          },
+          {
+            id: "e4b",
+            name: "attempt:billing.invoice",
+            service: "billing",
+            type: "attempt",
+            status: "error",
+            startPct: 34,
+            widthPct: 14,
+            durationMs: 43,
+            depth: 2,
+            isLast: false,
+            parentLines: [true, false],
+            attempt: 2,
+          },
+          {
+            id: "e4c",
+            name: "attempt:billing.invoice",
+            service: "billing",
+            type: "attempt",
+            status: "error",
+            startPct: 70,
+            widthPct: 22,
+            durationMs: 69,
+            depth: 2,
+            isLast: true,
+            parentLines: [true, true],
+            attempt: 3,
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const WORKFLOW_TRACE: WSpan[] = [
+  {
+    id: "w1",
+    name: "workflow:merchant.onboarding",
+    service: "platform",
+    type: "workflow",
+    status: "running",
+    startPct: 0,
+    widthPct: 100,
+    durationMs: 1842,
+    depth: 0,
+    isLast: true,
+    parentLines: [],
+    children: [
+      {
+        id: "w2",
+        name: "rpc:merchant.validate",
+        service: "merchants",
+        type: "rpc",
+        status: "success",
+        startPct: 1,
+        widthPct: 8,
+        durationMs: 147,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+      },
+      {
+        id: "w3",
+        name: "rpc:kyc.check",
+        service: "kyc",
+        type: "rpc",
+        status: "success",
+        startPct: 10,
+        widthPct: 20,
+        durationMs: 368,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+      },
+      {
+        id: "w4",
+        name: "rpc:billing.setup",
+        service: "billing",
+        type: "rpc",
+        status: "success",
+        startPct: 10,
+        widthPct: 15,
+        durationMs: 277,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+      },
+      {
+        id: "w5",
+        name: "rpc:merchant.create",
+        service: "merchants",
+        type: "rpc",
+        status: "success",
+        startPct: 31,
+        widthPct: 12,
+        durationMs: 221,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+      },
+      {
+        id: "w6",
+        name: "event:email.welcome",
+        service: "notify",
+        type: "event",
+        status: "success",
+        startPct: 44,
+        widthPct: 6,
+        durationMs: 110,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+        condition: "if: status=active",
+      },
+      {
+        id: "w7",
+        name: "sleep:wait 24h",
+        service: "platform",
+        type: "sleep",
+        status: "running",
+        startPct: 51,
+        widthPct: 48,
+        durationMs: 86400000,
+        depth: 1,
+        isLast: false,
+        parentLines: [false],
+      },
+      {
+        id: "w8",
+        name: "rpc:email.followup",
+        service: "notify",
+        type: "rpc",
+        status: "pending",
+        startPct: 99,
+        widthPct: 1,
+        durationMs: 0,
+        depth: 1,
+        isLast: true,
+        parentLines: [true],
+      },
+    ],
+  },
+];
+
+const TRACE_TABS = [
+  {
+    id: "http",
+    label: "HTTP",
+    desc: "HTTP request → RPC chain → event fan-out",
+    totalMs: "187ms",
+    spanCount: 10,
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
+    border: "border-indigo-500/20",
+    activeBg: "bg-indigo-500/15",
+    data: HTTP_TRACE,
+  },
+  {
+    id: "rpc",
+    label: "RPC",
+    desc: "Direct RPC with 2 retries → success on 3rd attempt",
+    totalMs: "243ms",
+    spanCount: 6,
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/20",
+    activeBg: "bg-blue-500/15",
+    data: RPC_TRACE,
+  },
+  {
+    id: "event",
+    label: "Event",
+    desc: "Publish → 3 subscribers, 1 retry, 1 DLQ",
+    totalMs: "312ms",
+    spanCount: 8,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    activeBg: "bg-emerald-500/15",
+    data: EVENT_TRACE,
+  },
+  {
+    id: "workflow",
+    label: "Workflow",
+    desc: "DAG: validate → parallel kyc/billing → conditional email → sleep",
+    totalMs: "~24h",
+    spanCount: 8,
+    color: "text-fuchsia-400",
+    bg: "bg-fuchsia-500/10",
+    border: "border-fuchsia-500/20",
+    activeBg: "bg-fuchsia-500/15",
+    data: WORKFLOW_TRACE,
+  },
+] as const;
+
+type TabId = (typeof TRACE_TABS)[number]["id"];
+
+// ─── Main section ─────────────────────────────────────────────────────────────
+
 export function TracingSection() {
-  const allSpans = flattenSpans(TRACE_SPANS);
+  const [activeTab, setActiveTab] = useState<TabId>("http");
   const [revealCount, setRevealCount] = useState(0);
   const sectionRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
+  const tab = TRACE_TABS.find((t) => t.id === activeTab) ?? TRACE_TABS[0];
+  const allSpans = flattenSpans(tab.data);
+
+  // Reset + re-reveal when tab changes
   useEffect(() => {
+    setRevealCount(0);
     if (!isInView) return;
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReducedMotion) {
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
       setRevealCount(allSpans.length);
       return;
     }
@@ -358,124 +875,126 @@ export function TracingSection() {
       i++;
       setRevealCount(i);
       if (i >= allSpans.length) clearInterval(interval);
-    }, 180);
+    }, 120);
     return () => clearInterval(interval);
-  }, [isInView, allSpans.length]);
+  }, [activeTab, isInView, allSpans.length]);
 
-  return (
-    <section ref={sectionRef} className="py-24 border-y border-white/[0.04]" id="tracing">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <p className="text-sm font-semibold text-primary uppercase tracking-widest mb-4">
-            Unified Tracing
-          </p>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight font-display">
-            RPC, events, retries, fan-out —<br className="hidden sm:block" /> zero blind spots.
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Automatic end-to-end traces across every primitive. No manual instrumentation, no
-            missing spans — just a full waterfall from request to final delivery.
-          </p>
-        </motion.div>
+  const waterfallDemo = (
+    <div ref={sectionRef} className="lg:col-span-2">
+      {/* Tab selector */}
+      <TabStrip
+        size="md"
+        items={TRACE_TABS}
+        active={activeTab}
+        onChange={setActiveTab}
+        className="mb-4"
+      />
 
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="rounded-2xl border border-white/[0.08] bg-[#080c18] overflow-hidden shadow-2xl shadow-cyan-500/[0.04]">
-            {/* Chrome */}
-            <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-3">
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
-                  <div className="h-3 w-3 rounded-full bg-white/[0.07]" />
-                </div>
-                <span className="text-xs font-mono text-zinc-500">
-                  ServiceBridge — Trace Waterfall
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-3xs font-mono text-zinc-600 bg-white/[0.03] px-2 py-0.5 rounded">
-                  {allSpans.length} spans
-                </span>
-                <span className="text-3xs font-mono text-zinc-600 bg-white/[0.03] px-2 py-0.5 rounded">
-                  142ms
-                </span>
-              </div>
-            </div>
-            {/* Header bar */}
-            <div className="flex items-center justify-between px-5 py-2 border-b border-white/[0.04]">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-cyan-400" />
-                <span className="text-xs font-semibold text-zinc-300">Trace Waterfall</span>
-              </div>
-              <div className="flex items-center gap-4 text-3xs font-mono text-zinc-600">
-                {[
-                  { color: "bg-emerald-500", label: "success" },
-                  { color: "bg-amber-400", label: "retry" },
-                  { color: "bg-red-400", label: "error" },
-                ].map(({ color, label }) => (
-                  <span key={label} className="flex items-center gap-1.5">
-                    <span className={cn("w-2 h-2 rounded-full", color)} />
-                    {label}
-                  </span>
-                ))}
-              </div>
-            </div>
-            {/* Waterfall rows */}
-            <div className="p-2 min-h-[360px]">
-              {allSpans.slice(0, revealCount).map((span, i) => (
-                <TraceSpanRow key={span.id} span={span} index={i} />
-              ))}
-            </div>
-            {/* Footer */}
-            <div className="border-t border-white/[0.04] px-5 py-3 flex flex-wrap items-center justify-between gap-2 text-3xs font-mono text-zinc-600">
-              <span>
-                trace_id: <span className="text-cyan-400/70">a1b2c3d4e5f6</span>
-              </span>
-              <div className="flex items-center gap-4">
-                <span>
-                  OTLP: <span className="text-emerald-400">compatible</span>
-                </span>
-                <span>
-                  spans: <span className="text-blue-400">hierarchical</span>
-                </span>
-                <span>
-                  runs: <span className="text-violet-400">linked</span>
-                </span>
-              </div>
-            </div>
+      {/* Waterfall panel */}
+      <CodePanel title="ServiceBridge — Trace Waterfall">
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border">
+          <div className="flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="type-body-sm text-zinc-300">{tab.desc}</span>
           </div>
-        </motion.div>
+          <div className="flex items-center gap-2">
+            <span className="type-overline-mono text-zinc-600 bg-surface px-2 py-0.5 rounded-2xl">
+              {tab.spanCount} spans
+            </span>
+            <span className="type-overline-mono text-zinc-600 bg-surface px-2 py-0.5 rounded-2xl">
+              {tab.totalMs}
+            </span>
+          </div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mt-12 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto"
-        >
-          {HIGHLIGHTS.map((item) => (
-            <MiniCard
-              key={item.title}
-              icon={item.icon}
-              iconClassName="text-cyan-400"
-              title={item.title}
-              desc={item.desc}
+        {/* Column header */}
+        <div className="grid [grid-template-columns:44%_1fr] border-b border-surface-border bg-code-chrome">
+          <div className="px-3 py-1.5 type-overline-mono text-zinc-600">
+            Operation
+          </div>
+          <div className="px-2 py-1.5 type-overline-mono text-zinc-600 border-l border-surface-border">
+            Timeline
+          </div>
+        </div>
+
+        {/* Waterfall rows */}
+        <div className="min-h-[320px]">
+          {allSpans.map((span, i) => (
+            <TraceRow
+              key={span.id}
+              span={span}
+              index={i}
+              revealed={i < revealCount}
             />
           ))}
-        </motion.div>
-      </div>
-    </section>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-surface-border px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-zinc-600 bg-code-chrome">
+          <span>
+            trace_id:{" "}
+            <span className={cn("font-semibold", tab.color)}>
+              {activeTab === "http"
+                ? "a1b2c3d4e5f6"
+                : activeTab === "rpc"
+                  ? "f6e5d4c3b2a1"
+                  : activeTab === "event"
+                    ? "c3d4e5f6a1b2"
+                    : "d4c3b2a1f6e5"}
+            </span>
+          </span>
+          <div className="flex items-center gap-4">
+            <span>
+              OTLP:{" "}
+              <span className="text-emerald-400">compatible</span>
+            </span>
+            <span>
+              storage:{" "}
+              <span className="text-violet-400">PostgreSQL</span>
+            </span>
+            <span>
+              delivery:{" "}
+              <span className="text-cyan-400">realtime push</span>
+            </span>
+          </div>
+        </div>
+      </CodePanel>
+    </div>
+  );
+
+  const miniCards = (
+    <>
+      <MiniCard
+        icon={Activity}
+        title="Cross-service waterfall"
+        desc="HTTP, RPC, events, workflows, retries — full execution path in one interactive view."
+        iconClassName="text-cyan-400"
+      />
+      <MiniCard
+        icon={RefreshCcw}
+        title="Retry group visualization"
+        desc="Retry chains show attempt count, recovered errors, and delivery stats inline."
+        iconClassName="text-orange-400"
+      />
+      <MiniCard
+        icon={Eye}
+        title="Live span updates"
+        desc="Running spans animate in real-time. Status changes push via WebSocket instantly."
+        iconClassName="text-primary"
+      />
+    </>
+  );
+
+  return (
+    <FeatureSection
+      id="tracing"
+      eyebrow="Unified Tracing"
+      title="Every primitive, one waterfall."
+      subtitle="HTTP, RPC, events, workflows, retries — all traced automatically. The same format used in the real dashboard, right here."
+      content={<div />}
+      demo={waterfallDemo}
+      cards={miniCards}
+    />
   );
 }

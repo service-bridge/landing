@@ -60,6 +60,14 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        code: {
+          DEFAULT: "hsl(var(--code-bg))",
+          chrome: "hsl(var(--code-chrome))",
+        },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          border: "hsl(var(--surface-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
