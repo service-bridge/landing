@@ -341,73 +341,77 @@ export function ReplacesSection() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-code">
-          <div className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-b border-surface-border">
-            <div className="type-overline-mono px-4 py-2.5 text-zinc-600">Capability</div>
-            <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-red-500/60">
-              Istio / Linkerd
-            </div>
-            <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-emerald-500/70">
-              ServiceBridge
+          <div className="overflow-x-auto">
+            <div className="min-w-[640px]">
+              <div className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-b border-surface-border">
+                <div className="type-overline-mono px-4 py-2.5 text-muted-foreground/60">Capability</div>
+                <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-red-500/60">
+                  Istio / Linkerd
+                </div>
+                <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-emerald-500/70">
+                  ServiceBridge
+                </div>
+              </div>
+
+              {(() => {
+                const categories = [...new Set(MESH_COMPARE.map((r) => r.category))];
+                return categories.map((cat) => {
+                  const rows = MESH_COMPARE.filter((r) => r.category === cat);
+                  return (
+                    <div key={cat}>
+                      <div className="border-t border-surface-border bg-white/[0.01]">
+                        <div className="col-span-3 flex items-center gap-3 px-4 py-1.5">
+                          <span className="type-overline-mono shrink-0 text-muted-foreground/60">{cat}</span>
+                          <div className="h-px flex-1 bg-white/[0.04]" />
+                        </div>
+                      </div>
+                      {rows.map((row) => (
+                        <div
+                          key={row.capability}
+                          className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-t border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.015]"
+                        >
+                          <div className="type-body-sm flex items-center px-4 py-2 font-medium leading-snug text-muted-foreground">
+                            {row.capability}
+                          </div>
+                          <div className="flex items-center gap-2 border-l border-white/[0.04] px-4 py-2">
+                            <span
+                              className={cn(
+                                "h-1.5 w-1.5 flex-shrink-0 rounded-full",
+                                row.pain === "critical"
+                                  ? "bg-red-500"
+                                  : row.pain === "major"
+                                    ? "bg-orange-400"
+                                    : "bg-yellow-500"
+                              )}
+                            />
+                            <span className="type-body-sm font-mono leading-snug text-muted-foreground/60">
+                              {row.mesh}
+                            </span>
+                          </div>
+                          <div className="flex items-center border-l border-white/[0.04] px-4 py-2">
+                            <span className="type-body-sm font-mono font-semibold leading-snug text-emerald-400">
+                              {row.sb}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
-          {(() => {
-            const categories = [...new Set(MESH_COMPARE.map((r) => r.category))];
-            return categories.map((cat) => {
-              const rows = MESH_COMPARE.filter((r) => r.category === cat);
-              return (
-                <div key={cat}>
-                  <div className="border-t border-surface-border bg-white/[0.01]">
-                    <div className="col-span-3 flex items-center gap-3 px-4 py-1.5">
-                      <span className="type-overline-mono shrink-0 text-zinc-600">{cat}</span>
-                      <div className="h-px flex-1 bg-white/[0.04]" />
-                    </div>
-                  </div>
-                  {rows.map((row) => (
-                    <div
-                      key={row.capability}
-                      className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-t border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.015]"
-                    >
-                      <div className="type-body-sm flex items-center px-4 py-2 font-medium leading-snug text-zinc-300">
-                        {row.capability}
-                      </div>
-                      <div className="flex items-center gap-2 border-l border-white/[0.04] px-4 py-2">
-                        <span
-                          className={cn(
-                            "h-1.5 w-1.5 flex-shrink-0 rounded-full",
-                            row.pain === "critical"
-                              ? "bg-red-500"
-                              : row.pain === "major"
-                                ? "bg-orange-400"
-                                : "bg-yellow-500"
-                          )}
-                        />
-                        <span className="type-body-sm font-mono leading-snug text-muted-foreground/60">
-                          {row.mesh}
-                        </span>
-                      </div>
-                      <div className="flex items-center border-l border-white/[0.04] px-4 py-2">
-                        <span className="type-body-sm font-mono font-semibold leading-snug text-emerald-400">
-                          {row.sb}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              );
-            });
-          })()}
-
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-surface-border px-4 py-2.5">
-            <span className="text-2xs flex items-center gap-1.5 text-zinc-600">
+            <span className="text-2xs flex items-center gap-1.5 text-muted-foreground/60">
               <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
               Critical overhead
             </span>
-            <span className="text-2xs flex items-center gap-1.5 text-zinc-600">
+            <span className="text-2xs flex items-center gap-1.5 text-muted-foreground/60">
               <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
               Major friction
             </span>
-            <span className="text-2xs flex items-center gap-1.5 text-zinc-600">
+            <span className="text-2xs flex items-center gap-1.5 text-muted-foreground/60">
               <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-yellow-500" />
               Minor concern
             </span>

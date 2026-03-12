@@ -35,7 +35,7 @@ svc.HandleEvent("ai.generate",
         return nil
     }, nil)`,
 
-  py: `from servicebridge import ServiceBridge
+  py: `from service_bridge import ServiceBridge
 
 svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "ai")
 
@@ -71,7 +71,7 @@ for ev := range ch {
     if ev.Done { break }
 }`,
 
-  py: `from servicebridge import ServiceBridge, WatchRunOpts
+  py: `from service_bridge import ServiceBridge, WatchRunOpts
 
 svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
@@ -155,7 +155,7 @@ function LiveTerminal() {
     <div ref={ref}>
       <CodePanel>
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-surface-border bg-code-chrome">
-          <span className="text-xs text-zinc-500 font-mono">run:stream:chunk — output</span>
+          <span className="text-xs text-muted-foreground/70 font-mono">run:stream:chunk — output</span>
           {isLive && (
             <span className="ml-auto flex items-center gap-1.5 text-3xs text-amber-400 font-mono">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -179,20 +179,20 @@ function LiveTerminal() {
               transition={{ duration: 0.18 }}
               className="flex gap-3 leading-5"
             >
-              <span className="text-zinc-600 select-none w-6 text-right shrink-0">
+              <span className="text-muted-foreground/60 select-none w-6 text-right shrink-0">
                 {String(line.seq).padStart(4, "0")}
               </span>
-              <span className={idx === arr.length - 1 ? "text-emerald-400" : "text-zinc-300"}>
+              <span className={idx === arr.length - 1 ? "text-emerald-400" : "text-muted-foreground"}>
                 {line.text}
               </span>
             </motion.div>
           ))}
           {isLive && (
             <div className="flex gap-3 leading-5">
-              <span className="text-zinc-600 select-none w-6 text-right shrink-0">
+              <span className="text-muted-foreground/60 select-none w-6 text-right shrink-0">
                 {String(visibleLines.length + 1).padStart(4, "0")}
               </span>
-              <span className="text-zinc-600 animate-pulse">▊</span>
+              <span className="text-muted-foreground/60 animate-pulse">▊</span>
             </div>
           )}
         </div>
@@ -203,6 +203,12 @@ function LiveTerminal() {
 
 export function StreamsSection() {
   const [tab, setTab] = useState<"writer" | "reader">("writer");
+
+  const allStreamCodes = [WRITER_CODE, READER_CODE];
+  const maxStreamLines = Math.max(
+    ...allStreamCodes.flatMap((c) => Object.values(c).map((v) => (v ?? "").trim().split("\n").length))
+  );
+  const minStreamCodeHeight = maxStreamLines * 20 + 40;
 
   return (
     <FeatureSection
@@ -232,14 +238,16 @@ export function StreamsSection() {
             onChange={setTab}
           />
 
-          <MultiCodeBlock
-            filename={
-              tab === "writer"
-                ? { ts: "ai-service.ts", go: "ai_service.go", py: "ai_service.py" }
-                : { ts: "subscriber.ts", go: "subscriber.go", py: "subscriber.py" }
-            }
-            code={tab === "writer" ? WRITER_CODE : READER_CODE}
-          />
+          <div style={{ minHeight: minStreamCodeHeight + 48 }}>
+            <MultiCodeBlock
+              filename={
+                tab === "writer"
+                  ? { ts: "ai-service.ts", go: "ai_service.go", py: "ai_service.py" }
+                  : { ts: "subscriber.ts", go: "subscriber.go", py: "subscriber.py" }
+              }
+              code={tab === "writer" ? WRITER_CODE : READER_CODE}
+            />
+          </div>
         </div>
       }
       demo={
@@ -257,7 +265,7 @@ export function StreamsSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={Terminal} title="Any handler" description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere." iconClassName="text-zinc-400" />
+          <FeatureCard variant="compact" icon={Terminal} title="Any handler" description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere." iconClassName="text-muted-foreground" />
           <FeatureCard variant="compact" icon={Radio} title="Named keys" description="Use named stream keys (output, log, progress) to multiplex multiple data streams from a single run." iconClassName="text-emerald-400" />
           <FeatureCard variant="compact" icon={Zap} title="Replay-safe" description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect." iconClassName="text-emerald-400" />
         </>

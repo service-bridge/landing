@@ -11,9 +11,8 @@ export function PageRpc() {
       />
 
       <Callout type="tip">
-        ServiceBridge RPC tracks raw gRPC throughput at 91–106% parity — <strong>7–49x faster than
-        broker-based RPC</strong> (RabbitMQ). Zero proxy hops in the data plane. Built-in
-        load balancing, retries, and distributed tracing — without a service mesh.
+        Zero proxy hops in the data plane. Built-in load balancing, retries, and distributed
+        tracing — without a service mesh.
       </Callout>
 
       {/* ── rpc() ────────────────────────────────────────────────── */}
@@ -29,7 +28,7 @@ export function PageRpc() {
         code={{
           ts: `rpc<T = unknown>(fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
           go: `func (c *Client) Rpc(ctx context.Context, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
-          py: `async def rpc(fn: str, payload: Any = None, *, retries: int = 3, timeout_ms: int = 30000, trace_id: str = "") -> Any`,
+          py: `async def rpc(fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "") -> Any`,
         }}
       />
 
@@ -38,9 +37,9 @@ export function PageRpc() {
         rows={[
           { name: "fn", type: "string", desc: 'Target in "service/method" format, e.g. "payments/charge". Use canonical form to avoid ambiguity.' },
           { name: "payload", type: "any", default: "undefined", desc: "JSON-serialisable request payload." },
-          { name: "timeout", type: "number (ms)", default: "30000", desc: "Per-attempt timeout. The whole call may take up to timeout × retries ms." },
-          { name: "retries", type: "number", default: "3", desc: "Retry count on transient failures. Each retry uses exponential backoff." },
-          { name: "retryDelay (Node)", type: "number (ms)", default: "300", desc: "Base backoff delay. Formula: delay × 2^(attempt-1)." },
+          { name: "timeout / timeout_ms / TimeoutMs", type: "number (ms)", default: "30000 (from Options)", desc: "Per-attempt timeout. The whole call may take up to timeout × retries ms." },
+          { name: "retries / Retries", type: "number", default: "3 (from Options)", desc: "Retry count on transient failures. Each retry uses exponential backoff." },
+          { name: "retryDelay (Node, per-call) / retry_delay_ms (Python, per-call) / RetryDelayMs (Go, per-call)", type: "number (ms)", default: "300 (from Options)", desc: "Base backoff delay. Formula: delay × 2^(attempt-1). Available in all SDKs as a per-call override." },
           { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request." },
           { name: "parentSpanId (Node)", type: "string", default: "auto", desc: "Override the parent span ID." },
         ]}
@@ -90,6 +89,13 @@ result = await sb.rpc(
         Service discovery is zero-latency at steady state — endpoint addresses are kept in an
         in-memory snapshot, no SQL on every call. If a target service has <strong>no alive instances</strong>,
         the call fails immediately with a "not found" error rather than waiting for the full timeout.
+      </Callout>
+
+      <Callout type="warning">
+        <Mono>rpc()</Mono> calls are <strong>not buffered offline</strong>. Unlike{" "}
+        <Mono>event()</Mono>, <Mono>job()</Mono>, and <Mono>workflow()</Mono>, an RPC call fails
+        immediately (after retries) if the target service is unreachable. Use events or workflows
+        for operations that must survive transient outages.
       </Callout>
 
       <H3 id="rpc-errors">Error handling</H3>
@@ -222,9 +228,11 @@ async def generate(payload: dict, ctx) -> dict:
 
       <H3 id="handle-acl">Access control</H3>
       <P>
-        Restrict which services can call a handler using <Mono>allowedCallers</Mono>. Enforced at
-        two layers: the runtime registry (caller blocked before the network call is made) and the
-        worker gRPC server (mTLS peer CN checked against the list).
+        Restrict which services can call a handler using <Mono>allowedCallers</Mono>. Registry-level
+        enforcement comes from the API key's configured <Mono>allowed_callers</Mono> list. The
+        SDK's <Mono>allowedCallers</Mono> option controls worker-side gRPC authentication (mTLS CN
+        checking). Set both the SDK option AND the API key's <Mono>allowed_callers</Mono> policy
+        for defense in depth.
       </P>
       <MultiCodeBlock
         code={{
@@ -341,6 +349,8 @@ res = await sb.rpc(
               ["string", "RpcString", "Protobuf string (varint-length-prefixed)"],
               ["int32", "RpcInt32", "Protobuf int32 (varint)"],
               ["int64", "RpcInt64", "Protobuf int64 (varint)"],
+              ["uint32", "RpcUint32", "Protobuf uint32 (varint, unsigned)"],
+              ["uint64", "RpcUint64", "Protobuf uint64 (varint, unsigned)"],
               ["bool", "RpcBool", "Protobuf bool (varint 0/1)"],
               ["float", "RpcFloat", "Protobuf float (32-bit IEEE)"],
               ["double", "RpcDouble", "Protobuf double (64-bit IEEE)"],

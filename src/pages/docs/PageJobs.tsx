@@ -58,7 +58,7 @@ await sb.serve()`,
       <H3 id="schedule-opts">ScheduleOpts</H3>
       <ParamTable
         rows={[
-          { name: "cron / Cron", type: "string", desc: 'Standard 5-field cron expression, e.g. "0 * * * *" (hourly). Mutually exclusive with delay.' },
+          { name: "cron / Cron", type: "string", desc: 'Standard 5- or 6-field cron expression (the optional 6th field specifies seconds), e.g. "0 * * * *" (hourly). Named descriptors are also supported: @hourly, @daily, @weekly, @monthly, @yearly, @midnight, @every <duration> (e.g. "@every 5m"). Mutually exclusive with delay.' },
           { name: "delay / DelayMs / delay_ms", type: "number (ms)", default: "0", desc: "One-shot execution after N milliseconds. Mutually exclusive with cron." },
           { name: "timezone / Timezone", type: "string", default: "UTC", desc: "IANA timezone for cron evaluation, e.g. America/New_York." },
           { name: "misfire / Misfire", type: '"fire_now" | "skip"', default: '"fire_now"', desc: 'Behaviour when a scheduled tick was missed. "fire_now" runs immediately on recovery; "skip" drops the missed tick.' },
@@ -122,6 +122,12 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
         }}
       />
 
+      <Callout type="info">
+        The target (RPC handler, event subscriber, or workflow) always receives an empty payload{" "}
+        <Mono>{"{}"}</Mono>. There is currently no way to pass custom input through a job trigger —
+        parameterize via the target's own configuration instead.
+      </Callout>
+
       <H3 id="job-delay">One-shot delayed job</H3>
       <P>Fire once after a delay — useful for welcome emails, trial expirations, follow-ups:</P>
       <MultiCodeBlock
@@ -140,6 +146,12 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
 ))`,
         }}
       />
+
+      <Callout type="warning">
+        The <Mono>delay</Mono>/<Mono>DelayMs</Mono>/<Mono>delay_ms</Mono> field is backed by a
+        proto <Mono>int32</Mono> — the maximum value is <Mono>2,147,483,647 ms</Mono> (~24.8 days).
+        Use a cron job or a durable workflow sleep step for longer delays.
+      </Callout>
 
       <H3 id="job-event">Trigger via event</H3>
       <P>
@@ -169,9 +181,11 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       {/* ── Trigger workflow ─────────────────────────────────────── */}
       <H2 id="job-workflow">Trigger a workflow</H2>
       <P>
-        Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. This is the
-        primary way to trigger workflows. There is no dedicated{" "}
-        <Mono>runWorkflow()</Mono> helper in the SDK.
+        Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. You can also
+        trigger workflows on demand using{" "}
+        <Mono>sb.runWorkflow(name, input)</Mono> /{" "}
+        <Mono>svc.RunWorkflow(ctx, name, input)</Mono> /{" "}
+        <Mono>await sb.run_workflow(name, input)</Mono>. See the Workflows page for full details.
       </P>
       <MultiCodeBlock
         code={{

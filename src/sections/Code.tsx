@@ -61,18 +61,15 @@ import (
   "context"
   "log"
 
-  sb "github.com/service-bridge/go"
+  servicebridge "github.com/service-bridge/go"
 )
 
 func main() {
   // Connect: control plane address + service key + service name
-  client, err := sb.New("127.0.0.1:14445", serviceKey, "payments")
-  if err != nil {
-    log.Fatal(err)
-  }
+  svc := servicebridge.New("127.0.0.1:14445", serviceKey, "payments")
 
   // RPC handler — direct gRPC, context carries trace
-  client.HandleRpc("payments.charge", func(ctx context.Context, payload map[string]any) (any, error) {
+  svc.HandleRpc("payments.charge", func(ctx context.Context, payload map[string]any) (any, error) {
     txId, err := stripe.Charge(ctx, payload)
     if err != nil {
       return nil, err
@@ -81,24 +78,24 @@ func main() {
   })
 
   // Event consumer with retry
-  client.HandleEvent("order.created", func(ctx context.Context, payload map[string]any, ectx sb.EventContext) error {
+  svc.HandleEvent("order.created", func(ctx context.Context, payload map[string]any, ectx servicebridge.EventContext) error {
     if err := processOrder(ctx, payload); err != nil {
       ectx.Retry(30_000)  // retry in 30s
     }
     return nil
-  }, sb.WithGroupName("payments:process"))
+  }, servicebridge.HandleEventOpts{GroupName: "payments:process"})
 
   // Scheduled job — cron or one-shot
-  client.Job("reports.daily", sb.JobOpts{Cron: "0 9 * * *", Via: "rpc"})
+  svc.Job("reports.daily", servicebridge.ScheduleOpts{Cron: "0 9 * * *", Via: "rpc"})
 
   // Multi-step workflow with parallel steps
-  client.Workflow("checkout.flow", []sb.WorkflowStep{
+  svc.Workflow("checkout.flow", []servicebridge.WorkflowStep{
     {ID: "charge",  Type: "rpc",   Ref: "payments.charge",   Deps: []string{}},
     {ID: "reserve", Type: "rpc",   Ref: "inventory.reserve", Deps: []string{}},
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   })
 
-  log.Fatal(client.Serve())
+  log.Fatal(svc.Serve())
 }`,
   },
   {
@@ -216,29 +213,30 @@ function RegistryPanel() {
       {/* Chrome */}
       <div className="flex items-center gap-2 border-b border-surface-border bg-code-chrome px-4 py-2.5">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="type-overline-mono text-zinc-500 flex-1">control plane — service registry</span>
+        <span className="type-overline-mono text-muted-foreground/70 flex-1">control plane — service registry</span>
         <span className="type-overline-mono text-emerald-400">online</span>
       </div>
 
-      {/* Column headers */}
-      <div
-        className="grid gap-2 px-4 py-1.5 border-b border-surface-border bg-code-chrome"
-        style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
-      >
-        <span className="type-overline-mono text-zinc-600">service</span>
-        <span className="type-overline-mono text-zinc-600">sdk</span>
-        <span className="type-overline-mono text-zinc-600">handlers</span>
-        <span className="type-overline-mono text-zinc-600 text-right">rtt</span>
-      </div>
-
-      {/* Service rows */}
-      <div className="divide-y divide-surface-border">
-        {REGISTRY_SERVICES.map((svc, i) => (
+      {/* Column headers + rows */}
+      <div className="overflow-x-auto">
+        <div className="min-w-[400px]">
           <div
-            key={svc.name}
-            className="grid gap-2 items-center px-4 py-2.5"
+            className="grid gap-2 px-4 py-1.5 border-b border-surface-border bg-code-chrome"
             style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
           >
+            <span className="type-overline-mono text-muted-foreground/60">service</span>
+            <span className="type-overline-mono text-muted-foreground/60">sdk</span>
+            <span className="type-overline-mono text-muted-foreground/60">handlers</span>
+            <span className="type-overline-mono text-muted-foreground/60 text-right">rtt</span>
+          </div>
+
+          <div className="divide-y divide-surface-border">
+            {REGISTRY_SERVICES.map((svc, i) => (
+              <div
+                key={svc.name}
+                className="grid gap-2 items-center px-4 py-2.5"
+                style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
+              >
             {/* Name + cert */}
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
@@ -266,18 +264,20 @@ function RegistryPanel() {
             </div>
 
             {/* RTT */}
-            <span className="text-[11px] font-mono text-zinc-400 tabular-nums text-right shrink-0">
+            <span className="text-[11px] font-mono text-muted-foreground tabular-nums text-right shrink-0">
               {pings[i]}ms
             </span>
           </div>
         ))}
+          </div>
+        </div>
       </div>
 
       {/* Live activity */}
       <div className="border-t border-surface-border">
         <div className="flex items-center gap-2 px-4 py-2 bg-code-chrome border-b border-surface-border">
           <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="type-overline-mono text-zinc-600">recent calls</span>
+          <span className="type-overline-mono text-muted-foreground/60">recent calls</span>
         </div>
         <div className="px-4 py-2 space-y-1.5 min-h-[88px]">
           <AnimatePresence initial={false}>
@@ -291,8 +291,8 @@ function RegistryPanel() {
                 className="flex items-center gap-2"
               >
                 <Badge tone={ACTIVITY_TONE[row.type]}>{row.type}</Badge>
-                <span className="text-xs font-mono text-zinc-300 flex-1 truncate">{row.name}</span>
-                <span className="text-[11px] font-mono text-zinc-600 tabular-nums">{row.ms}ms</span>
+                <span className="text-xs font-mono text-muted-foreground flex-1 truncate">{row.name}</span>
+                <span className="text-[11px] font-mono text-muted-foreground/60 tabular-nums">{row.ms}ms</span>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -300,7 +300,7 @@ function RegistryPanel() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-surface-border bg-code-chrome px-4 py-2 type-overline-mono text-zinc-600">
+      <div className="flex items-center justify-between border-t border-surface-border bg-code-chrome px-4 py-2 type-overline-mono text-muted-foreground/60">
         <span>5 services · 5 certs</span>
         <span>OTLP compatible</span>
       </div>
@@ -315,6 +315,9 @@ export function CodeSection() {
   const activeLang: LangId = SDK_TO_LANG[lang] ?? "typescript";
   const tab = LANG_TABS.find((t) => t.id === activeLang) ?? LANG_TABS[0];
 
+  const maxCodeLines = Math.max(...LANG_TABS.map((t) => t.code.trim().split("\n").length));
+  const minCodeHeight = maxCodeLines * 20 + 40;
+
   return (
     <Section id="code" className="border-y">
       <SectionHeader
@@ -327,7 +330,7 @@ export function CodeSection() {
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr] max-w-6xl mx-auto">
+      <div className="grid items-start gap-6 xl:grid-cols-[1.08fr_0.92fr] max-w-6xl mx-auto">
         <motion.div variants={fadeInUp} className="min-w-0">
           <CodePanel>
             <div className="flex items-center gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
@@ -338,13 +341,16 @@ export function CodeSection() {
                 onChange={(id) => setLang(LANG_TO_SDK[id])}
               />
             </div>
-            <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+            <pre
+              className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-muted-foreground"
+              style={{ minHeight: minCodeHeight }}
+            >
               <code>{highlightCode(tab.code.trim(), lang)}</code>
             </pre>
           </CodePanel>
         </motion.div>
 
-        <motion.div variants={fadeInUp}>
+        <motion.div variants={fadeInUp} className="min-w-0 xl:sticky xl:top-24">
           <RegistryPanel />
         </motion.div>
       </div>

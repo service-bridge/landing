@@ -94,6 +94,14 @@ async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequen
         When HTTP middleware is installed, the <Mono>x-trace-id</Mono> header is added to every
         response. The frontend can read it and pass it to a streaming endpoint:
       </P>
+      <Callout type="warning">
+        ServiceBridge streaming is <strong>gRPC-based</strong> — there is no native SSE endpoint.
+        To expose an SSE endpoint to browser clients, create your own endpoint in your service that
+        calls <Mono>sb.watchRun(runId)</Mono> /{" "}
+        <Mono>svc.WatchRun(ctx, runId, opts)</Mono> internally and proxies the chunks to the client.
+        The Express and Go examples in the{" "}
+        <strong>SSE endpoint</strong> section below show the correct proxy pattern.
+      </Callout>
       <MultiCodeBlock
         code={{
           ts: `// Client (browser)
@@ -191,6 +199,11 @@ async def on_order(payload: dict, ctx) -> None:
 
       {/* ── watchRun() ───────────────────────────────────────────── */}
       <H2 id="watch-run">watchRun() — consume the stream</H2>
+      <Callout type="info">
+        <Mono>watchRun()</Mono> requires the <Mono>events.publish</Mono> capability on the service
+        key. Services that only have <Mono>events.handle</Mono> cannot call{" "}
+        <Mono>watchRun()</Mono> directly.
+      </Callout>
 
       <H3 id="watch-signature">Signature</H3>
       <MultiCodeBlock
@@ -204,13 +217,11 @@ async def on_order(payload: dict, ctx) -> None:
       <H3 id="watch-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "key / Key / key", type: "string", default: '"default" (Node), "" (Go/Python)', desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".' },
+          { name: "key / Key / key", type: "string", default: '"" (all SDKs)', desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".' },
           { name: "fromSequence / FromSequence / from_sequence", type: "number", default: "0", desc: "Replay from this sequence cursor. 0 = replay all past chunks, then follow live." },
         ]}
       />
-      <Callout type="info">
-        To avoid cross-SDK default differences, always pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example, <Mono>"output"</Mono>).
-      </Callout>
+      <Callout type="info">Pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example, <Mono>"output"</Mono>) when you only need one stream lane.</Callout>
 
       {/* ── LLM streaming ────────────────────────────────────────── */}
       <H2 id="llm-streaming">LLM token streaming</H2>

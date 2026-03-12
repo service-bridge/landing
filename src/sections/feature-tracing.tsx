@@ -122,7 +122,7 @@ function SpanRow({ span, index, revealed }: { span: Span; index: number; reveale
 
   const nameColor = span.status === "error" ? "text-red-400"
     : span.status === "running" ? "text-amber-300"
-    : span.status === "pending" ? "text-zinc-500"
+    : span.status === "pending" ? "text-muted-foreground/70"
     : "text-zinc-200";
 
   const StatusIndicator = () => {
@@ -183,7 +183,7 @@ function SpanRow({ span, index, revealed }: { span: Span; index: number; reveale
             {span.attempt && (
               <span className="type-overline-mono text-orange-400">#{span.attempt}</span>
             )}
-            <span className="type-overline-mono text-zinc-600 bg-surface px-1 py-0.5 rounded-xl tabular-nums">
+            <span className="type-overline-mono text-muted-foreground/60 bg-surface px-1 py-0.5 rounded-xl tabular-nums">
               {span.durationMs >= 3600000 ? "~24h" : `${span.durationMs}ms`}
             </span>
             <StatusIndicator />
@@ -240,26 +240,30 @@ export function TracingSection() {
           <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border">
             <div className="flex items-center gap-2">
               <Activity className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="type-body-sm text-zinc-300">{tab.desc}</span>
+              <span className="type-body-sm text-muted-foreground">{tab.desc}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="type-overline-mono text-zinc-600 bg-surface px-2 py-0.5 rounded-xl">{tab.spanCount} spans</span>
-              <span className="type-overline-mono text-zinc-600 bg-surface px-2 py-0.5 rounded-xl">{tab.totalMs}</span>
+              <span className="type-overline-mono text-muted-foreground/60 bg-surface px-2 py-0.5 rounded-xl">{tab.spanCount} spans</span>
+              <span className="type-overline-mono text-muted-foreground/60 bg-surface px-2 py-0.5 rounded-xl">{tab.totalMs}</span>
             </div>
           </div>
 
-          <div className="grid [grid-template-columns:44%_1fr] border-b border-surface-border bg-code-chrome">
-            <div className="px-3 py-1.5 type-overline-mono text-zinc-600">Operation</div>
-            <div className="px-2 py-1.5 type-overline-mono text-zinc-600 border-l border-surface-border">Timeline</div>
+          <div className="overflow-x-auto">
+            <div className="min-w-[560px]">
+              <div className="grid [grid-template-columns:44%_1fr] border-b border-surface-border bg-code-chrome">
+                <div className="px-3 py-1.5 type-overline-mono text-muted-foreground/60">Operation</div>
+                <div className="px-2 py-1.5 type-overline-mono text-muted-foreground/60 border-l border-surface-border">Timeline</div>
+              </div>
+
+              <div className="min-h-[280px]">
+                {tab.data.map((span, i) => (
+                  <SpanRow key={span.id} span={span} index={i} revealed={i < revealCount} />
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="min-h-[280px]">
-            {tab.data.map((span, i) => (
-              <SpanRow key={span.id} span={span} index={i} revealed={i < revealCount} />
-            ))}
-          </div>
-
-          <div className="border-t border-surface-border px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-zinc-600 bg-code-chrome">
+          <div className="border-t border-surface-border px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-muted-foreground/60 bg-code-chrome">
             <span>trace_id: <span className={cn("font-semibold", tab.color)}>a1b2c3d4e5f6</span></span>
             <div className="flex items-center gap-4">
               <span>OTLP: <span className="text-emerald-400">compatible</span></span>

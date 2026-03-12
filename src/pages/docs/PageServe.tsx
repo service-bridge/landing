@@ -254,8 +254,9 @@ asyncio.run(main())`,
       {/* ── stop() ───────────────────────────────────────────────── */}
       <H2 id="stop-sig">stop()</H2>
       <P>
-        Stops the worker runtime and closes connections. Go/Python perform graceful server stop;
-        Node force-shuts the worker server and clears in-memory queues.
+        Gracefully stops the worker runtime and closes connections. All SDKs perform graceful
+        shutdown: Node tries a graceful gRPC server stop first then falls back to force shutdown;
+        Go/Python close heartbeat loops and drain connections.
       </P>
       <MultiCodeBlock
         code={{

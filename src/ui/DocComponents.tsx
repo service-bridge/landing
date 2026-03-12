@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { cn } from "../lib/utils";
+import { CodePanel } from "./CodePanel";
+import { CopyButton } from "./CopyButton";
 
 // ─── Typography ───────────────────────────────────────────────────────────────
 
@@ -184,37 +186,16 @@ const LANG_LABELS: Record<string, string> = {
 };
 
 export function DocCodeBlock({ code, lang = "bash" }: { code: string; lang?: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(code.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
   const label = LANG_LABELS[lang] ?? lang.toUpperCase();
   return (
-    <div className="rounded-lg border border-border bg-card overflow-hidden my-4 text-sm shadow-sm">
-      <div className="flex items-center justify-between bg-muted/60 border-b border-border px-4 py-2 gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className="flex gap-1.5 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400/40" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/40" />
-          </div>
-          <span className="text-3xs font-mono text-muted-foreground/50 uppercase tracking-wider">
-            {label}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={copy}
-          className="text-2xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer shrink-0 px-2 py-0.5 rounded bg-background/50 border border-border/50 hover:border-border"
-        >
-          {copied ? "Copied!" : "Copy"}
-        </button>
-      </div>
+    <CodePanel 
+      className="my-4" 
+      title={label}
+      headerActions={<CopyButton text={code} />}
+    >
       <pre className="p-4 overflow-x-auto font-mono text-xs text-foreground/80 bg-background/40">
         <code>{code.trim()}</code>
       </pre>
-    </div>
+    </CodePanel>
   );
 }

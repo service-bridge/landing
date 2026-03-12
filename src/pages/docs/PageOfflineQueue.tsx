@@ -12,9 +12,17 @@ export function PageOfflineQueue() {
 
       <P>
         The SDK buffers <Mono>event()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>, and
-        telemetry operations in an in-memory queue. Direct RPC calls between services continue
-        working via cached endpoint lists — only control-plane writes are queued.
+        telemetry operations (trace spans, <Mono>ReportCall</Mono>) in an in-memory queue. Direct
+        RPC calls between services continue working via cached endpoint lists — only control-plane
+        writes are queued.
       </P>
+
+      <Callout type="warning">
+        <Mono>stream.write()</Mono> / <Mono>ctx.stream.write()</Mono> calls are{" "}
+        <strong>not buffered offline</strong> — they are silently dropped when the control plane
+        is unreachable. Use <Mono>event()</Mono>, <Mono>job()</Mono>, or <Mono>workflow()</Mono>{" "}
+        for reliable delivery instead.
+      </Callout>
 
       <H2 id="behavior">How it works</H2>
       <MultiCodeBlock

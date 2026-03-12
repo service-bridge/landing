@@ -19,7 +19,7 @@ export function PageServiceKeys() {
       <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-muted-foreground/70">
               <th className="px-4 py-2.5 font-semibold">Capability</th>
               <th className="px-4 py-2.5 font-semibold">Allows</th>
             </tr>
@@ -33,9 +33,9 @@ export function PageServiceKeys() {
               ["jobs", "Register scheduled and delayed jobs"],
               ["workflows", "Register workflow definitions"],
             ].map(([capability, desc]) => (
-              <tr key={capability} className="hover:bg-surface text-zinc-300">
+              <tr key={capability} className="hover:bg-surface text-muted-foreground">
                 <td className="px-4 py-2.5 font-mono text-xs text-violet-400">{capability}</td>
-                <td className="px-4 py-2.5 text-xs text-zinc-400">{desc}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{desc}</td>
               </tr>
             ))}
           </tbody>
@@ -45,6 +45,19 @@ export function PageServiceKeys() {
       <Callout type="info">
         Admin operations (create/revoke keys, replay DLQ, issue TLS certs) are performed via the{" "}
         <strong>dashboard</strong> with admin login. Service keys cannot manage other keys.
+      </Callout>
+
+      <Callout type="info">
+        Service keys can be provided in two ways: <Mono>x-service-key: {"<key>"}</Mono> header OR{" "}
+        <Mono>Authorization: Bearer {"<key>"}</Mono> header. Both are accepted by the runtime.
+        All service keys start with the prefix <Mono>sb_</Mono> — this enables secret-scanning
+        tools (e.g. GitHub secret scanning) to detect accidentally committed keys.
+      </Callout>
+
+      <Callout type="info">
+        Keys support an optional expiration date (<Mono>expires_at</Mono>). Expired keys are
+        automatically rejected. Each key also tracks <Mono>last_used_at</Mono>, updated on every
+        use — useful for detecting dormant or potentially compromised keys.
       </Callout>
 
       <H2 id="policy">Granular Policy</H2>
@@ -57,7 +70,7 @@ export function PageServiceKeys() {
       <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-muted-foreground/70">
               <th className="px-4 py-2.5 font-semibold">Policy field</th>
               <th className="px-4 py-2.5 font-semibold">Enforced at</th>
               <th className="px-4 py-2.5 font-semibold">Controls</th>
@@ -71,10 +84,10 @@ export function PageServiceKeys() {
               ["allowed_call_targets", "Registry filter + SDK", "RPC functions this service may discover and call"],
               ["allowed_callers", "Registry + SDK + Worker", "Services allowed to call functions registered by this key"],
             ].map(([field, layer, desc]) => (
-              <tr key={field} className="hover:bg-white/[0.02] text-zinc-300">
+              <tr key={field} className="hover:bg-white/[0.02] text-muted-foreground">
                 <td className="px-4 py-2.5 font-mono text-xs text-violet-400">{field}</td>
-                <td className="px-4 py-2.5 text-xs text-zinc-500 whitespace-nowrap">{layer}</td>
-                <td className="px-4 py-2.5 text-xs text-zinc-400">{desc}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground/70 whitespace-nowrap">{layer}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{desc}</td>
               </tr>
             ))}
           </tbody>
@@ -89,7 +102,7 @@ export function PageServiceKeys() {
 
       <H2 id="key-example">Example: locked-down payments key</H2>
       <P>Create a service key from the <strong>Service Keys</strong> page in the dashboard:</P>
-      <ul className="list-disc list-inside text-zinc-400 space-y-1 my-3 text-sm">
+      <ul className="list-disc list-inside text-muted-foreground space-y-1 my-3 text-sm">
         <li>Name: <Mono>payments-service</Mono></li>
         <li>Capabilities: <Mono>events.publish</Mono>, <Mono>events.handle</Mono>, <Mono>rpc.call</Mono>, <Mono>rpc.handle</Mono></li>
         <li>Allowed topics: <Mono>payments.*</Mono></li>

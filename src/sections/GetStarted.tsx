@@ -83,21 +83,18 @@ import (
 )
 
 func main() {
-  client, err := sb.New("127.0.0.1:14445", serviceKey, "my-service")
-  if err != nil {
-    log.Fatal(err)
-  }
+  svc := sb.New("127.0.0.1:14445", serviceKey, "my-service")
 
-  client.HandleRpc("hello", func(ctx context.Context, payload map[string]any) (any, error) {
+  svc.HandleRpc("hello", func(ctx context.Context, payload map[string]any) (any, error) {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil
   })
 
-  client.HandleEvent("order.*", func(ctx context.Context, payload map[string]any, ectx sb.EventContext) error {
+  svc.HandleEvent("order.*", func(ctx context.Context, payload map[string]any, ectx sb.EventContext) error {
     fmt.Println("Event received:", payload)
     return nil
   })
 
-  log.Fatal(client.Serve())
+  log.Fatal(svc.Serve())
 }`,
   },
 };
@@ -121,6 +118,11 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   const [activeTab, setActiveTab] = useState<TabId>("node");
   const [copied, setCopied] = useState(false);
   const connect = CONNECT[activeTab];
+
+  const maxConnectLines = Math.max(
+    ...Object.values(CONNECT).map((c) => c.code.trim().split("\n").length)
+  );
+  const minConnectHeight = maxConnectLines * 16 + 32;
 
   const copyCode = () => {
     navigator.clipboard.writeText(connect.code.trim());
@@ -148,7 +150,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5">
                 <span className="type-overline-mono text-muted-foreground">terminal</span>
               </div>
-              <pre className="p-4 text-xs font-mono text-zinc-300 overflow-x-auto leading-relaxed">
+              <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
                 <code>$ bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)</code>
               </pre>
             </div>
@@ -166,7 +168,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 <TabStrip size="sm" items={SDK_TABS} active={activeTab} onChange={setActiveTab} />
                 <span className="type-caption text-muted-foreground/50">Install SDK</span>
               </div>
-              <pre className="p-4 text-xs font-mono text-zinc-300 overflow-x-auto leading-relaxed">
+              <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
                 <code>$ {INSTALL_CMDS[activeTab]}</code>
               </pre>
             </div>
@@ -185,7 +187,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 <button
                   type="button"
                   onClick={copyCode}
-                  className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0"
+                  className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
                 >
                   {copied ? (
                     <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
@@ -194,7 +196,10 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                   )}
                 </button>
               </div>
-              <pre className="p-4 text-xs font-mono overflow-x-auto leading-relaxed">
+              <pre
+                className="p-4 text-xs font-mono overflow-x-auto leading-relaxed"
+                style={{ minHeight: minConnectHeight }}
+              >
                 <code>{highlightCode(connect.code, connect.lang)}</code>
               </pre>
             </div>

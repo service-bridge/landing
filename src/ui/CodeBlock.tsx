@@ -1,7 +1,6 @@
-import { Check, Copy } from "lucide-react";
-import { useState } from "react";
 import { type CodeLangs, type FilenameLangs, type SdkLang, SDK_LANGS, useSdkLang } from "../lib/language-context";
 import { CodePanel } from "./CodePanel";
+import { CopyButton } from "./CopyButton";
 import { TabStrip } from "./Tabs";
 
 // ─── Keyword sets ─────────────────────────────────────────────────────────────
@@ -71,7 +70,7 @@ function highlight(
         (commentChar === "//" && ch === "/" && line[i + 1] === "/") ||
         (commentChar === "#" && ch === "#");
       if (isLineComment) {
-        push(line.slice(i), "text-zinc-500 italic");
+        push(line.slice(i), "text-muted-foreground italic");
         break;
       }
 
@@ -123,7 +122,7 @@ function highlight(
         } else if (/^[A-Z]/.test(word)) {
           cls = "text-cyan-300";
         } else {
-          cls = "text-zinc-200";
+          cls = "text-foreground/90";
         }
 
         push(word, cls);
@@ -133,9 +132,9 @@ function highlight(
 
       // Braces / brackets
       if ("{}()[]".includes(ch)) {
-        push(ch, "text-zinc-400");
+        push(ch, "text-muted-foreground");
       } else {
-        push(ch, "text-zinc-500");
+        push(ch, "text-muted-foreground");
       }
       i++;
     }
@@ -154,37 +153,6 @@ export function highlightCode(code: string, lang: SdkLang): React.ReactNode[] {
   return highlight(code, TS_KW, "//");
 }
 
-// ─── Lang dot colours (for filename indicator) ────────────────────────────────
-
-const LANG_DOT: Record<SdkLang, string> = {
-  ts: "bg-blue-400",
-  go: "bg-cyan-400",
-  py: "bg-yellow-400",
-};
-
-// ─── Shared copy button ───────────────────────────────────────────────────────
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(text.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0"
-    >
-      {copied
-        ? <Check className="w-3 h-3 text-emerald-400" />
-        : <Copy className="w-3 h-3" />}
-      <span className={copied ? "text-emerald-400" : ""}>{copied ? "Copied" : "Copy"}</span>
-    </button>
-  );
-}
-
 // ─── Base CodeBlock ───────────────────────────────────────────────────────────
 
 export function CodeBlock({
@@ -199,11 +167,11 @@ export function CodeBlock({
   const displayLang: SdkLang = lang === "js" ? "ts" : (lang as SdkLang);
 
   return (
-    <CodePanel className="group relative">
-      <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100">
-        <CopyButton text={code} />
-      </div>
-      <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+    <CodePanel 
+      title={filename} 
+      headerActions={<CopyButton text={code} />}
+    >
+      <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-foreground/90">
         <code>{highlightCode(code.trim(), displayLang)}</code>
       </pre>
     </CodePanel>
@@ -229,14 +197,20 @@ export function MultiCodeBlock({
       ? filename.replace(/\.(ts|go|py)$/, `.${displayLang === "py" ? "py" : displayLang === "go" ? "go" : "ts"}`)
       : (filename?.[displayLang] ?? filename?.ts);
 
+  const maxLines = Math.max(...available.map((l) => (code[l.id] ?? "").trim().split("\n").length));
+  const minCodeHeight = maxLines * 20 + 40;
+
   return (
     <CodePanel>
-      <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-surface px-3 py-2">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-3 py-2">
         <TabStrip size="sm" items={available} active={displayLang} onChange={setLang} />
         <CopyButton text={displayCode} />
       </div>
 
-      <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+      <pre
+        className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-foreground/90"
+        style={{ minHeight: minCodeHeight }}
+      >
         <code>{highlightCode(displayCode.trim(), displayLang)}</code>
       </pre>
     </CodePanel>

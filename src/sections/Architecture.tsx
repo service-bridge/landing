@@ -21,8 +21,8 @@ const LEGEND = [
 function ServiceBox({ name }: { name: string }) {
   return (
     <div className="rounded-xl border border-surface-border bg-surface p-4 text-center">
-      <Server className="w-5 h-5 mx-auto mb-2 text-zinc-500" />
-      <p className="text-sm font-semibold font-display text-zinc-300">{name}</p>
+      <Server className="w-5 h-5 mx-auto mb-2 text-muted-foreground/70" />
+      <p className="text-sm font-semibold font-display text-muted-foreground">{name}</p>
       <div className="mt-2 flex flex-col gap-1 items-center">
         <span className="inline-flex items-center gap-1 text-3xs font-mono text-violet-400/70 bg-violet-500/[0.08] rounded px-1.5 py-0.5">
           <Lock className="w-2.5 h-2.5" />

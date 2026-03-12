@@ -49,14 +49,14 @@ export function DashboardSection() {
     <motion.div variants={fadeInUp} className="w-full" ref={sectionRef}>
       <div className="rounded-2xl border border-surface-border overflow-hidden shadow-2xl shadow-black/50">
         {/* Browser chrome */}
-        <div className="bg-zinc-900 border-b border-surface-border px-4 py-2.5 flex items-center gap-3">
+        <div className="bg-background border-b border-surface-border px-4 py-2.5 flex items-center gap-3">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/60" />
             <div className="w-3 h-3 rounded-full bg-amber-500/60" />
             <div className="w-3 h-3 rounded-full bg-emerald-500/60" />
           </div>
           <div className="flex-1 flex justify-center">
-            <div className="bg-zinc-800 rounded-md px-4 py-1 text-2xs text-zinc-400 font-mono flex items-center gap-2">
+            <div className="bg-zinc-800 rounded-md px-4 py-1 text-2xs text-muted-foreground font-mono flex items-center gap-2">
               <BrandMark className="w-3 h-3 text-emerald-400 shrink-0" />
               localhost:14444
             </div>
@@ -110,11 +110,11 @@ export function DashboardSection() {
             {RECENT_RUNS.map((r) => (
               <div key={r.fn} className="flex items-center justify-between px-3 py-1.5 border-b border-surface-border last:border-0">
                 <div>
-                  <p className="text-3xs font-mono text-zinc-300">{r.fn}</p>
-                  <p className="text-3xs text-zinc-600">{r.svc}</p>
+                  <p className="text-3xs font-mono text-muted-foreground">{r.fn}</p>
+                  <p className="text-3xs text-muted-foreground/60">{r.svc}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {r.ms && <span className="text-3xs text-zinc-500 font-mono">{r.ms}</span>}
+                  {r.ms && <span className="text-3xs text-muted-foreground/70 font-mono">{r.ms}</span>}
                   <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
                 </div>
               </div>

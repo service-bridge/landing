@@ -50,6 +50,9 @@ svc := servicebridge.New(
     QueueMaxSize:        1000,
     QueueOverflow:       "drop-oldest",
     DiscoveryRefreshMs:  10_000,
+    TimeoutMs:           30_000,
+    Retries:             3,
+    RetryDelayMs:        300,
   },
 )`,
           py: `from service_bridge import ServiceBridge, Options
@@ -66,6 +69,9 @@ sb = ServiceBridge(
         queue_overflow="drop-oldest",
         discovery_refresh_ms=10_000,
         skip_tls=False,
+        timeout_ms=30_000,
+        retries=3,
+        retry_delay_ms=300,
     ),
 )`,
         }}
@@ -74,15 +80,18 @@ sb = ServiceBridge(
       <H2 id="options-table">All options</H2>
       <ParamTable
         rows={[
-          { name: "timeout (Node)", type: "number (ms)", default: "30000", desc: "Default timeout for SDK operations. Can be overridden per-call in rpc() opts." },
-          { name: "retries (Node)", type: "number", default: "3", desc: "Default retry count for rpc(). 0 = no retry." },
-          { name: "retryDelay (Node)", type: "number (ms)", default: "300", desc: "Base exponential backoff delay between retries." },
+          { name: "timeout / TimeoutMs / timeout_ms", type: "number (ms)", default: "30000", desc: "Global default RPC timeout. Per-call opts override. Available in all SDKs." },
+          { name: "retries / Retries / retries", type: "number", default: "3", desc: "Global default retry count for rpc(). 0 = no retry. Available in all SDKs." },
+          { name: "retryDelay / RetryDelayMs / retry_delay_ms", type: "number (ms)", default: "300", desc: "Base exponential backoff delay: delay × 2^(attempt-1). Available in all SDKs." },
           { name: "discoveryRefreshMs / DiscoveryRefreshMs / discovery_refresh_ms", type: "number (ms)", default: "10000", desc: "How often endpoint lists are refreshed from runtime registry." },
           { name: "queueMaxSize / QueueMaxSize / queue_max_size", type: "number", default: "1000", desc: "Max operations buffered in the offline queue while control plane is unavailable." },
           { name: "queueOverflow / QueueOverflow / queue_overflow", type: '"drop-oldest" | "drop-newest" | "error"', default: '"drop-oldest"', desc: "Overflow strategy when offline queue is full." },
           { name: "heartbeatIntervalMs / HeartbeatIntervalMs / heartbeat_interval_ms", type: "number (ms)", default: "10000", desc: "Heartbeat period for worker registrations." },
           { name: "captureLogs / CaptureLogs / capture_logs", type: "boolean", default: "true", desc: "Auto-capture logs and forward them to ServiceBridge runtime." },
           { name: "adminUrl / AdminURL / admin_url", type: "string", default: "derived from gRPC URL", desc: "HTTP admin base URL used by TLS provisioning and management calls." },
+          { name: "adminSessionCookie / AdminSessionCookie / admin_session_cookie", type: "string", default: '""', desc: "Admin session cookie for browser-authenticated endpoints (e.g. cancelWorkflowRun)." },
+          { name: "adminCsrfToken / AdminCSRFToken / admin_csrf_token", type: "string", default: '""', desc: "CSRF token paired with adminSessionCookie for unsafe HTTP methods." },
+          { name: "adminOrigin / AdminOrigin / admin_origin", type: "string", default: '""', desc: "Origin header required by admin CSRF/origin checks." },
           { name: "workerTransport (Node)", type: '"tls"', default: '"tls"', desc: "Worker server transport type." },
           { name: "workerTLS (Node)", type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }", desc: "Explicit mTLS materials for the worker gRPC server." },
           { name: "skip_tls (Python)", type: "boolean", default: "false", desc: "Disable mTLS auto-provisioning for local development." },
@@ -97,10 +106,9 @@ sb = ServiceBridge(
       </P>
       <ParamTable
         rows={[
-          { name: "Node-only constructor defaults", type: "timeout/retries/retryDelay", desc: "Go/Python configure retry and timeout per-call." },
+          { name: "Node-only constructor options", type: "workerTransport/workerTLS", desc: "Explicit TLS cert materials and transport config." },
           { name: "Node-only handler hints", type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch", desc: "Accepted by Node API as hints; currently not strict runtime limits." },
           { name: "Node-only serve fields", type: "instanceId/weight/transport/tls", desc: "Go/Python expose host + SkipTLS/skip_tls only." },
-          { name: "watchRun key default", type: 'Node: "default"; Go/Python: ""', desc: "Pass key explicitly for portable behavior." },
         ]}
       />
 

@@ -28,9 +28,8 @@ export function PageWorkflows() {
       </ul>
 
       <Callout type="info">
-        There is no dedicated <Mono>runWorkflow()</Mono> helper yet. Use{" "}
-        <Mono>job(name, {"{ via: \"workflow\" }"})</Mono> to trigger a workflow on a schedule, or
-        start one as a step inside another workflow.
+        Use <Mono>runWorkflow(name, input)</Mono> to start a workflow on demand, or{" "}
+        <Mono>job(name, {"{ via: \"workflow\" }"})</Mono> to trigger on a cron schedule.
       </Callout>
 
       {/* ── Handlers ─────────────────────────────────────────────── */}
@@ -99,9 +98,9 @@ async def on_fulfilled(payload: dict, ctx) -> None:
       <H3 id="workflow-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `workflow(name: string, steps: WorkflowStep[]): Promise<string>`,
-          go: `func (c *Client) Workflow(ctx context.Context, name string, steps []WorkflowStep) (string, error)`,
-          py: `async def workflow(name: str, steps: list[WorkflowStep]) -> str`,
+          ts: `workflow(name: string, steps: WorkflowStep[], opts?: WorkflowOpts): Promise<string>`,
+          go: `func (c *Client) Workflow(ctx context.Context, name string, steps []WorkflowStep, opts *servicebridge.WorkflowOpts) (string, error)`,
+          py: `async def workflow(name: str, steps: list[WorkflowStep], opts: WorkflowOpts | None = None) -> str`,
         }}
       />
       <P>
@@ -114,12 +113,28 @@ async def on_fulfilled(payload: dict, ctx) -> None:
         rows={[
           { name: "id", type: "string", desc: "Unique step identifier within this workflow definition." },
           { name: "type", type: '"rpc" | "event" | "event_wait" | "sleep" | "workflow"', desc: "Step execution type." },
-          { name: "ref", type: "string", desc: 'Required for "rpc", "event", "event_wait", and "workflow". RPC: "service/method". Event/event_wait: topic pattern. Workflow: child workflow name.' },
+          { name: "ref", type: "string", desc: 'Required for all step types except "sleep". RPC: "service/method". Event/event_wait: topic pattern. Workflow: child workflow name.' },
           { name: "deps", type: "string[]", default: "[]", desc: "Step IDs that must complete before this step runs. Steps with no shared deps run in parallel." },
-          { name: "if / If / if_expr", type: "string", desc: "Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps)." },
+          { name: "if (Go/Node) / if_expr (Python)", type: "string", desc: 'Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps). Python uses if_expr because "if" is a reserved keyword.' },
           { name: "timeoutMs / TimeoutMs / timeout_ms", type: "number", desc: "Step-level timeout for rpc and event_wait steps." },
           { name: "durationMs / DurationMs / duration_ms", type: "number", desc: 'Required for "sleep" steps. Pause duration in milliseconds.' },
         ]}
+      />
+
+      <H3 id="workflow-opts">WorkflowOpts</H3>
+      <ParamTable
+        rows={[
+          { name: "stateLimitBytes / StateLimitBytes / state_limit_bytes", type: "number", default: "262144 (256 KB)", desc: "Maximum size in bytes of accumulated step state stored in PostgreSQL for this workflow run." },
+          { name: "stepTimeoutMs / StepTimeoutMs / step_timeout_ms", type: "number", default: "30000 (30 s)", desc: "Default timeout applied to each step that does not have its own timeoutMs set." },
+        ]}
+      />
+      <MultiCodeBlock
+        code={{
+          ts: `await sb.workflow("order.fulfillment", steps, { stepTimeoutMs: 60000 })`,
+          go: `svc.Workflow(ctx, "order.fulfillment", steps, &servicebridge.WorkflowOpts{StepTimeoutMs: 60000})`,
+          py: `from service_bridge import WorkflowOpts
+await sb.workflow("order.fulfillment", steps, WorkflowOpts(step_timeout_ms=60000))`,
+        }}
       />
 
       {/* ── Output chaining ──────────────────────────────────────── */}
@@ -131,6 +146,13 @@ async def on_fulfilled(payload: dict, ctx) -> None:
         <li><strong className="text-foreground">0 deps</strong> — step receives the original workflow run input</li>
         <li><strong className="text-foreground">1 dep</strong> — step receives that dep's output directly</li>
         <li><strong className="text-foreground">2+ deps</strong> — step receives <Mono>{"{ depId: depOutput, ... }"}</Mono> map</li>
+      </ul>
+      <P>
+        Built-in step output shapes (in addition to whatever the handler returns):
+      </P>
+      <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
+        <li><Mono>event</Mono> step output: <Mono>{"{ messageId: \"...\", committedAt: \"...\" }"}</Mono></li>
+        <li><Mono>sleep</Mono> step output: <Mono>{"{ sleepMs: N }"}</Mono></li>
       </ul>
       <P>
         Use the <Mono>if</Mono> field (<Mono>if_expr</Mono> in Python) to inspect chained input
@@ -327,6 +349,61 @@ workflow_id = await sb.workflow("order.fulfillment", [
     WorkflowStep(id="wait_7d",       type="sleep", duration_ms=604_800_000,           deps=["send_reminder"]),
     WorkflowStep(id="expire",        type="rpc",   ref="billing/expire-trial",        deps=["wait_7d"]),
 ])`,
+        }}
+      />
+
+      {/* ── runWorkflow() ─────────────────────────────────────────── */}
+      <H2 id="run-workflow">runWorkflow() — start a run</H2>
+      <P>
+        Starts a workflow run by name with an optional input payload. The workflow must be
+        registered first via <Mono>workflow()</Mono>. Returns an object with <Mono>runId</Mono>{" "}
+        and <Mono>traceId</Mono> that you can use with <Mono>watchRun()</Mono> or{" "}
+        <Mono>cancelWorkflowRun()</Mono>.
+      </P>
+
+      <H3 id="run-workflow-signature">Signature</H3>
+      <MultiCodeBlock
+        code={{
+          ts: `runWorkflow(name: string, input?: unknown): Promise<{ runId: string; traceId: string }>`,
+          go: `func (c *Client) RunWorkflow(ctx context.Context, name string, input any) (*RunWorkflowResult, error)`,
+          py: `async def run_workflow(name: str, input: Any = None) -> dict[str, str]`,
+        }}
+      />
+      <ParamTable
+        rows={[
+          { name: "name", type: "string", desc: "Name of a previously registered workflow definition." },
+          { name: "input", type: "object", default: "{}", desc: "JSON-serializable input passed to root steps (steps with no deps)." },
+        ]}
+      />
+
+      <H3 id="run-workflow-example">Example</H3>
+      <MultiCodeBlock
+        code={{
+          ts: `const { runId, traceId } = await sb.runWorkflow("user.onboarding", {
+  userId: "u_123",
+  email: "alice@example.com",
+});
+console.log("started run", runId, "trace", traceId);
+
+// watch progress
+const stream = sb.watchRun(runId, { key: "default" });
+for await (const chunk of stream) {
+  console.log(chunk.data);
+  if (chunk.done) break;
+}`,
+          go: `result, err := svc.RunWorkflow(ctx, "user.onboarding", map[string]any{
+  "userId": "u_123",
+  "email":  "alice@example.com",
+})
+if err != nil {
+  log.Fatal(err)
+}
+fmt.Printf("started run %s, trace %s\\n", result.RunID, result.TraceID)`,
+          py: `result = await sb.run_workflow("user.onboarding", {
+    "userId": "u_123",
+    "email": "alice@example.com",
+})
+print(f"started run {result['runId']}, trace {result['traceId']}")`,
         }}
       />
 

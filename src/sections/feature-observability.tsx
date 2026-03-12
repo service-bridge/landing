@@ -70,7 +70,7 @@ export function ObservabilitySection() {
               {LOGQL_EXAMPLES.map((ex) => (
                 <div key={ex.query} className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-2">
                   <code className="type-body-sm text-cyan-300 shrink-0">{ex.query}</code>
-                  <span className="type-overline-mono text-zinc-500 min-w-0 truncate">{ex.desc}</span>
+                  <span className="type-overline-mono text-muted-foreground/70 min-w-0 truncate">{ex.desc}</span>
                 </div>
               ))}
             </div>
@@ -84,7 +84,7 @@ export function ObservabilitySection() {
               <p className="type-overline-mono text-muted-foreground">GET /metrics</p>
               <div className="flex items-center gap-2">
                 <Badge tone="border-orange-500/20 bg-orange-500/[0.08] text-orange-300">GET /metrics</Badge>
-                <Badge tone="border-surface-border bg-surface text-zinc-400">15s cache</Badge>
+                <Badge tone="border-surface-border bg-surface text-muted-foreground">15s cache</Badge>
               </div>
             </div>
             <div className="p-4 space-y-3">
@@ -93,7 +93,7 @@ export function ObservabilitySection() {
                   <p className={cn("type-overline-mono w-20 shrink-0 pt-0.5", group.tone)}>{group.label}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 min-w-0">
                     {group.metrics.map((m) => (
-                      <code key={m} className="type-overline-mono text-zinc-400">
+                      <code key={m} className="type-overline-mono text-muted-foreground">
                         servicebridge_{m}
                       </code>
                     ))}

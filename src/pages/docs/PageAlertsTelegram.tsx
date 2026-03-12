@@ -30,7 +30,7 @@ export function PageAlertsTelegram() {
           "Click the link (or copy and open on your phone). Telegram opens and shows a Start button.",
           "Press Start. The server receives your chat_id and marks the channel Active automatically.",
         ].map((step, i) => (
-          <li key={step} className="flex gap-3 text-sm text-zinc-400">
+          <li key={step} className="flex gap-3 text-sm text-muted-foreground">
             <span className="shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center font-semibold mt-0.5">
               {i + 1}
             </span>
@@ -49,7 +49,7 @@ export function PageAlertsTelegram() {
       <P>
         Telegram notifications are sent as Markdown-formatted messages. Example:
       </P>
-      <div className="rounded-xl border border-surface-border bg-surface p-4 my-4 text-sm text-zinc-300 font-mono leading-relaxed whitespace-pre-wrap">
+      <div className="rounded-xl border border-surface-border bg-surface p-4 my-4 text-sm text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap">
         {`🚨 *DLQ spike* fired
 Condition: dlq_new
 Message: 3 new dead-letter message(s) in the last cycle

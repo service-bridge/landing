@@ -13,7 +13,7 @@ export function PageReliability() {
       <div className="overflow-x-auto rounded-xl border border-surface-border my-5">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-muted-foreground/70">
               <th className="px-4 py-2.5">Primitive</th>
               <th className="px-4 py-2.5">Guarantee</th>
               <th className="px-4 py-2.5">On server outage</th>
@@ -26,10 +26,10 @@ export function PageReliability() {
               ["job()", "At-least-once, durable", "SDK queues in memory, flushes after reconnect"],
               ["workflow()", "Resumable, step-level durability", "Resumes from last completed step after restart"],
             ].map(([prim, guarantee, outage]) => (
-              <tr key={prim as string} className="text-zinc-400">
+              <tr key={prim as string} className="text-muted-foreground">
                 <td className="px-4 py-2.5 font-mono text-xs text-primary">{prim}</td>
                 <td className="px-4 py-2.5">{guarantee}</td>
-                <td className="px-4 py-2.5 text-zinc-500">{outage}</td>
+                <td className="px-4 py-2.5 text-muted-foreground/70">{outage}</td>
               </tr>
             ))}
           </tbody>
@@ -44,7 +44,7 @@ export function PageReliability() {
 
       <H2 id="outage">Event delivery status</H2>
       <P>Each event in the dashboard shows one of three delivery statuses:</P>
-      <ul className="list-none space-y-1.5 my-3 text-sm text-zinc-400">
+      <ul className="list-none space-y-1.5 my-3 text-sm text-muted-foreground">
         <li>
           <span className="font-mono text-emerald-400 mr-2">delivered</span>— All subscriber groups
           acknowledged delivery.

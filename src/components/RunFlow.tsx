@@ -247,68 +247,66 @@ export function RunFlowSection() {
               </div>
             </div>
 
-            {/* Column headers */}
-            <div className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-2.5 type-overline-mono text-zinc-600 border-b border-white/[0.04]">
-              <span>Name &amp; Service</span>
-              <span>Type</span>
-              <span>Status</span>
-              <span>Started</span>
-              <span className="text-right">Duration</span>
-            </div>
+            {/* Column headers + rows — scroll horizontally on narrow screens */}
+            <div className="overflow-x-auto">
+              <div className="min-w-[540px]">
+                <div className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-2.5 type-overline-mono text-muted-foreground/60 border-b border-white/[0.04]">
+                  <span>Name &amp; Service</span>
+                  <span>Type</span>
+                  <span>Status</span>
+                  <span>Started</span>
+                  <span className="text-right">Duration</span>
+                </div>
 
-            {/* Run rows */}
-            <div className="min-h-[320px]">
-              <AnimatePresence mode="popLayout">
-                {runs.map((run) => (
-                  <motion.div
-                    key={run.id}
-                    layout
-                    initial={{ opacity: 0, y: -10, backgroundColor: "rgba(52,211,153,0.07)" }}
-                    animate={{ opacity: 1, y: 0, backgroundColor: "rgba(52,211,153,0)" }}
-                    exit={{ opacity: 0, height: 0, overflow: "hidden" }}
-                    transition={{ duration: 0.3 }}
-                    className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-3 border-b border-white/[0.03] last:border-0 items-center"
-                  >
-                    {/* Name + Service */}
-                    <div className="flex flex-col min-w-0 pr-3">
-                      <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
-                        {run.name}
-                      </span>
-                      <span className="text-3xs text-zinc-600 mt-0.5">{run.service}</span>
-                    </div>
+                <div className="min-h-[320px]">
+                  <AnimatePresence mode="popLayout">
+                    {runs.map((run) => (
+                      <motion.div
+                        key={run.id}
+                        layout
+                        initial={{ opacity: 0, y: -10, backgroundColor: "rgba(52,211,153,0.07)" }}
+                        animate={{ opacity: 1, y: 0, backgroundColor: "rgba(52,211,153,0)" }}
+                        exit={{ opacity: 0, height: 0, overflow: "hidden" }}
+                        transition={{ duration: 0.3 }}
+                        className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-3 border-b border-white/[0.03] last:border-0 items-center"
+                      >
+                        <div className="flex flex-col min-w-0 pr-3">
+                          <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
+                            {run.name}
+                          </span>
+                          <span className="text-3xs text-muted-foreground/60 mt-0.5">{run.service}</span>
+                        </div>
 
-                    {/* Type badge */}
-                    <Badge
-                      tone={TYPE_COLORS[run.type]}
-                      className="w-fit"
-                    >
-                      {run.type}
-                    </Badge>
+                        <Badge
+                          tone={TYPE_COLORS[run.type]}
+                          className="w-fit"
+                        >
+                          {run.type}
+                        </Badge>
 
-                    {/* Status */}
-                    <StatusCell status={run.status} />
+                        <StatusCell status={run.status} />
 
-                    {/* Started */}
-                    <span className="text-3xs text-zinc-500 font-mono tabular-nums">
-                      {run.startedAt.toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: false,
-                      })}
-                    </span>
+                        <span className="text-3xs text-muted-foreground/70 font-mono tabular-nums">
+                          {run.startedAt.toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: false,
+                          })}
+                        </span>
 
-                    {/* Duration */}
-                    <span className="text-right font-mono text-3xs text-zinc-400 tabular-nums">
-                      {run.durationMs !== null ? `${run.durationMs}ms` : "—"}
-                    </span>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                        <span className="text-right font-mono text-3xs text-muted-foreground tabular-nums">
+                          {run.durationMs !== null ? `${run.durationMs}ms` : "—"}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-white/[0.04] px-5 py-3 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-zinc-600">
+            <div className="border-t border-white/[0.04] px-5 py-3 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-muted-foreground/60">
               <span>event · rpc · job · workflow · http</span>
               <div className="flex items-center gap-4">
                 <span>

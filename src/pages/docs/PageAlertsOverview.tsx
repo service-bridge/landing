@@ -40,7 +40,7 @@ export function PageAlertsOverview() {
           <div key={label} className="rounded-2xl border border-surface-border bg-surface p-4">
             <p className="text-2xl font-bold font-display text-primary mb-1">{num}</p>
             <p className="text-sm font-semibold text-foreground mb-1">{label}</p>
-            <p className="text-xs text-zinc-500 leading-relaxed">{desc}</p>
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">{desc}</p>
           </div>
         ))}
       </div>

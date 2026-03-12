@@ -24,7 +24,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const EVENT_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "notifications");
 
@@ -55,7 +55,7 @@ svc.HandleEvent("order.*",
         ec *servicebridge.EventContext) error {
         ok := sendEmail(ctx, p)
         if !ok {
-            return ec.Retry(30_000)
+            ec.Retry(30_000); return nil
         }
         return nil
     }, &servicebridge.HandleEventOpts{
@@ -70,7 +70,7 @@ svc.Event(ctx, "order.created", map[string]any{
     "customer": map[string]any{"tier": "premium"},
 }, &servicebridge.EventOpts{IdempotencyKey: "orders:ord_123:created"})`,
 
-  py: `from servicebridge import ServiceBridge
+  py: `from service_bridge import ServiceBridge
 
 svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notifications")
 
@@ -156,7 +156,7 @@ export function DurableEventsSection() {
               {FILTER_EXAMPLES.map(({ expr, desc }) => (
                 <div key={expr} className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-1.5">
                   <code className="text-xs font-mono text-emerald-300">{expr}</code>
-                  <span className="text-3xs text-zinc-600 ml-auto">{desc}</span>
+                  <span className="text-3xs text-muted-foreground/60 ml-auto">{desc}</span>
                 </div>
               ))}
             </div>
@@ -176,9 +176,9 @@ export function DurableEventsSection() {
 
             <div ref={pipelineRef} className="p-5 space-y-5">
               {/* Pipeline stages */}
-              <div>
+              <div className="overflow-x-auto">
                 <p className="type-overline-mono text-muted-foreground mb-3">delivery stages</p>
-                <div className="flex items-center gap-0">
+                <div className="flex items-center gap-0 min-w-[420px]">
                   {PIPELINE.map((stage, i) => {
                     const Icon = stage.icon;
                     return (
@@ -192,7 +192,7 @@ export function DurableEventsSection() {
                         >
                           <Icon className={cn("w-3.5 h-3.5 mx-auto mb-1", stage.color)} />
                           <p className={cn("text-xs font-semibold font-display leading-tight", stage.color)}>{stage.label}</p>
-                          <p className="text-3xs text-zinc-600 mt-0.5">{stage.desc}</p>
+                          <p className="text-3xs text-muted-foreground/60 mt-0.5">{stage.desc}</p>
                         </motion.div>
                         {i < PIPELINE.length - 1 && (
                           <div className="flex-1 relative h-px bg-white/[0.06] min-w-[8px]">
@@ -234,18 +234,18 @@ export function DurableEventsSection() {
                         )}
                       >
                         <p className={cn("text-xs font-semibold font-display shrink-0 w-20", isDlq ? "text-rose-200" : "text-zinc-200")}>{sub.service}</p>
-                        <p className="text-3xs font-mono text-zinc-600 flex-1 truncate">{sub.group}</p>
+                        <p className="text-3xs font-mono text-muted-foreground/60 flex-1 truncate">{sub.group}</p>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <Badge tone={cn(outCfg.bg, outCfg.border, outCfg.color)}>
                             <OutIcon className="w-2.5 h-2.5 inline mr-1" />{outCfg.label}
                           </Badge>
                           {sub.attempts > 1 && (
-                            <span className="text-3xs font-mono text-zinc-500">
+                            <span className="text-3xs font-mono text-muted-foreground/70">
                               <RefreshCcw className="w-2.5 h-2.5 inline" /> {sub.attempts}×
                             </span>
                           )}
                         </div>
-                        {sub.note && <p className="text-3xs font-mono text-zinc-600 shrink-0">{sub.note}</p>}
+                        {sub.note && <p className="text-3xs font-mono text-muted-foreground/60 shrink-0">{sub.note}</p>}
                       </motion.div>
                     );
                   })}
@@ -268,7 +268,7 @@ export function DurableEventsSection() {
                         "flex items-center gap-2 rounded-xl border px-3 py-1.5 font-mono text-3xs",
                         row.stage === "error" ? "border-red-500/15 bg-red-500/[0.04] text-red-400/80"
                           : row.stage === "dlq" ? "border-rose-500/20 bg-rose-500/[0.05] text-rose-400"
-                            : "border-surface-border bg-surface text-zinc-500"
+                            : "border-surface-border bg-surface text-muted-foreground/70"
                       )}
                     >
                       <span>{row.text}</span>

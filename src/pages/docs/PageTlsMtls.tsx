@@ -23,12 +23,13 @@ export function PageTlsMtls() {
         certificates:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
-        <li>SDK generates an ECDSA P-256 key pair locally.</li>
+        <li>SDK generates an <strong className="text-foreground">RSA 2048</strong> key pair locally (Go and Python SDKs; the server's own cert uses ECDSA P-256).</li>
         <li>
           Sends <strong className="text-foreground">only the public key</strong> to{" "}
           <Mono>POST /api/tls/provision</Mono> (authenticated with the service key).
+          Go SDK sends a CSR (<Mono>{"{ \"csr\": \"...\" }"}</Mono>); Python SDK sends a raw public key (<Mono>{"{ \"public_key_pem\": \"...\" }"}</Mono>). Both formats are accepted by the server.
         </li>
-        <li>Server signs the public key and returns a client cert + CA cert.</li>
+        <li>Server signs the public key and returns a client cert + CA cert. Worker certificates are valid for <strong className="text-foreground">7 days</strong>; the SDK handles re-provisioning automatically on startup if the cert is missing or expired.</li>
         <li>
           Worker gRPC server starts with full mTLS.{" "}
           <strong className="text-foreground">The private key never leaves your process.</strong>
@@ -45,8 +46,8 @@ const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!
   workerTLS: { caCert: CA_PEM, cert: CERT_PEM, key: KEY_PEM },
 });
 
-// Local dev: skip TLS entirely
-await sb.serve({ skipTLS: true });`,
+// Node SDK has no skipTLS flag — use auto-provisioning or explicit workerTLS.
+await sb.serve();`,
           go: `// Default — auto-provisions mTLS
 svc.Serve(ctx, nil)
 
@@ -79,6 +80,13 @@ await sb.serve(skip_tls=True)`,
           they already have each other's addresses from the last discovery refresh.
         </li>
       </ul>
+
+      <Callout type="warning">
+        The Node.js SDK does not currently include TLS auto-provisioning. Node.js services connect
+        without mTLS by default, or you can supply explicit TLS credentials via the{" "}
+        <Mono>workerTLS</Mono> option. For mTLS-enforced environments, use Go or Python services
+        for worker registration, or configure TLS externally.
+      </Callout>
 
       <Callout type="tip">
         In Kubernetes or Docker Swarm, set <Mono>SERVICEBRIDGE_GRPC_HOST=0.0.0.0</Mono> and

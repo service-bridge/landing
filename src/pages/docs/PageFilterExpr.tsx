@@ -50,25 +50,25 @@ async def on_high_value_order(payload: dict, ctx) -> None:
       <div className="overflow-x-auto rounded-xl border border-surface-border my-4">
         <table className="w-full text-sm font-mono">
           <thead>
-            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-zinc-500">
+            <tr className="border-b border-surface-border text-left text-2xs uppercase tracking-wider text-muted-foreground/70">
               <th className="px-4 py-2.5">Operator</th>
               <th className="px-4 py-2.5">Meaning</th>
               <th className="px-4 py-2.5">Works on</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04] text-zinc-400 text-xs">
+          <tbody className="divide-y divide-white/[0.04] text-muted-foreground text-xs">
             {[
               ["=", "equals", "string, number"],
               ["!=", "not equals", "string, number"],
-              [">", "greater than", "number"],
-              [">=", "greater than or equal", "number"],
-              ["<", "less than", "number"],
-              ["<=", "less than or equal", "number"],
+              [">", "greater than", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
+              [">=", "greater than or equal", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
+              ["<", "less than", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
+              ["<=", "less than or equal", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
             ].map(([op, meaning, works]) => (
               <tr key={op}>
                 <td className="px-4 py-2.5 text-primary">{op}</td>
                 <td className="px-4 py-2.5">{meaning}</td>
-                <td className="px-4 py-2.5 text-zinc-500">{works}</td>
+                <td className="px-4 py-2.5 text-muted-foreground/70">{works}</td>
               </tr>
             ))}
           </tbody>
@@ -80,6 +80,14 @@ async def on_high_value_order(payload: dict, ctx) -> None:
         Fields are accessed using dot notation on the event payload. For example, a payload{" "}
         <Mono>{`{ "order": { "status": "paid", "amount": 150 } }`}</Mono> can be filtered with{" "}
         <Mono>order.status=paid,order.amount&gt;100</Mono>.
+      </P>
+      <P>
+        If the referenced field does not exist in the payload (null or missing), all operators
+        return <Mono>false</Mono> except <Mono>!=</Mono> which returns <Mono>true</Mono>.
+      </P>
+      <P>
+        Boolean fields can be compared with <Mono>=</Mono> (e.g. <Mono>active=true</Mono>) —
+        booleans are compared as the strings <Mono>"true"</Mono> and <Mono>"false"</Mono>.
       </P>
     </div>
   );

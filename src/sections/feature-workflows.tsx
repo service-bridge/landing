@@ -22,7 +22,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const WORKFLOW_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "platform");
 
@@ -50,31 +50,31 @@ await sb.workflow("merchant.onboarding", [
     "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "platform", nil)
 
 svc.Workflow(ctx, "merchant.onboarding", []servicebridge.WorkflowStep{
-    {Name: "validate",  Fn: "merchant.validate", Payload: map[string]any{}},
-    {Name: "kyc",     Fn: "kyc.check",     DependsOn: []string{"validate"}},
-    {Name: "billing", Fn: "billing.setup", DependsOn: []string{"validate"}},
-    {Name: "provision", Fn: "merchant.create",
-        DependsOn: []string{"kyc", "billing"}},
-    {Name: "welcome",  Fn: "email.welcome",  DependsOn: []string{"provision"}},
-    {Name: "followup", Fn: "email.followup", DependsOn: []string{"welcome"}},
+    {ID: "validate",  Type: "rpc",   Ref: "merchant.validate", Deps: []string{}},
+    {ID: "kyc",       Type: "rpc",   Ref: "kyc.check",         Deps: []string{"validate"}},
+    {ID: "billing",   Type: "rpc",   Ref: "billing.setup",     Deps: []string{"validate"}},
+    {ID: "provision", Type: "rpc",   Ref: "merchant.create",
+        Deps: []string{"kyc", "billing"}},
+    {ID: "welcome",   Type: "event", Ref: "email.welcome",     Deps: []string{"provision"}},
+    {ID: "followup",  Type: "rpc",   Ref: "email.followup",    Deps: []string{"welcome"}},
 })`,
 
-  py: `from servicebridge import ServiceBridge, WorkflowStep
+  py: `from service_bridge import ServiceBridge, WorkflowStep
 
 svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "platform")
 
 await svc.workflow("merchant.onboarding", [
-    WorkflowStep(name="validate",  fn="merchant.validate",  payload={}),
-    WorkflowStep(name="kyc",     fn="kyc.check",
-        payload={}, depends_on=["validate"]),
-    WorkflowStep(name="billing", fn="billing.setup",
-        payload={}, depends_on=["validate"]),
-    WorkflowStep(name="provision", fn="merchant.create",
-        payload={}, depends_on=["kyc", "billing"]),
-    WorkflowStep(name="welcome",  fn="email.welcome",
-        payload={}, depends_on=["provision"]),
-    WorkflowStep(name="followup", fn="email.followup",
-        payload={}, depends_on=["welcome"]),
+    WorkflowStep(id="validate",  type="rpc",   ref="merchant.validate",  deps=[]),
+    WorkflowStep(id="kyc",       type="rpc",   ref="kyc.check",
+        deps=["validate"]),
+    WorkflowStep(id="billing",   type="rpc",   ref="billing.setup",
+        deps=["validate"]),
+    WorkflowStep(id="provision", type="rpc",   ref="merchant.create",
+        deps=["kyc", "billing"]),
+    WorkflowStep(id="welcome",   type="event", ref="email.welcome",
+        deps=["provision"]),
+    WorkflowStep(id="followup",  type="rpc",   ref="email.followup",
+        deps=["welcome"]),
 ])`,
 };
 
@@ -198,7 +198,7 @@ export function WorkflowsSection() {
                         </div>
                       ) : (
                         <div className="rounded-lg border border-surface-border bg-surface px-2 py-1 text-center w-full">
-                          <p className="text-3xs font-mono text-zinc-600">step</p>
+                          <p className="text-3xs font-mono text-muted-foreground/60">step</p>
                         </div>
                       )}
                       {!isLast && <div className="w-px flex-1 min-h-[20px] bg-white/[0.05] mt-1" />}
@@ -241,7 +241,7 @@ export function WorkflowsSection() {
                         })}
                       </div>
                       {wave.note && (
-                        <p className="mt-1 text-3xs font-mono text-zinc-600">{wave.note}</p>
+                        <p className="mt-1 text-3xs font-mono text-muted-foreground/60">{wave.note}</p>
                       )}
                     </div>
                   </motion.div>

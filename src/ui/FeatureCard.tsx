@@ -3,7 +3,7 @@ import { cn } from "../lib/utils";
 import { Badge } from "./Badge";
 import { Card } from "./Card";
 
-type FeatureCardVariant = "default" | "stat" | "highlight" | "compact";
+type FeatureCardVariant = "default" | "stat" | "highlight" | "compact" | "large";
 
 interface FeatureCardProps {
   variant?: FeatureCardVariant;
@@ -74,21 +74,26 @@ export function FeatureCard({
     );
   }
 
+  // Shared styles for default and large variants
+  const isLarge = variant === "large";
+  
   return (
     <Card
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-white/[0.035]",
+        "group relative flex h-full flex-col overflow-hidden transition-all duration-300",
+        "hover:border-white/[0.12] hover:bg-white/[0.035]",
+        isLarge && "hover:shadow-lg hover:shadow-black/20",
         className
       )}
     >
-      {iconBg && (
-        <div
-          className={cn(
-            "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100",
-            iconBg
-          )}
-        />
-      )}
+      {/* Blur effect */}
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100",
+          iconBg || "bg-white/[0.03]"
+        )}
+      />
+      
       <div className="relative flex h-full flex-col">
         {Icon && (
           <div
@@ -100,11 +105,14 @@ export function FeatureCard({
             <Icon className={cn("h-5 w-5", iconClassName)} />
           </div>
         )}
+        
         <div className="mb-2 flex flex-wrap items-start gap-2">
           <h3 className="type-subsection-title leading-snug">{title}</h3>
           {badge && <Badge tone={badgeTone}>{badge}</Badge>}
         </div>
+        
         <p className="type-body-sm flex-1 leading-relaxed">{description}</p>
+        
         {stat && (
           <div className="mt-5 flex items-baseline gap-1.5 border-t border-surface-border pt-4">
             <span

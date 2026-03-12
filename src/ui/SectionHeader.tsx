@@ -6,6 +6,7 @@ import { Eyebrow } from "./Eyebrow";
 
 interface SectionHeaderProps {
   eyebrow?: string;
+  eyebrowTone?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   align?: "center" | "left";
@@ -13,6 +14,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({
   eyebrow,
+  eyebrowTone,
   title,
   subtitle,
   align = "center",
@@ -26,7 +28,7 @@ export function SectionHeader({
 
   return (
     <motion.div variants={fadeInUp} className={containerClasses}>
-      {eyebrow && <Eyebrow variant="plain">{eyebrow}</Eyebrow>}
+      {eyebrow && <Eyebrow variant="plain" tone={eyebrowTone}>{eyebrow}</Eyebrow>}
       <h2 className={titleClasses}>{title}</h2>
       {subtitle && (
         <p

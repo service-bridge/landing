@@ -18,8 +18,8 @@ const FRAMEWORK_TABS = [
     lang: "ts" as const,
     filename: "app.ts",
     code: `import express from "express";
-import { servicebridge } from "@servicebridge/sdk";
-import { servicebridgeMiddleware } from "@servicebridge/http-node";
+import { servicebridge } from "service-bridge";
+import { servicebridgeMiddleware } from "@service-bridge/http";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "gateway");
 const app = express();
@@ -42,8 +42,8 @@ app.post("/api/orders", async (req, res) => {
     lang: "ts" as const,
     filename: "server.ts",
     code: `import Fastify from "fastify";
-import { servicebridge } from "@servicebridge/sdk";
-import { servicebridgePlugin } from "@servicebridge/http-node";
+import { servicebridge } from "service-bridge";
+import { servicebridgePlugin } from "@service-bridge/http";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "api");
 const app = Fastify();
@@ -71,7 +71,7 @@ import (
 )
 
 func main() {
-  client, _ := sb.New("127.0.0.1:14445", serviceKey, "gateway")
+  client := sb.New("127.0.0.1:14445", serviceKey, "gateway")
   r := gin.Default()
 
   r.Use(sbhttp.GinMiddleware(client))
@@ -90,7 +90,7 @@ func main() {
     lang: "py" as const,
     filename: "app.py",
     code: `from fastapi import FastAPI
-from servicebridge import ServiceBridge
+from service_bridge import ServiceBridge
 from servicebridge_http import ServiceBridgeMiddleware
 
 sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "api")
@@ -110,11 +110,11 @@ type FrameworkId = (typeof FRAMEWORK_TABS)[number]["id"];
 const TRACE_HEADERS = [
   { label: "traceparent", desc: "W3C standard → uses traceId + parentSpanId", tone: "text-indigo-400 border-indigo-500/25 bg-indigo-500/10", priority: "1st" },
   { label: "x-trace-id", desc: "ServiceBridge native → continues existing trace", tone: "text-blue-400 border-blue-500/25 bg-blue-500/10", priority: "2nd" },
-  { label: "none", desc: "New trace ID generated automatically", tone: "text-zinc-400 border-zinc-500/25 bg-zinc-500/10", priority: "3rd" },
+  { label: "none", desc: "New trace ID generated automatically", tone: "text-muted-foreground border-zinc-500/25 bg-zinc-500/10", priority: "3rd" },
 ];
 
 const REQUEST_PATH = [
-  { label: "client", sub: "POST /api/orders", color: "bg-zinc-500", tone: "text-zinc-300 bg-surface border-surface-border" },
+  { label: "client", sub: "POST /api/orders", color: "bg-zinc-500", tone: "text-muted-foreground bg-surface border-surface-border" },
   { label: "middleware", sub: "span starts · x-trace-id injected", color: "bg-indigo-400", tone: "text-indigo-300 bg-indigo-500/[0.06] border-indigo-500/20" },
   { label: "handler", sub: "sb.rpc('orders.create', …)", color: "bg-blue-400", tone: "text-blue-300 bg-blue-500/[0.06] border-blue-500/20" },
   { label: "orders service", sub: "child span · direct gRPC", color: "bg-emerald-400", tone: "text-emerald-300 bg-emerald-500/[0.06] border-emerald-500/20" },
@@ -125,6 +125,9 @@ export function HttpSection() {
   const [copied, setCopied] = useState(false);
   const tab = FRAMEWORK_TABS.find((t) => t.id === activeTab) ?? FRAMEWORK_TABS[0];
 
+  const maxFwLines = Math.max(...FRAMEWORK_TABS.map((t) => t.code.trim().split("\n").length));
+  const minFwCodeHeight = maxFwLines * 20 + 40;
+
   const copyCode = () => {
     navigator.clipboard.writeText(tab.code.trim());
     setCopied(true);
@@ -134,6 +137,7 @@ export function HttpSection() {
   return (
     <FeatureSection
       id="http"
+      stickyColumn="content"
       eyebrow="HTTP Middleware"
       title={<>HTTP requests, traced. Automatically.</>}
       subtitle="Add one middleware and every HTTP request gets a span, a trace ID in the response, and its route registered in the HTTP catalog — with no code changes to handlers."
@@ -145,7 +149,7 @@ export function HttpSection() {
               <button
                 type="button"
                 onClick={copyCode}
-                className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer shrink-0"
+                className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
               >
                 {copied ? (
                   <><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
@@ -154,7 +158,10 @@ export function HttpSection() {
                 )}
               </button>
             </div>
-            <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-zinc-300">
+            <pre
+              className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-muted-foreground"
+              style={{ minHeight: minFwCodeHeight }}
+            >
               <code>{highlightCode(tab.code.trim(), tab.lang)}</code>
             </pre>
           </CodePanel>

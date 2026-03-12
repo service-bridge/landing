@@ -35,7 +35,7 @@ const VIA_TONE: Record<Via, string> = {
 const STATUS_TONE: Record<RunStatus, string> = {
   success: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
   running: "border-blue-500/20 bg-blue-500/[0.08] text-blue-300",
-  pending: "border-surface-border bg-surface text-zinc-500",
+  pending: "border-surface-border bg-surface text-muted-foreground/70",
   error: "border-red-500/20 bg-red-500/[0.08] text-red-300",
 };
 
@@ -45,7 +45,7 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
     label: "Cron",
     filename: { ts: "billing-service.ts", go: "billing_service.go", py: "billing_service.py" },
     code: {
-      ts: `import { servicebridge } from "@servicebridge/sdk";
+      ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "billing");
 
@@ -81,7 +81,7 @@ svc.HandleRpc("billing.reconcile",
     })
 
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
-      py: `from servicebridge import ServiceBridge, ScheduleOpts
+      py: `from service_bridge import ServiceBridge, ScheduleOpts
 
 svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "billing")
 
@@ -103,7 +103,7 @@ await svc.serve()`,
     label: "Delayed",
     filename: { ts: "onboarding-service.ts", go: "onboarding_service.go", py: "onboarding_service.py" },
     code: {
-      ts: `import { servicebridge } from "@servicebridge/sdk";
+      ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "onboarding");
 
@@ -130,13 +130,13 @@ svc.Job(ctx, "trial.reminder", servicebridge.ScheduleOpts{
 svc.HandleEvent("trial.reminder",
     func(ctx context.Context, p json.RawMessage, ec *servicebridge.EventContext) error {
         if !sendReminderEmail(ctx, p) {
-            return ec.Retry(60_000)
+            ec.Retry(60_000); return nil
         }
         return nil
     }, nil)
 
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
-      py: `from servicebridge import ServiceBridge, ScheduleOpts
+      py: `from service_bridge import ServiceBridge, ScheduleOpts
 
 svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "onboarding")
 
@@ -159,7 +159,7 @@ await svc.serve()`,
     label: "Via Workflow",
     filename: { ts: "platform-service.ts", go: "platform_service.go", py: "platform_service.py" },
     code: {
-      ts: `import { servicebridge } from "@servicebridge/sdk";
+      ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "platform");
 
@@ -188,13 +188,13 @@ svc.Job(ctx, "billing.daily", servicebridge.ScheduleOpts{
 })
 
 svc.Workflow(ctx, "billing.daily", []servicebridge.WorkflowStep{
-    {Name: "fetch",   Fn: "billing.fetchDue",   Payload: map[string]any{}},
-    {Name: "process", Fn: "billing.processAll", DependsOn: []string{"fetch"}},
-    {Name: "notify",  Fn: "billing.reconciled", DependsOn: []string{"process"}},
+    {ID: "fetch",   Type: "rpc",   Ref: "billing.fetchDue",   Deps: []string{}},
+    {ID: "process", Type: "rpc",   Ref: "billing.processAll", Deps: []string{"fetch"}},
+    {ID: "notify",  Type: "event", Ref: "billing.reconciled", Deps: []string{"process"}},
 })
 
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
-      py: `from servicebridge import ServiceBridge, ScheduleOpts, WorkflowStep
+      py: `from service_bridge import ServiceBridge, ScheduleOpts, WorkflowStep
 
 svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "platform")
 
@@ -204,11 +204,9 @@ await svc.job(
 )
 
 await svc.workflow("billing.daily", [
-    WorkflowStep(name="fetch",   fn="billing.fetchDue",   payload={}),
-    WorkflowStep(name="process", fn="billing.processAll", payload={},
-        depends_on=["fetch"]),
-    WorkflowStep(name="notify",  fn="billing.reconciled", payload={},
-        depends_on=["process"]),
+    WorkflowStep(id="fetch",   type="rpc",   ref="billing.fetchDue",   deps=[]),
+    WorkflowStep(id="process", type="rpc",   ref="billing.processAll", deps=["fetch"]),
+    WorkflowStep(id="notify",  type="event", ref="billing.reconciled", deps=["process"]),
 ])
 
 await svc.serve()`,
@@ -257,6 +255,12 @@ export function JobsSection() {
   }, [inView]);
 
   const tab = TABS[activeTab];
+
+  const maxJobLines = Math.max(
+    ...TABS.flatMap((t) => Object.values(t.code).map((c) => (c ?? "").trim().split("\n").length))
+  );
+  const minJobCodeHeight = maxJobLines * 20 + 40;
+
   const ViaIcon = ({ via }: { via: Via }) => {
     const Icon = VIA_ICON[via];
     return (
@@ -294,7 +298,7 @@ export function JobsSection() {
                 onChange={(id) => setActiveTab(TABS.findIndex((t) => t.id === id))}
               />
             </div>
-            <div className="p-4">
+            <div className="p-4" style={{ minHeight: minJobCodeHeight + 48 }}>
               <MultiCodeBlock code={tab.code} filename={tab.filename} />
             </div>
           </div>
@@ -309,7 +313,7 @@ export function JobsSection() {
             </div>
 
             <div ref={tableRef} className="p-4 space-y-2">
-              <div className="grid gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-zinc-600"
+              <div className="grid gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-muted-foreground/60"
                 style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}>
                 <span>job</span><span>via</span><span>status</span><span>next</span>
               </div>
@@ -328,14 +332,14 @@ export function JobsSection() {
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold font-display text-zinc-200">{run.name}</p>
-                        <p className="text-3xs font-mono text-zinc-600 mt-0.5">{run.schedule}</p>
+                        <p className="text-3xs font-mono text-muted-foreground/60 mt-0.5">{run.schedule}</p>
                       </div>
                       <ViaIcon via={run.via} />
                       <Badge tone={cn(STATUS_TONE[run.status], "inline-flex items-center gap-1 shrink-0")}>
                         <StatusIcon className={cn("w-2.5 h-2.5", run.status === "running" && "animate-spin")} />
                         {run.status}
                       </Badge>
-                      <span className="text-3xs font-mono text-zinc-500 text-right">{run.nextRun}</span>
+                      <span className="text-3xs font-mono text-muted-foreground/70 text-right">{run.nextRun}</span>
                     </motion.div>
                   );
                 })}

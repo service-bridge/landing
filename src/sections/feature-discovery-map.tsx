@@ -12,7 +12,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const DISCOVERY_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "service-bridge";
 
 // Worker: endpoint is advertised on serve()
 const payments = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "payments");
@@ -44,7 +44,7 @@ orders := servicebridge.New(
 result, _ := orders.Rpc(ctx, "payments.charge",
     map[string]any{"amount": 4990}, nil)`,
 
-  py: `from servicebridge import ServiceBridge
+  py: `from service_bridge import ServiceBridge
 
 # Worker: endpoint is advertised on serve()
 payments = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "payments")
@@ -109,43 +109,45 @@ export function DiscoveryMapSection() {
               <span className="font-mono text-2xs text-emerald-400/70">live</span>
             </div>
 
-            <div ref={tableRef} className="p-4 space-y-1">
-              <div
-                className="grid gap-2 px-3 pb-2"
-                style={{ gridTemplateColumns: "1.7fr 1.1fr 0.35fr 0.8fr 0.7fr" }}
-              >
-                {(["SERVICE", "ENDPOINT", "INST", "HEARTBEAT", "STATUS"] as const).map((h) => (
-                  <span key={h} className="type-overline-mono text-muted-foreground">{h}</span>
-                ))}
-              </div>
-
-              {REGISTRY_ROWS.map((row, i) => (
-                <motion.div
-                  key={row.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
-                  transition={{ duration: 0.3, delay: i * 0.07 }}
-                  className="grid gap-2 rounded-xl px-3 py-2.5 border border-surface-border bg-surface"
+            <div ref={tableRef} className="p-4 space-y-1 overflow-x-auto">
+              <div className="min-w-[520px]">
+                <div
+                  className="grid gap-2 px-3 pb-2"
                   style={{ gridTemplateColumns: "1.7fr 1.1fr 0.35fr 0.8fr 0.7fr" }}
                 >
-                  <span className={cn("text-xs font-mono truncate", row.alive ? "text-zinc-200" : "text-zinc-600")}>
-                    {row.canonical}
-                  </span>
-                  <span className={cn("text-xs font-mono", row.alive ? "text-zinc-500" : "text-zinc-700")}>
-                    {row.endpoint}
-                  </span>
-                  <span className={cn("text-xs font-mono text-center", row.alive ? "text-zinc-300" : "text-zinc-600")}>
-                    {row.inst}
-                  </span>
-                  <span className="text-xs font-mono text-zinc-600">{row.beat}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", row.alive ? "bg-emerald-400 animate-pulse" : "bg-zinc-700")} />
-                    <span className={cn("text-3xs font-mono", row.alive ? "text-emerald-400" : "text-zinc-600")}>
-                      {row.alive ? "alive" : "stale"}
+                  {(["SERVICE", "ENDPOINT", "INST", "HEARTBEAT", "STATUS"] as const).map((h) => (
+                    <span key={h} className="type-overline-mono text-muted-foreground">{h}</span>
+                  ))}
+                </div>
+
+                {REGISTRY_ROWS.map((row, i) => (
+                  <motion.div
+                    key={row.id}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: -8 }}
+                    transition={{ duration: 0.3, delay: i * 0.07 }}
+                    className="grid gap-2 rounded-xl px-3 py-2.5 border border-surface-border bg-surface"
+                    style={{ gridTemplateColumns: "1.7fr 1.1fr 0.35fr 0.8fr 0.7fr" }}
+                  >
+                    <span className={cn("text-xs font-mono truncate", row.alive ? "text-zinc-200" : "text-muted-foreground/60")}>
+                      {row.canonical}
                     </span>
-                  </div>
-                </motion.div>
-              ))}
+                    <span className={cn("text-xs font-mono", row.alive ? "text-muted-foreground/70" : "text-zinc-700")}>
+                      {row.endpoint}
+                    </span>
+                    <span className={cn("text-xs font-mono text-center", row.alive ? "text-muted-foreground" : "text-muted-foreground/60")}>
+                      {row.inst}
+                    </span>
+                    <span className="text-xs font-mono text-muted-foreground/60">{row.beat}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", row.alive ? "bg-emerald-400 animate-pulse" : "bg-zinc-700")} />
+                      <span className={cn("text-3xs font-mono", row.alive ? "text-emerald-400" : "text-muted-foreground/60")}>
+                        {row.alive ? "alive" : "stale"}
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
 
             <div className="border-t border-surface-border px-4 py-3 flex items-center gap-6">

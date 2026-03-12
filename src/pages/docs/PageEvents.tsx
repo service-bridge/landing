@@ -11,16 +11,15 @@ export function PageEvents() {
       />
 
       <Callout type="tip">
-        ServiceBridge events are <strong>4x faster than RabbitMQ</strong> at burst load (12,500 vs
-        3,200 evt/s). DLQ, replay, and consumer group fan-out are built-in — no Kafka, no Redis
-        Streams, no separate queue infrastructure.
+        DLQ, replay, and consumer group fan-out are built-in — no Kafka, no Redis Streams, no
+        separate queue infrastructure.
       </Callout>
 
       {/* ── event() ──────────────────────────────────────────────── */}
       <H2 id="event-publish">event() — publish</H2>
       <P>
         Publish a JSON payload to a topic. Every registered consumer group receives it independently
-        with retries and DLQ on failure. Returns the <Mono>messageId</Mono> (ULID) on success, or
+        with retries and DLQ on failure. Returns the <Mono>messageId</Mono> (UUID) on success, or
         an empty string while in offline-queue mode (flushed automatically on reconnect).
       </P>
 
@@ -41,7 +40,7 @@ export function PageEvents() {
           { name: "idempotencyKey", type: "string", desc: "Deduplication key — runtime rejects duplicates per (producer_service, key) pair." },
           { name: "headers", type: "Record<string, string>", desc: "Custom metadata forwarded to all consumers via EventContext.refs.headers." },
           { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate publishing with the consumer trace." },
-          { name: "parentSpanId (Node)", type: "string", default: "auto", desc: "Override parent span ID." },
+          { name: "parentSpanId (Node) / parent_span_id (Python)", type: "string", default: "auto", desc: "Override parent span ID. Available in Node.js (parentSpanId) and Python (parent_span_id)." },
         ]}
       />
 
@@ -59,7 +58,7 @@ const messageId = await sb.event("orders.completed", {
   idempotencyKey: "order:ord_42:completed",
   headers: { source: "checkout", region: "us-east" },
 });
-console.log(messageId); // "msg_01HQ..."`,
+  console.log(messageId); // "550e8400-e29b-41d4-a716-446655440000"`,
           go: `// Basic publish
 svc.Event(ctx, "orders.created", map[string]any{"order_id": "ord_42", "total": 4990}, nil)
 
@@ -116,7 +115,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
       <ParamTable
         rows={[
           { name: "pattern / topic", type: "string", desc: 'Topic pattern. Use * for single-segment wildcard: "orders.*" matches "orders.created" but not "orders.created.sub".' },
-          { name: "groupName / GroupName / group_name", type: "string", default: "Node: <service>:<pattern>; Go/Python: <service>.<topic>", desc: "Consumer group name. All instances sharing this name receive load-balanced delivery." },
+          { name: "groupName / GroupName / group_name", type: "string", default: "<service>.<topic> (all SDKs)", desc: "Consumer group name. All instances sharing this name receive load-balanced delivery." },
           { name: "concurrency (Node)", type: "number", desc: "Max concurrent handler executions per worker (reserved, not yet enforced)." },
           { name: "prefetch (Node)", type: "number", desc: "Messages to pre-fetch from the runtime (reserved, not yet enforced)." },
           { name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json", type: "string (JSON)", desc: "JSON retry policy. See Retry policy section below." },
@@ -125,6 +124,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
       />
       <Callout type="info">
         Cross-SDK parity: <Mono>groupName/group_name</Mono>, retry policy, and <Mono>filterExpr/filter_expr</Mono> are available in all SDKs.
+        In Python, registering a duplicate group name raises a <Mono>ValueError</Mono>. In Go and Node.js, the duplicate is silently ignored (the original handler is kept).
         Node-only <Mono>concurrency</Mono>/<Mono>prefetch</Mono> are currently hint fields.
       </Callout>
 
@@ -137,7 +137,9 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
           { name: "ctx.refs.groupName (Node/Go) / ctx.group_name (Python)", type: "string", desc: "This consumer group's name." },
           { name: "ctx.refs.messageId (Node/Go) / ctx.message_id (Python)", type: "string", desc: "Queue message ID." },
           { name: "ctx.refs.attempt (Node/Go) / ctx.attempt (Python)", type: "number", desc: "Current delivery attempt number (1-indexed)." },
-          { name: "ctx.refs.headers (Node/Go) / ctx.headers (Python)", type: "Node: string(JSON), Go: map[string]string, Python: dict[str,str]", desc: "Headers set by publisher." },
+          { name: "ctx.refs.headers (Node/Go) / ctx.headers (Python)", type: "map[string]string / dict[str,str]", desc: "Headers set by publisher." },
+          { name: "ctx.traceId (Node/Go) / ctx.trace_id (Python)", type: "string", desc: "Distributed trace ID for this event delivery — use with watchRun() for run correlation." },
+          { name: "ctx.spanId (Node/Go) / ctx.span_id (Python)", type: "string", desc: "Span ID for linking back to the producer's span." },
           { name: "ctx.stream.write(data, key)", type: "method", desc: "Append a real-time chunk to the run stream (visible in dashboard, consumable via watchRun)." },
         ]}
       />

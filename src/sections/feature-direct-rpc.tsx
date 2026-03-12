@@ -12,7 +12,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const RPC_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@servicebridge/sdk";
+  ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
@@ -50,7 +50,7 @@ func main() {
     _ = sb.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})
 }`,
 
-  py: `from servicebridge import ServiceBridge
+  py: `from service_bridge import ServiceBridge
 import os
 
 sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
@@ -86,13 +86,14 @@ export function DirectRpcSection() {
   return (
     <FeatureSection
       id="direct-rpc"
+      stickyColumn="content"
       eyebrow="Direct RPC"
       title={<>Zero proxy hops. Direct to the worker.</>}
       subtitle="ServiceBridge handles discovery, endpoint caching, mTLS identity, and load balancing entirely off the data path. Calls travel service-to-service over a persistent direct gRPC channel — no intermediary process."
       content={
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
-            <p className="type-overline-mono text-zinc-500">how it works</p>
+            <p className="type-overline-mono text-muted-foreground/70">how it works</p>
             <h2 className="type-subsection-title mt-2">Registry resolves once. Then it's a direct wire.</h2>
             <p className="type-body-sm mt-3">
               On first{" "}
@@ -129,14 +130,14 @@ export function DirectRpcSection() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="type-overline-mono text-red-400/60">traditional service mesh</p>
-                    <p className="mt-0.5 text-xs text-zinc-500">Istio / Linkerd — sidecar on every pod</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground/70">Istio / Linkerd — sidecar on every pod</p>
                   </div>
                   <Badge tone="border-red-500/25 bg-red-500/[0.08] text-red-400">4 proxy hops</Badge>
                 </div>
                 <div className="flex items-center gap-1 overflow-x-auto">
                   <div className="rounded-lg border border-zinc-700/40 bg-zinc-800/40 px-3 py-1.5 text-center shrink-0">
-                    <p className="text-xs font-semibold font-display text-zinc-300">checkout</p>
-                    <p className="text-3xs font-mono text-zinc-600">caller</p>
+                    <p className="text-xs font-semibold font-display text-muted-foreground">checkout</p>
+                    <p className="text-3xs font-mono text-muted-foreground/60">caller</p>
                   </div>
                   <div className="flex-1 relative h-px bg-zinc-700/40 min-w-[16px]">
                     {inView && <Packet color="bg-zinc-500/80" duration={2.4} />}
@@ -156,8 +157,8 @@ export function DirectRpcSection() {
                     {inView && <Packet color="bg-zinc-500/80" duration={2.4} delay={0.8} />}
                   </div>
                   <div className="rounded-lg border border-zinc-700/40 bg-zinc-800/40 px-3 py-1.5 text-center shrink-0">
-                    <p className="text-xs font-semibold font-display text-zinc-300">payments</p>
-                    <p className="text-3xs font-mono text-zinc-600">worker</p>
+                    <p className="text-xs font-semibold font-display text-muted-foreground">payments</p>
+                    <p className="text-3xs font-mono text-muted-foreground/60">worker</p>
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
@@ -174,7 +175,7 @@ export function DirectRpcSection() {
                 <div className="flex items-center justify-between mb-3">
                   <div>
                     <p className="type-overline-mono text-emerald-400/80">ServiceBridge</p>
-                    <p className="mt-0.5 text-xs text-zinc-400">Control plane is off the data path</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">Control plane is off the data path</p>
                   </div>
                   <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">0 hops</Badge>
                 </div>
@@ -192,7 +193,7 @@ export function DirectRpcSection() {
                     <div className="w-px h-3 border-l border-dashed border-violet-500/25" />
                     <div className="w-px h-3 border-l border-dashed border-violet-500/25" />
                   </div>
-                  <p className="text-3xs font-mono text-zinc-600 mb-2">lookup on first call · cached · refresh every 10s</p>
+                  <p className="text-3xs font-mono text-muted-foreground/60 mb-2">lookup on first call · cached · refresh every 10s</p>
 
                   {/* Direct data path */}
                   <div className="flex items-center gap-2 w-full">
@@ -223,7 +224,7 @@ export function DirectRpcSection() {
                       <p className="text-3xs font-mono text-emerald-400/50">worker</p>
                     </div>
                   </div>
-                  <p className="mt-1.5 text-3xs font-mono text-zinc-600">direct gRPC · mTLS · round_robin · waitForReady</p>
+                  <p className="mt-1.5 text-3xs font-mono text-muted-foreground/60">direct gRPC · mTLS · round_robin · waitForReady</p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-3">

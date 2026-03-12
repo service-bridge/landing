@@ -76,6 +76,15 @@ app.listen(3000);`,
 });`,
         }}
       />
+      <H3 id="express-eager-opts">registerExpressRoutes options</H3>
+      <ParamTable
+        rows={[
+          { name: "instanceId", type: "string", desc: "Unique instance identifier for this service instance." },
+          { name: "endpoint", type: "string", desc: "Publicly reachable address for this service instance, registered in the catalog." },
+          { name: "allowedCallers", type: "string[]", default: "[]", desc: "List of service names allowed to call these HTTP endpoints." },
+          { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to exclude from catalog registration." },
+        ]}
+      />
 
       {/* ── Fastify ──────────────────────────────────────────────── */}
       <H2 id="fastify">Fastify</H2>
@@ -104,6 +113,18 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
   return reply.send(user);
 }));`,
         }}
+      />
+
+      <H3 id="fastify-options">servicebridgePlugin options</H3>
+      <ParamTable
+        rows={[
+          { name: "client", type: "ServiceBridgeService", desc: "The SDK client instance." },
+          { name: "instanceId", type: "string", desc: "Unique instance identifier for this service instance. Used to disambiguate multiple instances in the Service Map." },
+          { name: "endpoint", type: "string", desc: "The gRPC endpoint address this worker listens on. Registered in the service catalog." },
+          { name: "allowedCallers", type: "string[]", default: "[]", desc: "List of service names allowed to call these HTTP endpoints. Enforced at the worker gRPC level." },
+          { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to skip — no span, no catalog registration." },
+          { name: "autoRegister", type: "boolean", default: "true", desc: "Register route pattern in catalog on first request hit." },
+        ]}
       />
 
       <Callout type="warning">
@@ -241,7 +262,7 @@ e.GET("/users/:id", func(c echo.Context) error {
         code={{
           go: `r.Use(sbhttp.ChiMiddleware(svc, sbhttp.Options{
   ExcludePaths: []string{"/health", "/ready"},
-  AutoRegister: servicebridge.BoolPtr(true),
+  AutoRegister: sbhttp.BoolPtr(true),
 }))`,
         }}
       />

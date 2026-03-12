@@ -6,11 +6,14 @@ interface FeatureSectionProps {
   id: string;
   eyebrow: string;
   title: React.ReactNode;
-  subtitle: string;
+  subtitle: React.ReactNode;
   content: React.ReactNode;
   demo: React.ReactNode;
   cards?: React.ReactNode;
-  size?: "default" | "large";
+  /** Which column should stick on scroll when columns differ in height.
+   *  "demo" (default) — right/demo column sticks (content is taller).
+   *  "content" — left/content column sticks (demo is taller). */
+  stickyColumn?: "content" | "demo";
 }
 
 export function FeatureSection({
@@ -21,14 +24,18 @@ export function FeatureSection({
   content,
   demo,
   cards,
-  size = "default",
+  stickyColumn = "demo",
 }: FeatureSectionProps) {
   return (
     <Section id={id}>
-      <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} size={size} />
+      <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
       <div className="mt-12 grid items-start gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <div>{content}</div>
-        <div>{demo}</div>
+        <div className={`min-w-0${stickyColumn === "content" ? " lg:sticky lg:top-24" : ""}`}>
+          {content}
+        </div>
+        <div className={`min-w-0${stickyColumn === "demo" ? " lg:sticky lg:top-24" : ""}`}>
+          {demo}
+        </div>
       </div>
       {cards && (
         <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

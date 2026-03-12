@@ -20,9 +20,6 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { fadeInUp } from "../components/animations";
-import { cn } from "../lib/utils";
-import { Badge } from "../ui/Badge";
-import { Card } from "../ui/Card";
 import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
@@ -34,7 +31,7 @@ type FeatureDef = {
   iconBg: string;
   iconColor: string;
   badge?: string;
-  badgeColor?: string;
+  badgeTone?: string;
   stat?: string;
   statLabel?: string;
 };
@@ -57,7 +54,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-blue-500/10",
         iconColor: "text-blue-400",
         badge: "0% overhead, mTLS + GAP",
-        badgeColor: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+        badgeTone: "text-blue-400 bg-blue-400/10 border-blue-400/20",
       },
       {
         title: "Durable Events",
@@ -66,7 +63,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-emerald-500/10",
         iconColor: "text-emerald-400",
         badge: "up to 4× vs RabbitMQ",
-        badgeColor: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+        badgeTone: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
       },
       {
         title: "HTTP Middleware",
@@ -75,7 +72,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-indigo-500/10",
         iconColor: "text-indigo-400",
         badge: "Express, Fastify, Gin, FastAPI",
-        badgeColor: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
+        badgeTone: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20",
       },
       {
         title: "Realtime Streams",
@@ -84,7 +81,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-red-500/10",
         iconColor: "text-red-400",
         badge: "LLM, progress, logs",
-        badgeColor: "text-red-400 bg-red-400/10 border-red-400/20",
+        badgeTone: "text-red-400 bg-red-400/10 border-red-400/20",
       },
       {
         title: "Service Discovery",
@@ -93,7 +90,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-cyan-500/10",
         iconColor: "text-cyan-400",
         badge: "1000+ services, zero DB",
-        badgeColor: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+        badgeTone: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
       },
       {
         title: "Service Map & Connections",
@@ -102,7 +99,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-violet-500/10",
         iconColor: "text-violet-400",
         badge: "realtime, replica-aware",
-        badgeColor: "text-violet-400 bg-violet-400/10 border-violet-400/20",
+        badgeTone: "text-violet-400 bg-violet-400/10 border-violet-400/20",
       },
     ],
   },
@@ -137,7 +134,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-violet-500/10",
         iconColor: "text-violet-400",
         badge: "5-layer enforcement",
-        badgeColor: "text-violet-400 bg-violet-400/10 border-violet-400/20",
+        badgeTone: "text-violet-400 bg-violet-400/10 border-violet-400/20",
       },
       {
         title: "Auto mTLS",
@@ -146,7 +143,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-teal-500/10",
         iconColor: "text-teal-400",
         badge: "mTLS, certs at key creation",
-        badgeColor: "text-teal-400 bg-teal-400/10 border-teal-400/20",
+        badgeTone: "text-teal-400 bg-teal-400/10 border-teal-400/20",
       },
     ],
   },
@@ -161,7 +158,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-cyan-500/10",
         iconColor: "text-cyan-400",
         badge: "100% runs traced",
-        badgeColor: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
+        badgeTone: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
       },
       {
         title: "Logs & Metrics",
@@ -170,7 +167,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-orange-500/10",
         iconColor: "text-orange-400",
         badge: "Prometheus & Loki export",
-        badgeColor: "text-orange-400 bg-orange-400/10 border-orange-400/20",
+        badgeTone: "text-orange-400 bg-orange-400/10 border-orange-400/20",
       },
       {
         title: "Smart Alerts",
@@ -179,7 +176,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         iconBg: "bg-red-500/10",
         iconColor: "text-red-400",
         badge: "6 condition types",
-        badgeColor: "text-red-400 bg-red-400/10 border-red-400/20",
+        badgeTone: "text-red-400 bg-red-400/10 border-red-400/20",
       },
     ],
   },
@@ -236,46 +233,6 @@ const PROD_FEATURES = [
   },
 ];
 
-function LargeFeatureCard({ feature, className }: { feature: FeatureDef; className?: string }) {
-  return (
-    <motion.div variants={fadeInUp} className={className}>
-      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.10] hover:shadow-lg hover:shadow-black/20">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.03] bg-white" />
-        <div className="relative flex h-full flex-col">
-          <div
-            className={cn(
-              "mb-5 inline-flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-white/[0.06]",
-              feature.iconBg
-            )}
-          >
-            <feature.icon className={cn("h-5 w-5", feature.iconColor)} />
-          </div>
-          <div className="mb-2 flex flex-wrap items-start gap-2">
-            <h3 className="type-subsection-title leading-snug">{feature.title}</h3>
-            {feature.badge && (
-              <Badge tone={feature.badgeColor}>{feature.badge}</Badge>
-            )}
-          </div>
-          <p className="type-body-sm flex-1 leading-relaxed">{feature.desc}</p>
-          {feature.stat && (
-            <div className="mt-5 flex items-baseline gap-1.5 border-t border-surface-border pt-4">
-              <span
-                className={cn(
-                  "font-display text-3xl font-bold tabular-nums",
-                  feature.iconColor
-                )}
-              >
-                {feature.stat}
-              </span>
-              <span className="type-body-sm">{feature.statLabel}</span>
-            </div>
-          )}
-        </div>
-      </Card>
-    </motion.div>
-  );
-}
-
 function CategoryDivider({ label }: { label: string }) {
   return (
     <div className="col-span-full mt-2 flex items-center gap-4 first:mt-0">
@@ -299,11 +256,25 @@ export function FeaturesSection() {
           <div key={group.label} className="contents">
             <CategoryDivider label={group.label} />
             {group.features.map((feature) => (
-              <LargeFeatureCard
-                key={feature.title}
-                feature={feature}
+              <motion.div 
+                key={feature.title} 
+                variants={fadeInUp} 
                 className={group.wide ? "md:col-span-3" : "md:col-span-2"}
-              />
+              >
+                <FeatureCard
+                  variant="large"
+                  title={feature.title}
+                  description={feature.desc}
+                  icon={feature.icon}
+                  iconBg={feature.iconBg}
+                  iconClassName={feature.iconColor}
+                  badge={feature.badge}
+                  badgeTone={feature.badgeTone}
+                  stat={feature.stat}
+                  statLabel={feature.statLabel}
+                  className="h-full"
+                />
+              </motion.div>
             ))}
           </div>
         ))}
@@ -311,9 +282,9 @@ export function FeaturesSection() {
 
       <motion.div variants={fadeInUp} className="mx-auto mt-12 max-w-5xl">
         <div className="mb-6 flex items-center gap-4">
-          <div className="h-px flex-1 bg-surface-border" />
+          <div className="h-px flex-1 bg-border" />
           <span className="type-overline-mono">Production-grade infrastructure</span>
-          <div className="h-px flex-1 bg-surface-border" />
+          <div className="h-px flex-1 bg-border" />
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {PROD_FEATURES.map((item) => (

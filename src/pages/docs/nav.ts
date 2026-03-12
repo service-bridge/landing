@@ -100,6 +100,7 @@ export const NAV: NavGroup[] = [
           { id: "conditional-if", label: "Conditional steps" },
           { id: "child-workflow", label: "Child workflows" },
           { id: "sleep-step", label: "Durable sleep" },
+          { id: "run-workflow", label: "runWorkflow()" },
           { id: "cancel", label: "Cancel a run" },
         ],
       },
