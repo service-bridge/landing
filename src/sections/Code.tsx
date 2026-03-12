@@ -18,10 +18,10 @@ const LANG_TABS = [
     id: "typescript",
     label: "TypeScript",
     filename: "orders-service.ts",
-    code: `import { servicebridge } from "@service-bridge/node";
+    code: `import { servicebridge } from "service-bridge";
 
 // Connect: control plane address + service key + service name
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "orders");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // RPC handler — direct gRPC, zero proxy hops
 sb.handleRpc("orders.create", async (payload) => {
@@ -109,7 +109,7 @@ func main() {
 from service_bridge import ServiceBridge
 
 # Connect: control plane address + service key + service name
-sb = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "notify")
+sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notify")
 
 # RPC handler — direct gRPC, zero proxy hops
 @sb.handle_rpc("notify.send")

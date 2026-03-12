@@ -24,7 +24,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const WORKFLOW_CODE: CodeLangs = {
   ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "platform");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "platform");
 
 // DAG: parallel fan-out → fan-in → conditional → sleep → followup
 await sb.workflow("merchant.onboarding", [
@@ -47,7 +47,7 @@ await sb.workflow("merchant.onboarding", [
 ]);`,
 
   go: `svc := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "platform", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "platform", nil)
 
 svc.Workflow(ctx, "merchant.onboarding", []servicebridge.WorkflowStep{
     {Name: "validate",  Fn: "merchant.validate", Payload: map[string]any{}},
@@ -61,7 +61,7 @@ svc.Workflow(ctx, "merchant.onboarding", []servicebridge.WorkflowStep{
 
   py: `from servicebridge import ServiceBridge, WorkflowStep
 
-svc = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "platform")
+svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "platform")
 
 await svc.workflow("merchant.onboarding", [
     WorkflowStep(name="validate",  fn="merchant.validate",  payload={}),

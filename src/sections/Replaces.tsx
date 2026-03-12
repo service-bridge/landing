@@ -172,7 +172,7 @@ export function ReplacesSection() {
       <motion.div variants={fadeInUp} className="mb-14 text-center">
         <Eyebrow
           variant="pill"
-          tone="border-primary/20 bg-primary/[0.06] text-primary"
+          tone="border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400"
           icon={<CheckCircle2 className="h-3.5 w-3.5" />}
         >
           Simplify your stack
@@ -233,33 +233,33 @@ export function ReplacesSection() {
           variants={fadeInUp}
           className="hidden flex-col items-center justify-center gap-2 lg:flex"
         >
-          <div className="h-10 w-px bg-gradient-to-b from-transparent via-border to-primary/30" />
-          <div className="rounded-full border border-primary/25 bg-primary/[0.08] p-2.5 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
-            <ArrowRight className="h-4 w-4 text-primary" />
+          <div className="h-10 w-px bg-gradient-to-b from-transparent via-border to-emerald-500/30" />
+          <div className="rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] p-2.5 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+            <ArrowRight className="h-4 w-4 text-emerald-400" />
           </div>
-          <div className="h-10 w-px bg-gradient-to-b from-primary/30 via-border to-transparent" />
+          <div className="h-10 w-px bg-gradient-to-b from-emerald-500/30 via-border to-transparent" />
         </motion.div>
 
         <div className="flex items-center justify-center gap-3 lg:hidden">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <div className="rounded-full border border-primary/25 bg-primary/[0.08] p-2">
-            <ArrowRight className="h-4 w-4 rotate-90 text-primary" />
+          <div className="rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] p-2">
+            <ArrowRight className="h-4 w-4 rotate-90 text-emerald-400" />
           </div>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
 
         <div>
           <div className="mb-3 flex items-center gap-2 px-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
-            <span className="type-overline text-primary">With ServiceBridge</span>
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+            <span className="type-overline text-emerald-400">With ServiceBridge</span>
           </div>
           <motion.div variants={fadeInUp}>
-            <Card className="relative overflow-hidden border-primary/25 bg-primary/[0.03]">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.07] via-transparent to-emerald-500/[0.04]" />
-              <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-primary/[0.12] blur-3xl" />
+            <Card className="relative overflow-hidden border-emerald-500/25 bg-emerald-500/[0.03]">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/[0.07] via-transparent to-emerald-500/[0.04]" />
+              <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-emerald-500/[0.10] blur-3xl" />
 
-              <div className="relative flex items-center gap-3 border-b border-primary/[0.12] px-5 py-4">
-                <div className="rounded-lg bg-primary/10 p-2 text-primary">
+              <div className="relative flex items-center gap-3 border-b border-emerald-500/[0.12] px-5 py-4">
+                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-400">
                   <BrandMark className="h-5 w-5" />
                 </div>
                 <div>
@@ -267,7 +267,7 @@ export function ReplacesSection() {
                   <p className="text-2xs text-muted-foreground">One binary · all primitives</p>
                 </div>
                 <Badge
-                  tone="border-primary/20 bg-primary/[0.08] text-primary"
+                  tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400"
                   className="ml-auto px-2.5 py-1"
                 >
                   All included
@@ -280,7 +280,7 @@ export function ReplacesSection() {
                     key={item.label}
                     className="flex items-center gap-3 px-5 py-2.5 transition-colors duration-150 hover:bg-surface"
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-emerald-400" />
                     <item.icon className={cn("h-3.5 w-3.5 flex-shrink-0", item.color)} />
                     <span className="text-sm font-medium text-foreground/80">{item.label}</span>
                     <span className="ml-auto hidden text-2xs text-muted-foreground/50 sm:block">
@@ -382,7 +382,7 @@ export function ReplacesSection() {
                                 : "bg-yellow-500"
                           )}
                         />
-                        <span className="type-body-sm font-mono leading-snug text-amber-400/70">
+                        <span className="type-body-sm font-mono leading-snug text-muted-foreground/60">
                           {row.mesh}
                         </span>
                       </div>

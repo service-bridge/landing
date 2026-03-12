@@ -51,7 +51,7 @@ export function ObservabilitySection() {
           <CodePanel title="grafana datasource config">
             <div className="px-4 py-3 flex items-center justify-between border-b border-surface-border bg-code-chrome">
               <p className="type-overline-mono text-muted-foreground">datasources.yaml</p>
-              <Badge tone="border-primary/20 bg-primary/[0.08] text-primary">zero extra services</Badge>
+              <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">zero extra services</Badge>
             </div>
             <div className="p-4">
               <CodeBlock code={GRAFANA_CODE} filename="datasources.yaml" />
@@ -123,7 +123,7 @@ export function ObservabilitySection() {
           <FeatureCard variant="compact" icon={BarChart2} title="30+ metric families" description="RPC, events, jobs, workflows, traces, resources, logs — all in one /metrics endpoint." iconClassName="text-orange-400" />
           <FeatureCard variant="compact" icon={ScrollText} title="Native log collection" description="SDK patches console.log / log / slog automatically. No Promtail, no FluentBit, no log shipper." iconClassName="text-cyan-400" />
           <FeatureCard variant="compact" icon={Eye} title="Trace+log correlation" description="Logs carry trace_id and span_id. Expand any span in the waterfall to see correlated log lines." iconClassName="text-violet-400" />
-          <FeatureCard variant="compact" icon={Database} title="One data store" description="Metrics, logs, and traces all in PostgreSQL. Standard backups, no separate time-series DB." iconClassName="text-primary" />
+          <FeatureCard variant="compact" icon={Database} title="One data store" description="Metrics, logs, and traces all in PostgreSQL. Standard backups, no separate time-series DB." iconClassName="text-emerald-400" />
         </>
       }
     />

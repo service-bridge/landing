@@ -22,7 +22,7 @@ export function MiniCard({
       <Icon
         className={cn(
           "mt-0.5 h-5 w-5 shrink-0",
-          iconClassName ?? "text-primary"
+          iconClassName ?? "text-emerald-400"
         )}
       />
       <div>

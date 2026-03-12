@@ -21,7 +21,7 @@ const FRAMEWORK_TABS = [
 import { servicebridge } from "@servicebridge/sdk";
 import { servicebridgeMiddleware } from "@servicebridge/http-node";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "gateway");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "gateway");
 const app = express();
 
 // Auto-traces every request, registers routes in HTTP catalog
@@ -45,7 +45,7 @@ app.post("/api/orders", async (req, res) => {
 import { servicebridge } from "@servicebridge/sdk";
 import { servicebridgePlugin } from "@servicebridge/http-node";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "api");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "api");
 const app = Fastify();
 
 await app.register(servicebridgePlugin, { client: sb });
@@ -66,8 +66,8 @@ app.post("/checkout", {
 
 import (
   "github.com/gin-gonic/gin"
-  sb "github.com/servicebridge/go-sdk"
-  sbhttp "github.com/servicebridge/http-go"
+  sb "github.com/service-bridge/go"
+  sbhttp "github.com/service-bridge/go/http"
 )
 
 func main() {
@@ -93,7 +93,7 @@ func main() {
 from servicebridge import ServiceBridge
 from servicebridge_http import ServiceBridgeMiddleware
 
-sb = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "api")
+sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "api")
 app = FastAPI()
 
 app.add_middleware(ServiceBridgeMiddleware, client=sb)

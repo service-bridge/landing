@@ -19,7 +19,7 @@ const INSTALL_TABS = [
 ];
 
 const INSTALL_CMDS: Record<(typeof INSTALL_TABS)[number]["id"], string> = {
-  node: "npm install @service-bridge/node",
+  node: "npm i service-bridge",
   python: "pip install service-bridge",
   go: "go get github.com/service-bridge/go",
 };
@@ -37,8 +37,8 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
   return (
     <Section className="relative overflow-hidden pb-20 pt-32 lg:pb-32 lg:pt-44 border-t-0">
       <div className="absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_80%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-      <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-emerald-500/[0.07] blur-[128px]" />
-      <div className="absolute right-1/4 top-20 h-[400px] w-[400px] rounded-full bg-blue-500/[0.05] blur-[96px]" />
+      <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-slate-500/[0.025] blur-[140px]" />
+      <div className="absolute right-1/4 top-20 h-[400px] w-[400px] rounded-full bg-slate-400/[0.02] blur-[100px]" />
 
       <div className="container relative z-10 mx-auto px-4 text-center">
         <motion.div
@@ -59,7 +59,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="type-display-xl mx-auto max-w-5xl font-display sm:text-6xl lg:text-7xl"
         >
-          The Unified Interaction Layer for Microservices
+          The Unified Bridge for Microservices Interaction
         </motion.h1>
 
         <motion.p
@@ -96,11 +96,11 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
         >
           <button
             type="button"
-            onClick={() => copyCmd("docker compose up -d", 0)}
-            className="group flex w-full max-w-xl cursor-pointer items-center gap-3 rounded-lg border border-surface-border bg-surface px-5 py-3 font-mono text-sm transition-all hover:border-white/[0.12] hover:bg-surface"
+            onClick={() => copyCmd("bash <(curl -fsSL https://servicebridge.dev/install.sh)", 0)}
+            className="group flex w-full max-w-3xl cursor-pointer items-center gap-3 rounded-lg border border-surface-border bg-surface px-5 py-3 font-mono text-sm transition-all hover:border-white/[0.12] hover:bg-surface"
           >
             <span className="shrink-0 text-muted-foreground">$</span>
-            <span className="flex-1 text-left text-foreground">docker compose up -d</span>
+            <span className="flex-1 text-left text-foreground">bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)</span>
             <span className="type-caption hidden shrink-0 font-sans text-muted-foreground/50 sm:block">
               Runtime + Postgres
             </span>
@@ -111,7 +111,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
             )}
           </button>
 
-          <div className="flex w-full max-w-xl flex-col gap-2 rounded-lg border border-surface-border bg-surface overflow-hidden">
+          <div className="flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-surface-border bg-surface overflow-hidden">
             <div className="flex items-center justify-between border-b border-surface-border px-3 py-2">
               <TabStrip
                 items={INSTALL_TABS}

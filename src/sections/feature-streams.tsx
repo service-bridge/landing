@@ -10,9 +10,9 @@ import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
 const WRITER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@service-bridge/node";
+  ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("api.example.com:14445", SERVICE_KEY, "ai");
+const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "ai");
 
 sb.handleEvent("ai.generate", async (payload, ctx) => {
   // Stream tokens to any subscriber in real-time
@@ -23,7 +23,7 @@ sb.handleEvent("ai.generate", async (payload, ctx) => {
 });`,
 
   go: `svc := servicebridge.New(
-    "api.example.com:14445", os.Getenv("SERVICE_KEY"), "ai", nil)
+    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "ai", nil)
 
 svc.HandleEvent("ai.generate",
     func(ctx context.Context, p json.RawMessage,
@@ -37,7 +37,7 @@ svc.HandleEvent("ai.generate",
 
   py: `from servicebridge import ServiceBridge
 
-svc = ServiceBridge("api.example.com:14445", SERVICE_KEY, "ai")
+svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "ai")
 
 @svc.handle_event("ai.generate")
 async def on_generate(payload: dict, ctx) -> None:
@@ -46,9 +46,9 @@ async def on_generate(payload: dict, ctx) -> None:
 };
 
 const READER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "@service-bridge/node";
+  ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("api.example.com:14445", SERVICE_KEY);
+const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 const runId = await sb.event("ai.generate", { prompt });
 
@@ -58,29 +58,29 @@ for await (const chunk of sb.watchRun(runId, { key: "output" })) {
 }`,
 
   go: `svc := servicebridge.New(
-    "api.example.com:14445", os.Getenv("SERVICE_KEY"), "", nil)
+    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "", nil)
 
 runID, _ := svc.Event(ctx, "ai.generate",
     map[string]any{"prompt": prompt}, nil)
 
-events, _ := svc.WatchRun(ctx, runID,
-    &servicebridge.WatchRunOpts{Keys: []string{"output"}})
-for ev := range events {
-    if ev.Error != nil { break }
-    fmt.Print(ev.Data["token"])
+ch, _ := svc.WatchRun(ctx, runID, &servicebridge.WatchRunOpts{Key: "output"})
+for ev := range ch {
+    var data map[string]any
+    json.Unmarshal(ev.Data, &data)
+    if token, ok := data["token"].(string); ok { fmt.Print(token) }
+    if ev.Done { break }
 }`,
 
   py: `from servicebridge import ServiceBridge, WatchRunOpts
 
-svc = ServiceBridge("api.example.com:14445", SERVICE_KEY)
+svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 run_id, _ = await svc.event("ai.generate", {"prompt": prompt})
 
-async for chunk in svc.watch_run(
-        run_id, WatchRunOpts(keys=["output"])):
-    if chunk.error:
+async for chunk in svc.watch_run(run_id, WatchRunOpts(key="output")):
+    if chunk.done:
         break
-    print(chunk.data["token"], end="", flush=True)`,
+    print(chunk.data.get("token", ""), end="", flush=True)`,
 };
 
 const STREAM_LINES = [
@@ -216,7 +216,7 @@ export function StreamsSection() {
             <p className="type-overline-mono text-muted-foreground mb-2">how it works</p>
             <p className="type-body-sm">
               Any handler — event, RPC, or workflow step — can call{" "}
-              <code className="font-mono text-primary">ctx.stream.write()</code> while it runs.
+              <code className="font-mono text-emerald-400">ctx.stream.write()</code> while it runs.
               The SDK buffers chunks in PostgreSQL and pushes them to all watchers via WebSocket.
               Late subscribers catch up by replaying stored chunks.
             </p>
@@ -250,7 +250,7 @@ export function StreamsSection() {
           <LiveTerminal />
           <p className="type-body-sm">
             Both the UI dashboard and SDK{" "}
-            <code className="font-mono text-primary">sb.watchRun()</code> receive chunks through
+            <code className="font-mono text-emerald-400">sb.watchRun()</code> receive chunks through
             the same pipeline.
           </p>
         </div>
@@ -259,7 +259,7 @@ export function StreamsSection() {
         <>
           <FeatureCard variant="compact" icon={Terminal} title="Any handler" description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere." iconClassName="text-zinc-400" />
           <FeatureCard variant="compact" icon={Radio} title="Named keys" description="Use named stream keys (output, log, progress) to multiplex multiple data streams from a single run." iconClassName="text-emerald-400" />
-          <FeatureCard variant="compact" icon={Zap} title="Replay-safe" description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect." iconClassName="text-primary" />
+          <FeatureCard variant="compact" icon={Zap} title="Replay-safe" description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect." iconClassName="text-emerald-400" />
         </>
       }
     />

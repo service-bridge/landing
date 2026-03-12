@@ -28,7 +28,7 @@ export function FooterSection() {
               Documentation
             </a>
             <a
-              href="https://www.npmjs.com/package/@service-bridge/node"
+              href="https://www.npmjs.com/package/service-bridge"
               target="_blank"
               rel="noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -37,7 +37,7 @@ export function FooterSection() {
             </a>
           </div>
 
-          <p className="text-sm text-muted-foreground">© 2026 Eugene Surkov. Open Source.</p>
+          <p className="text-sm text-muted-foreground">© 2026 Eugene Surkov.</p>
         </div>
       </div>
     </footer>

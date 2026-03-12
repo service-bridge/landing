@@ -20,7 +20,7 @@ const SDK_TABS = [
 type TabId = (typeof SDK_TABS)[number]["id"];
 
 const INSTALL_CMDS: Record<TabId, string> = {
-  node:   "npm install @service-bridge/node",
+  node:   "npm i service-bridge",
   python: "pip install service-bridge",
   go:     "go get github.com/service-bridge/go",
 };
@@ -29,11 +29,11 @@ const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> 
   node: {
     filename: "my-service.ts",
     lang: "ts",
-    code: `import { servicebridge } from "@service-bridge/node";
+    code: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
   "127.0.0.1:14445",
-  process.env.SERVICE_KEY ?? "dev-service-key",
+  process.env.SERVICEBRIDGE_SERVICE_KEY!,
   "my-service"
 );
 
@@ -55,7 +55,7 @@ from service_bridge import ServiceBridge
 
 sb = ServiceBridge(
     "127.0.0.1:14445",
-    SERVICE_KEY,
+    os.environ["SERVICEBRIDGE_SERVICE_KEY"],
     "my-service"
 )
 
@@ -142,14 +142,14 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
         <div className="flex gap-6">
           <StepNumber n="01" />
           <div className="pb-8 flex-1 min-w-0">
-            <h3 className="type-subsection-title mb-1">Start the runtime</h3>
-            <p className="type-body-sm mb-4">Spin up ServiceBridge + PostgreSQL with Docker Compose.</p>
+            <h3 className="type-subsection-title mb-1">Install the runtime</h3>
+            <p className="type-body-sm mb-4">One command sets up ServiceBridge + PostgreSQL via Docker Compose and prints the generated admin password.</p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5">
                 <span className="type-overline-mono text-muted-foreground">terminal</span>
               </div>
               <pre className="p-4 text-xs font-mono text-zinc-300 overflow-x-auto leading-relaxed">
-                <code>$ docker compose up -d</code>
+                <code>$ bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)</code>
               </pre>
             </div>
           </div>
@@ -214,7 +214,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
         >
           Read the Docs <ArrowRight className="w-4 h-4" />
         </Button>
-        <a href="https://github.com/esurkov1/connectr" target="_blank" rel="noreferrer">
+        <a href="https://github.com/service-bridge/sdk" target="_blank" rel="noreferrer">
           <Button
             variant="outline"
             size="lg"

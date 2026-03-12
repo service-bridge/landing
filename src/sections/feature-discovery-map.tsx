@@ -15,12 +15,12 @@ const DISCOVERY_CODE: CodeLangs = {
   ts: `import { servicebridge } from "@servicebridge/sdk";
 
 // Worker: endpoint is advertised on serve()
-const payments = servicebridge("127.0.0.1:14445", SERVICE_KEY, "payments");
+const payments = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "payments");
 payments.handleRpc("payments.charge", handler);
 await payments.serve();  // → RegisterFunction + Heartbeat loop
 
 // Caller: lazy resolution on first rpc() call
-const orders = servicebridge("127.0.0.1:14445", SERVICE_KEY, "orders");
+const orders = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // First call  → LookupFunction → opens persistent gRPC channel
 // All after   → direct wire, zero lookup overhead
@@ -28,7 +28,7 @@ const result = await orders.rpc("payments.charge", { amount: 4990 });`,
 
   go: `// Worker: endpoint is advertised on Serve()
 payments := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "payments", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
 
 payments.HandleRpc("payments.charge",
     func(ctx context.Context, p json.RawMessage) (any, error) {
@@ -39,7 +39,7 @@ go payments.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})
 
 // Caller: first Rpc() → LookupFunction → opens gRPC channel
 orders := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "orders", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
 
 result, _ := orders.Rpc(ctx, "payments.charge",
     map[string]any{"amount": 4990}, nil)`,
@@ -47,7 +47,7 @@ result, _ := orders.Rpc(ctx, "payments.charge",
   py: `from servicebridge import ServiceBridge
 
 # Worker: endpoint is advertised on serve()
-payments = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "payments")
+payments = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "payments")
 
 @payments.handle_rpc("payments.charge")
 async def charge(payload: dict) -> dict:
@@ -56,7 +56,7 @@ async def charge(payload: dict) -> dict:
 asyncio.create_task(payments.serve(host="127.0.0.1"))
 
 # Caller: first rpc() → LookupFunction → opens gRPC channel
-orders = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "orders")
+orders = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
 result = await orders.rpc("payments.charge", {"amount": 4990})`,
 };
 
@@ -90,7 +90,7 @@ export function DiscoveryMapSection() {
               Callers read that snapshot and open persistent gRPC channels — no SQL at call time.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Badge tone="border-primary/20 bg-primary/[0.08] text-primary">proxyless</Badge>
+              <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">proxyless</Badge>
               <Badge tone="border-violet-500/20 bg-violet-500/[0.08] text-violet-300">in-memory snapshot</Badge>
               <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">heartbeat TTL 30s</Badge>
             </div>
@@ -156,7 +156,7 @@ export function DiscoveryMapSection() {
               <div className="w-px h-8 bg-surface-border" />
               <div className="text-center">
                 <p className="type-overline-mono text-muted-foreground">hot path</p>
-                <p className="text-sm font-semibold font-display text-primary mt-0.5">0 DB queries</p>
+                <p className="text-sm font-semibold font-display text-emerald-400 mt-0.5">0 DB queries</p>
               </div>
               <div className="w-px h-8 bg-surface-border" />
               <div className="text-center">

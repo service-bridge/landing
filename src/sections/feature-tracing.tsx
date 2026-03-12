@@ -272,7 +272,7 @@ export function TracingSection() {
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         <FeatureCard variant="compact" icon={Activity} title="Cross-service waterfall" description="HTTP, RPC, events, workflows, retries — full execution path in one interactive view." iconClassName="text-cyan-400" />
         <FeatureCard variant="compact" icon={RefreshCcw} title="Retry group visualization" description="Retry chains show attempt count, recovered errors, and delivery stats inline." iconClassName="text-orange-400" />
-        <FeatureCard variant="compact" icon={Eye} title="Live span updates" description="Running spans animate in real-time. Status changes push via WebSocket instantly." iconClassName="text-primary" />
+        <FeatureCard variant="compact" icon={Eye} title="Live span updates" description="Running spans animate in real-time. Status changes push via WebSocket instantly." iconClassName="text-emerald-400" />
       </div>
     </Section>
   );

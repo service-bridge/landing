@@ -47,7 +47,7 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
     code: {
       ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "billing");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "billing");
 
 // Runs every hour — fires immediately if the node was down
 await sb.job("billing.reconcile", {
@@ -65,7 +65,7 @@ sb.handleRpc("billing.reconcile", async () => {
 
 await sb.serve();`,
       go: `svc := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "billing", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "billing", nil)
 
 jobID, _ := svc.Job(ctx, "billing.reconcile",
     servicebridge.ScheduleOpts{
@@ -83,7 +83,7 @@ svc.HandleRpc("billing.reconcile",
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
       py: `from servicebridge import ServiceBridge, ScheduleOpts
 
-svc = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "billing")
+svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "billing")
 
 job_id = await svc.job(
     "billing.reconcile",
@@ -105,7 +105,7 @@ await svc.serve()`,
     code: {
       ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "onboarding");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "onboarding");
 
 // Fires once after 24 hours, delivered as a durable event
 await sb.job("trial.reminder", {
@@ -120,7 +120,7 @@ sb.handleEvent("trial.reminder", async (payload, ctx) => {
 
 await sb.serve();`,
       go: `svc := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "onboarding", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "onboarding", nil)
 
 svc.Job(ctx, "trial.reminder", servicebridge.ScheduleOpts{
     DelayMs: 24 * 60 * 60 * 1000,
@@ -138,7 +138,7 @@ svc.HandleEvent("trial.reminder",
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
       py: `from servicebridge import ServiceBridge, ScheduleOpts
 
-svc = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "onboarding")
+svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "onboarding")
 
 await svc.job(
     "trial.reminder",
@@ -161,7 +161,7 @@ await svc.serve()`,
     code: {
       ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "platform");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "platform");
 
 // Daily job — kicks off a full workflow run
 await sb.job("billing.daily", {
@@ -179,7 +179,7 @@ await sb.workflow("billing.daily", [
 
 await sb.serve();`,
       go: `svc := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "platform", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "platform", nil)
 
 svc.Job(ctx, "billing.daily", servicebridge.ScheduleOpts{
     Cron:    "0 2 * * *",
@@ -196,7 +196,7 @@ svc.Workflow(ctx, "billing.daily", []servicebridge.WorkflowStep{
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})`,
       py: `from servicebridge import ServiceBridge, ScheduleOpts, WorkflowStep
 
-svc = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "platform")
+svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "platform")
 
 await svc.job(
     "billing.daily",

@@ -34,12 +34,12 @@ function Hub({ sub, className }: { sub?: string; className?: string }) {
   return (
     <div
       className={cn(
-        "rounded-xl border-2 border-primary/30 bg-primary/[0.05] px-4 py-3 text-center glow-emerald",
+        "rounded-xl border-2 border-emerald-500/30 bg-emerald-500/[0.05] px-4 py-3 text-center subtle-glow",
         className
       )}
     >
-      <BrandMark className="w-4 h-4 text-primary mx-auto mb-1" />
-      <p className="type-body-sm font-bold font-display text-primary">ServiceBridge</p>
+      <BrandMark className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+      <p className="type-body-sm font-bold font-display text-emerald-400">ServiceBridge</p>
       {sub && <p className="type-overline-mono text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );

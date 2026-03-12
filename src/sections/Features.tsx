@@ -239,13 +239,8 @@ const PROD_FEATURES = [
 function LargeFeatureCard({ feature, className }: { feature: FeatureDef; className?: string }) {
   return (
     <motion.div variants={fadeInUp} className={className}>
-      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.12] hover:bg-surface">
-        <div
-          className={cn(
-            "pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-100",
-            feature.iconBg
-          )}
-        />
+      <Card className="group relative flex h-full flex-col overflow-hidden transition-all duration-300 hover:border-white/[0.10] hover:shadow-lg hover:shadow-black/20">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full opacity-0 blur-3xl transition-opacity duration-500 group-hover:opacity-[0.03] bg-white" />
         <div className="relative flex h-full flex-col">
           <div
             className={cn(

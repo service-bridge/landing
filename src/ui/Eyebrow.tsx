@@ -20,7 +20,7 @@ export function Eyebrow({
 
   if (variant === "plain") {
     return (
-      <p className={cn(textClasses, "text-primary mb-4", className)}>
+      <p className={cn(textClasses, "text-emerald-400 mb-4", className)}>
         {children}
       </p>
     );

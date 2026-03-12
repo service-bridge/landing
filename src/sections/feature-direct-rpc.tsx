@@ -14,7 +14,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const RPC_CODE: CodeLangs = {
   ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "orders");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // Register — advertises endpoint to the registry
 sb.handleRpc("orders.create", async (payload) => {
@@ -33,12 +33,12 @@ await sb.serve();`,
 import (
     "context"
     "encoding/json"
-    servicebridge "github.com/servicebridge/sdk-go"
+    servicebridge "github.com/service-bridge/go"
 )
 
 func main() {
     sb := servicebridge.New("127.0.0.1:14445",
-        os.Getenv("SERVICE_KEY"), "orders", nil)
+        os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
 
     sb.HandleRpc("orders.create",
         func(ctx context.Context, p json.RawMessage) (any, error) {
@@ -53,7 +53,7 @@ func main() {
   py: `from servicebridge import ServiceBridge
 import os
 
-sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICE_KEY"], "orders")
+sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
 
 @sb.handle_rpc("orders.create")
 async def orders_create(payload: dict) -> dict:
@@ -113,7 +113,7 @@ export function DirectRpcSection() {
               </Card>
               <Card className="p-3">
                 <p className="type-overline-mono text-muted-foreground">dial</p>
-                <p className="mt-2 type-subsection-title text-primary">direct gRPC</p>
+                <p className="mt-2 type-subsection-title text-emerald-400">direct gRPC</p>
               </Card>
             </div>
           </Card>
@@ -170,13 +170,13 @@ export function DirectRpcSection() {
               </div>
 
               {/* ServiceBridge */}
-              <div className="rounded-xl border border-primary/[0.15] bg-primary/[0.03] p-4">
+              <div className="rounded-xl border border-emerald-500/[0.15] bg-emerald-500/[0.03] p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <p className="type-overline-mono text-primary/80">ServiceBridge</p>
+                    <p className="type-overline-mono text-emerald-400/80">ServiceBridge</p>
                     <p className="mt-0.5 text-xs text-zinc-400">Control plane is off the data path</p>
                   </div>
-                  <Badge tone="border-primary/20 bg-primary/[0.08] text-primary">0 hops</Badge>
+                  <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">0 hops</Badge>
                 </div>
 
                 {/* Registry above, dashed lines down */}
@@ -196,15 +196,15 @@ export function DirectRpcSection() {
 
                   {/* Direct data path */}
                   <div className="flex items-center gap-2 w-full">
-                    <div className="rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2 text-center shrink-0">
-                      <p className="text-xs font-semibold font-display text-primary">checkout</p>
-                      <p className="text-3xs font-mono text-primary/50">caller</p>
+                    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-2 text-center shrink-0">
+                      <p className="text-xs font-semibold font-display text-emerald-400">checkout</p>
+                      <p className="text-3xs font-mono text-emerald-400/50">caller</p>
                     </div>
-                    <div className="flex-1 relative h-0.5 min-w-[40px] bg-gradient-to-r from-primary/25 via-primary/50 to-primary/25 rounded-full">
+                    <div className="flex-1 relative h-0.5 min-w-[40px] bg-gradient-to-r from-emerald-500/25 via-emerald-500/50 to-emerald-500/25 rounded-full">
                       {inView && (
                         <>
                           <motion.span
-                            className="absolute top-1/2 h-2 w-2 rounded-full bg-primary -translate-y-1/2"
+                            className="absolute top-1/2 h-2 w-2 rounded-full bg-emerald-400 -translate-y-1/2"
                             style={{ boxShadow: "0 0 8px rgba(34,197,94,0.7)" }}
                             animate={{ left: ["-3%", "103%"] }}
                             transition={{ duration: 1.2, ease: "linear", repeat: Infinity }}
@@ -218,9 +218,9 @@ export function DirectRpcSection() {
                         </>
                       )}
                     </div>
-                    <div className="rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-2 text-center shrink-0">
-                      <p className="text-xs font-semibold font-display text-primary">payments</p>
-                      <p className="text-3xs font-mono text-primary/50">worker</p>
+                    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-2 text-center shrink-0">
+                      <p className="text-xs font-semibold font-display text-emerald-400">payments</p>
+                      <p className="text-3xs font-mono text-emerald-400/50">worker</p>
                     </div>
                   </div>
                   <p className="mt-1.5 text-3xs font-mono text-zinc-600">direct gRPC · mTLS · round_robin · waitForReady</p>
@@ -229,7 +229,7 @@ export function DirectRpcSection() {
                 <div className="grid grid-cols-3 gap-2 mt-3">
                   <Card className="p-3">
                     <p className="type-overline-mono text-muted-foreground">proxy hops</p>
-                    <p className="mt-1 type-subsection-title text-primary">0</p>
+                    <p className="mt-1 type-subsection-title text-emerald-400">0</p>
                   </Card>
                   <Card className="p-3">
                     <p className="type-overline-mono text-muted-foreground">identity</p>

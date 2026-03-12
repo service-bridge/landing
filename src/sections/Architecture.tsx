@@ -84,9 +84,9 @@ export function ArchitectureSection() {
                 <div className="flex-1 border-t border-dashed border-yellow-500/30" />
               </div>
 
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/[0.05] p-5 text-center w-full glow-emerald">
-                <BrandMark className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="text-sm font-bold font-display text-primary">ServiceBridge</p>
+              <div className="rounded-xl border-2 border-emerald-500/30 bg-emerald-500/[0.05] p-5 text-center w-full subtle-glow">
+                <BrandMark className="w-6 h-6 text-emerald-400 mx-auto mb-2" />
+                <p className="text-sm font-bold font-display text-emerald-400">ServiceBridge</p>
                 <p className="text-3xs text-muted-foreground mt-0.5 font-mono">+ PostgreSQL</p>
                 <div className="mt-3 grid grid-cols-3 gap-1">
                   {PRIMITIVES.map((m) => (
@@ -101,11 +101,11 @@ export function ArchitectureSection() {
               </div>
 
               <div className="w-full flex items-center gap-2">
-                <div className="flex-1 border-t border-dashed border-primary/20" />
+                <div className="flex-1 border-t border-dashed border-emerald-500/20" />
                 <span className="text-3xs font-mono text-muted-foreground bg-white/[0.04] px-2 py-0.5 rounded shrink-0">
                   control plane
                 </span>
-                <div className="flex-1 border-t border-dashed border-primary/20" />
+                <div className="flex-1 border-t border-dashed border-emerald-500/20" />
               </div>
             </div>
 

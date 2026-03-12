@@ -17,7 +17,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const FLOW_STEPS = [
   { icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-400/10", label: "Condition triggered", sub: "error_rate > 10% in last 5 min" },
   { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10", label: "Cooldown checked", sub: "300s since last fire — ok to proceed" },
-  { icon: Bell, color: "text-primary", bg: "bg-primary/10", label: "History recorded", sub: "alert_history INSERT" },
+  { icon: Bell, color: "text-emerald-400", bg: "bg-emerald-400/10", label: "History recorded", sub: "alert_history INSERT" },
   { icon: Send, color: "text-blue-400", bg: "bg-blue-400/10", label: "Channels notified", sub: "Telegram · Webhook · UI push" },
   { icon: Clock, color: "text-violet-400", bg: "bg-violet-400/10", label: "Cooldown armed", sub: "Next fire allowed in 5 min" },
 ];

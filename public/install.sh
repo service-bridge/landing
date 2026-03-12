@@ -16,8 +16,8 @@ set -euo pipefail
 
 # ── Defaults ─────────────────────────────────────────────────────────────────
 SB_REGISTRY="${SB_REGISTRY:-ghcr.io}"
-SB_OWNER="${SB_OWNER:-esurkov1}"
-SB_VERSION="${SB_VERSION:-latest}"
+SB_OWNER="${SB_OWNER:-service-bridge}"
+SB_VERSION="${SB_VERSION:-edge}"
 SB_IMAGE="${SB_IMAGE:-${SB_REGISTRY}/${SB_OWNER}/servicebridge:${SB_VERSION}}"
 SB_DIR="${SB_DIR:-${HOME}/servicebridge}"
 
@@ -74,7 +74,11 @@ ask() {
 # gen_password — generates a random URL-safe password if SB_ADMIN_PASSWORD is not set
 gen_password() {
   if [ -n "${SB_ADMIN_PASSWORD:-}" ]; then return; fi
+  # head -c causes tr to receive SIGPIPE, making the pipeline exit non-zero.
+  # Temporarily disable pipefail so the assignment succeeds.
+  set +o pipefail
   SB_ADMIN_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9_-' < /dev/urandom | head -c 24)
+  set -o pipefail
   SB_PASSWORD_GENERATED=true
 }
 
@@ -115,18 +119,13 @@ main() {
   )
   ok "Password hashed successfully"
 
-  # ── Write .env ────────────────────────────────────────────────────────────
+  # ── Write docker-compose.yml ──────────────────────────────────────────────
   step "3/4  Writing configuration"
 
-  cat > .env <<ENV
-SERVICEBRIDGE_ADMIN_LOGIN=${SB_ADMIN_LOGIN}
-SERVICEBRIDGE_ADMIN_PASSWORD_HASH=${SB_PASSWORD_HASH}
-SERVICEBRIDGE_PUBLIC_ORIGIN=${SB_PUBLIC_ORIGIN}
-ENV
-  chmod 600 .env
-  ok "Created .env  (mode 600)"
+  # Bcrypt hashes contain '$' which Docker Compose treats as variable interpolation.
+  # Escape every '$' to '$$' so Compose passes the literal '$' to the container.
+  SB_PASSWORD_HASH_ESCAPED="${SB_PASSWORD_HASH//\$/\$\$}"
 
-  # ── Write docker-compose.yml ──────────────────────────────────────────────
   cat > docker-compose.yml <<COMPOSE
 services:
   postgres:
@@ -159,8 +158,10 @@ services:
       - servicebridge
     volumes:
       - servicebridge-tls:/etc/servicebridge/tls
-    env_file: .env
     environment:
+      SERVICEBRIDGE_ADMIN_LOGIN: ${SB_ADMIN_LOGIN}
+      SERVICEBRIDGE_ADMIN_PASSWORD_HASH: "${SB_PASSWORD_HASH_ESCAPED}"
+      SERVICEBRIDGE_PUBLIC_ORIGIN: ${SB_PUBLIC_ORIGIN}
       SERVICEBRIDGE_TLS_DIR: /etc/servicebridge/tls
       SERVICEBRIDGE_GRPC_HOST: "0.0.0.0"
       SERVICEBRIDGE_PG_URL: "postgres://postgres:postgres@postgres:5432/servicebridge"

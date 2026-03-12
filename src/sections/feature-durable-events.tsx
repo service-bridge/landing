@@ -26,7 +26,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const EVENT_CODE: CodeLangs = {
   ts: `import { servicebridge } from "@servicebridge/sdk";
 
-const sb = servicebridge("127.0.0.1:14445", SERVICE_KEY, "notifications");
+const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "notifications");
 
 // Consumer with server-side filter + retry policy
 sb.handleEvent("order.*", async (payload, ctx) => {
@@ -48,7 +48,7 @@ await sb.event("order.created", {
 }, { idempotencyKey: "orders:ord_123:created" });`,
 
   go: `svc := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICE_KEY"), "notifications", nil)
+    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "notifications", nil)
 
 svc.HandleEvent("order.*",
     func(ctx context.Context, p json.RawMessage,
@@ -72,7 +72,7 @@ svc.Event(ctx, "order.created", map[string]any{
 
   py: `from servicebridge import ServiceBridge
 
-svc = ServiceBridge("127.0.0.1:14445", SERVICE_KEY, "notifications")
+svc = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notifications")
 
 @svc.handle_event(
     "order.*",
@@ -97,7 +97,7 @@ const PIPELINE = [
   { icon: Database, label: "Persist", desc: "PostgreSQL", color: "text-violet-300", bg: "bg-violet-500/[0.08]", border: "border-violet-500/25", dot: "bg-violet-400" },
   { icon: GitBranch, label: "Fan-out", desc: "×4 groups", color: "text-emerald-300", bg: "bg-emerald-500/[0.08]", border: "border-emerald-500/25", dot: "bg-emerald-400" },
   { icon: Send, label: "Deliver", desc: "per group", color: "text-amber-300", bg: "bg-amber-500/[0.08]", border: "border-amber-500/25", dot: "bg-amber-400" },
-  { icon: CheckCircle2, label: "Outcome", desc: "ack · retry · dlq", color: "text-primary", bg: "bg-primary/[0.08]", border: "border-primary/25", dot: "bg-primary" },
+  { icon: CheckCircle2, label: "Outcome", desc: "ack · retry · dlq", color: "text-emerald-400", bg: "bg-emerald-500/[0.08]", border: "border-emerald-500/25", dot: "bg-emerald-400" },
 ] as const;
 
 type Outcome = "ack" | "retry" | "dlq";

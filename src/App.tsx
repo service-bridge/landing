@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, ChevronDown, Github, Menu, X } from "lucide-react";
+import { Activity, AlertTriangle, BarChart2, BookOpen, ChevronDown, Clock, Github, Globe, Menu, Network, Radio, Waves, Workflow, X, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandMark } from "./components/BrandMark";
 import { RunFlowSection } from "./components/RunFlow";
@@ -33,6 +33,10 @@ const NAV_LINKS = [
   { label: "Architecture", href: "#architecture" },
   { label: "Get Started", href: "#start" },
 ] as const;
+
+const ICON_MAP = {
+  Zap, Globe, Radio, Waves, Workflow, Clock, Network, Activity, BarChart2, AlertTriangle,
+} as const;
 
 function FeaturesDropdown({ onClose }: { onClose: () => void }) {
   const [open, setOpen] = useState(false);
@@ -78,19 +82,27 @@ function FeaturesDropdown({ onClose }: { onClose: () => void }) {
           >
             <div className="w-[480px] rounded-2xl border border-surface-border bg-background/95 p-2 shadow-2xl shadow-black/40 backdrop-blur-xl">
               <div className="grid grid-cols-2 gap-0.5">
-                {FEATURE_MENU_ITEMS.map((item) => (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => { setOpen(false); onClose(); }}
-                    className="rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.04]"
-                  >
-                    <span className="block text-sm font-semibold font-display text-foreground/90">
-                      {item.label}
-                    </span>
-                    <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>
-                  </a>
-                ))}
+                {FEATURE_MENU_ITEMS.map((item) => {
+                  const Icon = ICON_MAP[item.iconName as keyof typeof ICON_MAP];
+                  return (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => { setOpen(false); onClose(); }}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-white/[0.04]"
+                    >
+                      <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", item.iconBg)}>
+                        <Icon className={cn("h-4 w-4", item.iconColor)} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-sm font-semibold font-display text-foreground/90 leading-tight">
+                          {item.label}
+                        </span>
+                        <span className="block text-xs text-muted-foreground mt-0.5 leading-tight">{item.desc}</span>
+                      </div>
+                    </a>
+                  );
+                })}
               </div>
             </div>
           </motion.div>
@@ -150,7 +162,11 @@ export default function App() {
   }, []);
 
   if (page === "docs") {
-    return <DocsPage onBack={() => navigateTo("landing")} />;
+    return (
+      <LanguageProvider>
+        <DocsPage onBack={() => navigateTo("landing")} />
+      </LanguageProvider>
+    );
   }
   if (page === "hash-password") {
     return <HashPasswordPage onBack={() => navigateTo("landing")} />;
@@ -158,7 +174,7 @@ export default function App() {
 
   return (
     <LanguageProvider>
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/20">
       <header
         className={cn(
           "fixed left-0 right-0 top-0 z-50 transition-all duration-300",
@@ -196,7 +212,7 @@ export default function App() {
 
           {/* Desktop CTAs */}
           <div className="hidden items-center gap-2 md:flex">
-            <a href="https://github.com/esurkov1/connectr" target="_blank" rel="noreferrer">
+            <a href="https://github.com/service-bridge/sdk" target="_blank" rel="noreferrer">
               <Button variant="ghost" size="sm" className="gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground">
                 <Github className="h-4 w-4" />
                 GitHub
@@ -248,17 +264,25 @@ export default function App() {
                         className="overflow-hidden border-t border-surface-border"
                       >
                         <div className="grid grid-cols-2 gap-0.5 p-2">
-                          {FEATURE_MENU_ITEMS.map((item) => (
-                            <a
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => { setMobileMenuOpen(false); setMobileFeatureMenuOpen(false); }}
-                              className="rounded-lg px-3 py-2 hover:bg-white/[0.04]"
-                            >
-                              <span className="block text-sm font-semibold font-display text-foreground/90">{item.label}</span>
-                              <span className="block text-xs text-muted-foreground mt-0.5">{item.desc}</span>
-                            </a>
-                          ))}
+                          {FEATURE_MENU_ITEMS.map((item) => {
+                            const Icon = ICON_MAP[item.iconName as keyof typeof ICON_MAP];
+                            return (
+                              <a
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => { setMobileMenuOpen(false); setMobileFeatureMenuOpen(false); }}
+                                className="flex items-center gap-2.5 rounded-lg px-3 py-2 hover:bg-white/[0.04]"
+                              >
+                                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", item.iconBg)}>
+                                  <Icon className={cn("h-3.5 w-3.5", item.iconColor)} />
+                                </div>
+                                <div className="min-w-0">
+                                  <span className="block text-sm font-semibold font-display text-foreground/90 leading-tight">{item.label}</span>
+                                  <span className="block text-xs text-muted-foreground mt-0.5 leading-tight">{item.desc}</span>
+                                </div>
+                              </a>
+                            );
+                          })}
                         </div>
                       </motion.div>
                     )}
@@ -278,7 +302,7 @@ export default function App() {
 
                 <div className="flex gap-2 pt-1">
                   <a
-                    href="https://github.com/esurkov1/connectr"
+                    href="https://github.com/service-bridge/sdk"
                     target="_blank"
                     rel="noreferrer"
                     className="flex-1"
