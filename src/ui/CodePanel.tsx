@@ -12,7 +12,7 @@ export function CodePanel({ title, children, className, headerActions }: CodePan
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border bg-card",
+        "relative overflow-hidden rounded-2xl border border-border bg-card",
         className
       )}
     >
