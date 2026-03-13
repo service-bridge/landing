@@ -79,7 +79,7 @@ func main() {
   if grpcURL == "" {
     grpcURL = "localhost:14445"
   }
-  svc := servicebridge.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
+  svc := servicebridge.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
   // RPC handler — direct gRPC, context carries trace
   svc.HandleRpc("payments.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {

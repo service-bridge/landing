@@ -95,7 +95,7 @@ func main() {
     grpcURL = "localhost:14445"
   }
 
-  svc := sb.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "my-service", nil)
+  svc := sb.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
   svc.HandleRpc("hello", func(ctx context.Context, payload json.RawMessage) (any, error) {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil

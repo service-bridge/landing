@@ -27,7 +27,7 @@ export function PageOfflineQueue() {
       <H2 id="behavior">How it works</H2>
       <MultiCodeBlock
         code={{
-          ts: `const sb = servicebridge(url, serviceKey, "my-service", {
+          ts: `const sb = servicebridge(url, serviceKey, {
   queueMaxSize: 2_000,           // max buffered operations
   queueOverflow: "drop-oldest",  // eviction policy when full
 });
@@ -38,14 +38,14 @@ await sb.event("order.created", payload);  // buffered if offline
 
 // On reconnect, the queue drains automatically
 // No code changes needed`,
-          go: `svc := servicebridge.New(url, key, "my-service", &servicebridge.Options{
+          go: `svc := servicebridge.New(url, key, &servicebridge.Options{
   QueueMaxSize:  2000,
   QueueOverflow: "drop-oldest",
 })
 
 // Event, Job, Workflow calls queue automatically when offline
 svc.Event(ctx, "order.created", payload, nil) // buffered if offline`,
-          py: `sb = ServiceBridge(url, key, "my-service", opts=Options(
+          py: `sb = ServiceBridge(url, key, opts=Options(
     queue_max_size=2000,
     queue_overflow="drop-oldest",
 ))

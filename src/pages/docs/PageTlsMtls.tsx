@@ -42,11 +42,11 @@ export function PageTlsMtls() {
       <MultiCodeBlock
         code={{
           ts: `// Default — auto-provisions mTLS (just a service key needed)
-const sb = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+const sb = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 await sb.serve();  // ← provisions TLS here
 
 // Advanced TLS overrides: explicit certs override auto-provisioning
-const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders", {
+const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, {
   workerTLS: { caCert: CA_PEM, cert: CERT_PEM, key: KEY_PEM },
 });
 

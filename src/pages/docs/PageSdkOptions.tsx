@@ -18,7 +18,6 @@ export function PageSdkOptions() {
 const sb = servicebridge(
   url,         // gRPC control plane URL (e.g. "localhost:14445")
   serviceKey,  // Service authentication key
-  serviceName, // Service name in the registry
   {
     timeout: 30_000,
     retries: 3,
@@ -40,7 +39,6 @@ const sb = servicebridge(
 svc := servicebridge.New(
   "localhost:14445",   // gRPC URL
   os.Getenv("SERVICEBRIDGE_SERVICE_KEY"),
-  "my-service",
   &servicebridge.Options{
     HeartbeatIntervalMs: 10_000,
     CaptureLogs:         servicebridge.BoolPtr(true),
@@ -58,7 +56,6 @@ from service_bridge import ServiceBridge, Options
 sb = ServiceBridge(
     grpc_url="localhost:14445",
     service_key="sbv2.<id>.<secret>.<ca>",
-    service_name="my-service",
     opts=Options(
         heartbeat_interval_ms=10_000,
         capture_logs=True,
@@ -118,7 +115,7 @@ sb = ServiceBridge(
       </P>
       <MultiCodeBlock
         code={{
-          ts: `const sb = servicebridge(url, key, "my-service", {
+          ts: `const sb = servicebridge(url, key, {
   queueMaxSize: 2_000,          // max buffered operations
   queueOverflow: "drop-oldest", // what to do when full
 });
@@ -126,11 +123,11 @@ sb = ServiceBridge(
 // These return immediately even when the control plane is down
 await sb.event("order.created", payload); // queued
 await sb.job("billing/collect", opts);    // queued`,
-          go: `svc := servicebridge.New(url, key, "my-service", &servicebridge.Options{
+          go: `svc := servicebridge.New(url, key, &servicebridge.Options{
   QueueMaxSize:  2000,
   QueueOverflow: "drop-oldest",
 })`,
-          py: `sb = ServiceBridge(url, key, "my-service", opts=Options(
+          py: `sb = ServiceBridge(url, key, Options(
     queue_max_size=2000,
     queue_overflow="drop-oldest",
 ))`,

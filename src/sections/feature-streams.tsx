@@ -12,7 +12,7 @@ import { TabStrip } from "../ui/Tabs";
 const WRITER_CODE: CodeLangs = {
   ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "ai");
+const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 sb.handleEvent("ai.generate", async (payload, ctx) => {
   // Stream tokens to any subscriber in real-time
@@ -23,7 +23,7 @@ sb.handleEvent("ai.generate", async (payload, ctx) => {
 });`,
 
   go: `svc := servicebridge.New(
-    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "ai", nil)
+    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
 svc.HandleEvent("ai.generate",
     func(ctx context.Context, p json.RawMessage,
@@ -37,7 +37,7 @@ svc.HandleEvent("ai.generate",
 
   py: `from service_bridge import ServiceBridge
 
-svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "ai")
+svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @svc.handle_event("ai.generate")
 async def on_generate(payload: dict, ctx) -> None:

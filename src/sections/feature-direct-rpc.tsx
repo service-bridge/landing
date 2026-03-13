@@ -14,7 +14,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const RPC_CODE: CodeLangs = {
   ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Register — advertises endpoint to the registry
 sb.handleRpc("orders.create", async (payload) => {
@@ -38,7 +38,7 @@ import (
 
 func main() {
     sb := servicebridge.New("localhost:14445",
-        os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
+        os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
     sb.HandleRpc("orders.create",
         func(ctx context.Context, p json.RawMessage) (any, error) {
@@ -53,7 +53,7 @@ func main() {
   py: `from service_bridge import ServiceBridge
 import os
 
-sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
+sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @sb.handle_rpc("orders.create")
 async def orders_create(payload: dict) -> dict:

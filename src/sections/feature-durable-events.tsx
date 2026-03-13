@@ -26,7 +26,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const EVENT_CODE: CodeLangs = {
   ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "notifications");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Consumer with server-side filter + retry policy
 sb.handleEvent("order.*", async (payload, ctx) => {
@@ -48,7 +48,7 @@ await sb.event("order.created", {
 }, { idempotencyKey: "orders:ord_123:created" });`,
 
   go: `svc := servicebridge.New(
-    "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "notifications", nil)
+    "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
 svc.HandleEvent("order.*",
     func(ctx context.Context, p json.RawMessage,
@@ -72,7 +72,7 @@ svc.Event(ctx, "order.created", map[string]any{
 
   py: `from service_bridge import ServiceBridge
 
-svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notifications")
+svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @svc.handle_event(
     "order.*",

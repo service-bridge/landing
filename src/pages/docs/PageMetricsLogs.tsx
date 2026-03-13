@@ -56,7 +56,7 @@ console.error("charge failed", error);
 console.warn("retrying...");
 
 // Disable if needed
-const sb = servicebridge(url, key, "payments", { captureLogs: false });`,
+const sb = servicebridge(url, key, { captureLogs: false });`,
         }}
       />
 
@@ -76,7 +76,7 @@ slog.SetDefault(slog.New(svc.SlogHandler()))
 slog.Info("order processed", "orderId", orderId, "amount", 4990)
 
 // Disable log capture
-svc := servicebridge.New(url, key, "payments", &servicebridge.Options{
+svc := servicebridge.New(url, key, &servicebridge.Options{
   CaptureLogs: servicebridge.BoolPtr(false),
 })`,
         }}
@@ -98,7 +98,7 @@ logging.error("charge failed: %s", error)
 
 # Disable if needed
 from service_bridge import ServiceBridge, Options
-sb = ServiceBridge(url, key, "payments", opts=Options(capture_logs=False))`,
+sb = ServiceBridge(url, key, opts=Options(capture_logs=False))`,
         }}
       />
 

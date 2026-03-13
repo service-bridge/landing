@@ -21,7 +21,7 @@ export function PageEndToEnd() {
         code={{
           ts: `import { servicebridge } from "service-bridge";
 
-const payments = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "payments");
+const payments = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 payments.handleRpc("charge", async (payload: { orderId: string; amount: number }, ctx) => {
   await ctx?.stream.write({ status: "charging", orderId: payload.orderId }, "progress");
@@ -33,7 +33,7 @@ payments.handleRpc("charge", async (payload: { orderId: string; amount: number }
 });
 
 await payments.serve({ host: "localhost" });`,
-          go: `svc := servicebridge.New("localhost:14445", key, "payments", nil)
+          go: `svc := servicebridge.New("localhost:14445", key, nil)
 
 svc.HandleRpcWithOpts("charge",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
@@ -46,7 +46,7 @@ svc.HandleRpcWithOpts("charge",
 svc.Serve(ctx, nil)`,
           py: `from service_bridge import ServiceBridge
 
-payments = ServiceBridge("localhost:14445", "key", "payments")
+payments = ServiceBridge("localhost:14445", "key")
 
 @payments.handle_rpc("charge")
 async def charge(payload: dict, ctx) -> dict:
@@ -62,7 +62,7 @@ asyncio.run(payments.serve())`,
       <H2 id="orders-caller">Orders service (RPC call + event publish)</H2>
       <MultiCodeBlock
         code={{
-          ts: `const orders = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+          ts: `const orders = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 const charge = await orders.rpc<{ ok: boolean; txId: string }>("payments/charge", {
   orderId: "ord_42",
@@ -76,7 +76,7 @@ await orders.event("orders.completed", {
   idempotencyKey: "order:ord_42:completed",
   headers: { source: "checkout" },
 });`,
-          go: `orders := servicebridge.New("localhost:14445", key, "orders", nil)
+          go: `orders := servicebridge.New("localhost:14445", key, nil)
 
 result, _ := orders.Rpc(ctx, "payments/charge", map[string]any{
   "order_id": "ord_42", "amount": 4990,
@@ -88,7 +88,7 @@ orders.Event(ctx, "orders.completed", map[string]any{
   IdempotencyKey: "order:ord_42:completed",
   Headers:        map[string]string{"source": "checkout"},
 })`,
-          py: `orders = ServiceBridge("localhost:14445", "key", "orders")
+          py: `orders = ServiceBridge("localhost:14445", "key")
 
 async def process_order():
     charge = await orders.rpc("payments/charge", {
@@ -106,7 +106,7 @@ async def process_order():
       <H2 id="notifications">Notifications service (event consumer)</H2>
       <MultiCodeBlock
         code={{
-          ts: `const notifications = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "notifications");
+          ts: `const notifications = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 notifications.handleEvent("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string; txId: string };
@@ -119,7 +119,7 @@ notifications.handleEvent("orders.*", async (payload, ctx) => {
 });
 
 await notifications.serve({ host: "localhost" });`,
-          go: `notif := servicebridge.New("localhost:14445", key, "notifications", nil)
+          go: `notif := servicebridge.New("localhost:14445", key, nil)
 
 notif.HandleEvent("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
@@ -131,7 +131,7 @@ notif.HandleEvent("orders.*",
 notif.Serve(ctx, nil)`,
           py: `from service_bridge import ServiceBridge, EventContext
 
-notifications = ServiceBridge("localhost:14445", "key", "notifications")
+notifications = ServiceBridge("localhost:14445", "key")
 
 @notifications.handle_event("orders.*", group_name="notifications.orders")
 async def on_order(payload: dict, ctx: EventContext) -> None:

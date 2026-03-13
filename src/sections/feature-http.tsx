@@ -21,7 +21,7 @@ const FRAMEWORK_TABS = [
 import { servicebridge } from "service-bridge";
 import { servicebridgeMiddleware } from "@service-bridge/http";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "gateway");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = express();
 
 // Auto-traces every request, registers routes in HTTP catalog
@@ -45,7 +45,7 @@ app.post("/api/orders", async (req, res) => {
 import { servicebridge } from "service-bridge";
 import { servicebridgePlugin } from "@service-bridge/http";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "api");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = Fastify();
 
 await app.register(servicebridgePlugin, { client: sb });
@@ -93,7 +93,7 @@ func main() {
 from service_bridge import ServiceBridge
 from servicebridge_http import ServiceBridgeMiddleware
 
-sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "api")
+sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 app = FastAPI()
 
 app.add_middleware(ServiceBridgeMiddleware, client=sb)

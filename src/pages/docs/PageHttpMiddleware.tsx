@@ -32,7 +32,7 @@ export function PageHttpMiddleware() {
 import { servicebridge } from "service-bridge";
 import { servicebridgeMiddleware, registerExpressRoutes } from "service-bridge/express";
 
-const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!, "api");
+const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = express();
 
 app.use(servicebridgeMiddleware({
@@ -95,7 +95,7 @@ app.listen(3000);`,
 import { servicebridge } from "service-bridge";
 import { servicebridgePlugin, wrapHandler } from "service-bridge/fastify";
 
-const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!, "api");
+const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = Fastify();
 
 await app.register(servicebridgePlugin, {
@@ -142,7 +142,7 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
 from service_bridge import ServiceBridge
 from service_bridge.http.fastapi import ServiceBridgeMiddleware, get_client
 
-sb = ServiceBridge("localhost:14445", "key", "api")
+sb = ServiceBridge("localhost:14445", "key")
 app = FastAPI()
 
 app.add_middleware(
@@ -169,7 +169,7 @@ async def get_user(user_id: str, request: Request):
 from service_bridge import ServiceBridge
 from service_bridge.http.flask import init_servicebridge
 
-sb = ServiceBridge("localhost:14445", "key", "api")
+sb = ServiceBridge("localhost:14445", "key")
 app = Flask(__name__)
 init_servicebridge(app, sb, auto_register=True)
 

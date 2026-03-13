@@ -20,7 +20,7 @@ export function PageServe() {
       <ol className="list-decimal pl-6 space-y-2 text-sm text-muted-foreground my-4">
         <li>
           <strong className="text-foreground">Construct the client</strong> —
-          {" "}<Mono>servicebridge(url, key, serviceName)</Mono> (or language equivalent).
+          {" "}<Mono>servicebridge(url, key)</Mono> (or language equivalent).
         </li>
         <li>
           <strong className="text-foreground">Register handlers</strong> —
@@ -44,7 +44,6 @@ export function PageServe() {
 const sb = servicebridge(
   process.env.SERVICEBRIDGE_URL!,
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
-  "payments",
 );
 
 // 2. Register handlers (order doesn't matter)
@@ -71,7 +70,6 @@ func main() {
   svc := servicebridge.New(
     os.Getenv("SERVICEBRIDGE_URL"),
     os.Getenv("SERVICEBRIDGE_SERVICE_KEY"),
-    "payments",
     nil,
   )
 
@@ -90,7 +88,6 @@ from service_bridge import ServiceBridge
 sb = ServiceBridge(
     "localhost:14445",
     "your-service-key",
-    "payments",
 )
 
 @sb.handle_rpc("charge")
