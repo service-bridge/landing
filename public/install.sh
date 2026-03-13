@@ -72,6 +72,18 @@ ask() {
   fi
 }
 
+# compose_quote VALUE
+# Produces a docker-compose-safe double-quoted scalar:
+# - escapes backslashes and quotes for YAML
+# - escapes '$' as '$$' to disable Compose variable interpolation
+compose_quote() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//\$/\$\$}"
+  printf '"%s"' "$s"
+}
+
 # gen_password — generates a random URL-safe password if SB_ADMIN_PASSWORD is not set
 gen_password() {
   if [ -n "${SB_ADMIN_PASSWORD:-}" ]; then return; fi
@@ -121,9 +133,9 @@ main() {
   ask SB_DIR         "Installation directory"              "$SB_DIR"
   ask SB_IMAGE       "Docker image"                        "$SB_IMAGE"
   ask SB_ADMIN_LOGIN "Admin username"                      "admin"
-  ask SB_PUBLIC_ORIGIN "Public URL(s), comma-separated for multiple CORS origins" "http://localhost:14444"
   ask SB_HTTP_PORT   "HTTP port"                           "14444"
   ask SB_GRPC_PORT   "gRPC port"                          "14445"
+  ask SB_PUBLIC_ORIGIN "Public URL(s), comma-separated for multiple CORS origins" "http://localhost:${SB_HTTP_PORT},http://127.0.0.1:${SB_HTTP_PORT}"
 
   SB_PASSWORD_GENERATED=false
   gen_password
@@ -147,9 +159,10 @@ main() {
   # ── Write docker-compose.yml ──────────────────────────────────────────────
   step "3/4  Writing configuration"
 
-  # Bcrypt hashes contain '$' which Docker Compose treats as variable interpolation.
-  # Escape every '$' to '$$' so Compose passes the literal '$' to the container.
-  SB_PASSWORD_HASH_ESCAPED="${SB_PASSWORD_HASH//\$/\$\$}"
+  # Inline everything into compose and neutralize '$' interpolation.
+  SB_ADMIN_LOGIN_COMPOSE="$(compose_quote "$SB_ADMIN_LOGIN")"
+  SB_PASSWORD_HASH_COMPOSE="$(compose_quote "$SB_PASSWORD_HASH")"
+  SB_PUBLIC_ORIGIN_COMPOSE="$(compose_quote "$SB_PUBLIC_ORIGIN")"
 
   cat > docker-compose.yml <<COMPOSE
 services:
@@ -185,9 +198,9 @@ services:
     volumes:
       - servicebridge-tls:/etc/servicebridge/tls
     environment:
-      SERVICEBRIDGE_ADMIN_LOGIN: ${SB_ADMIN_LOGIN}
-      SERVICEBRIDGE_ADMIN_PASSWORD_HASH: "${SB_PASSWORD_HASH_ESCAPED}"
-      SERVICEBRIDGE_PUBLIC_ORIGIN: \${SB_PUBLIC_ORIGIN}
+      SERVICEBRIDGE_ADMIN_LOGIN: ${SB_ADMIN_LOGIN_COMPOSE}
+      SERVICEBRIDGE_ADMIN_PASSWORD_HASH: ${SB_PASSWORD_HASH_COMPOSE}
+      SERVICEBRIDGE_PUBLIC_ORIGIN: ${SB_PUBLIC_ORIGIN_COMPOSE}
       SERVICEBRIDGE_TLS_DIR: /etc/servicebridge/tls
       SERVICEBRIDGE_GRPC_HOST: "0.0.0.0"
       SERVICEBRIDGE_PG_URL: "postgres://postgres:postgres@postgres:5432/servicebridge"
@@ -221,17 +234,17 @@ COMPOSE
   export_ca_for_local_sdks
 
   echo
-  log "ServiceBridge is running!"
+  log "Installation completed"
   echo "──────────────────────────────────"
-  info "UI:          ${SB_PUBLIC_ORIGIN}"
-  info "Admin login: ${SB_ADMIN_LOGIN}"
+  echo "  URL:         ${SB_PUBLIC_ORIGIN}"
+  echo "  Admin login: ${SB_ADMIN_LOGIN}"
   if [ "$SB_PASSWORD_GENERATED" = true ]; then
-    echo -e "  ${YELLOW}Admin password: ${BOLD}${SB_ADMIN_PASSWORD}${NC}  ${YELLOW}← save this, it won't be shown again${NC}"
+    echo -e "  Password:    ${BOLD}${SB_ADMIN_PASSWORD}${NC}"
   fi
   unset SB_ADMIN_PASSWORD
-  info "Install dir: ${SB_DIR}"
+  echo "  Directory:   ${SB_DIR}"
   echo
-  echo -e "  ${BOLD}Useful commands:${NC}"
+  echo "Commands:"
   echo "    cd ${SB_DIR}"
   echo "    docker compose logs -f servicebridge"
   echo "    docker compose restart servicebridge"
