@@ -21,7 +21,7 @@ const LANG_TABS = [
     code: `import { servicebridge } from "service-bridge";
 
 // Connect: control plane address + service key + service name
-const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // RPC handler — direct gRPC, zero proxy hops
 sb.handleRpc("orders.create", async (payload) => {
@@ -59,17 +59,22 @@ await sb.serve();`,
 
 import (
   "context"
+  "encoding/json"
   "log"
+  "os"
+  "os/signal"
 
   servicebridge "github.com/service-bridge/go"
 )
 
 func main() {
   // Connect: control plane address + service key + service name
-  svc := servicebridge.New("127.0.0.1:14445", serviceKey, "payments")
+  ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+  defer cancel()
+  svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
 
   // RPC handler — direct gRPC, context carries trace
-  svc.HandleRpc("payments.charge", func(ctx context.Context, payload map[string]any) (any, error) {
+  svc.HandleRpc("payments.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
     txId, err := stripe.Charge(ctx, payload)
     if err != nil {
       return nil, err
@@ -78,12 +83,12 @@ func main() {
   })
 
   // Event consumer with retry
-  svc.HandleEvent("order.created", func(ctx context.Context, payload map[string]any, ectx servicebridge.EventContext) error {
+  svc.HandleEvent("order.created", func(ctx context.Context, payload json.RawMessage, ectx *servicebridge.EventContext) error {
     if err := processOrder(ctx, payload); err != nil {
       ectx.Retry(30_000)  // retry in 30s
     }
     return nil
-  }, servicebridge.HandleEventOpts{GroupName: "payments:process"})
+  }, &servicebridge.HandleEventOpts{GroupName: "payments:process"})
 
   // Scheduled job — cron or one-shot
   svc.Job("reports.daily", servicebridge.ScheduleOpts{Cron: "0 9 * * *", Via: "rpc"})
@@ -95,7 +100,7 @@ func main() {
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   })
 
-  log.Fatal(svc.Serve())
+  log.Fatal(svc.Serve(ctx, nil))
 }`,
   },
   {
@@ -103,10 +108,11 @@ func main() {
     label: "Python",
     filename: "app.py",
     code: `import asyncio
+import os
 from service_bridge import ServiceBridge
 
 # Connect: control plane address + service key + service name
-sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notify")
+sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notify")
 
 # RPC handler — direct gRPC, zero proxy hops
 @sb.handle_rpc("notify.send")
@@ -122,16 +128,19 @@ async def on_order_created(payload: dict, ctx) -> None:
         ctx.retry(30_000)    # retry in 30s
 
 # Scheduled job — cron or one-shot
-await sb.job("reports.daily", cron="0 9 * * *", via="rpc")
+async def bootstrap():
+    await sb.job("reports.daily", cron="0 9 * * *", via="rpc")
 
-# Multi-step workflow with parallel steps
-await sb.workflow("checkout.flow", [
-    {"id": "charge",  "type": "rpc",   "ref": "payments.charge",   "deps": []},
-    {"id": "reserve", "type": "rpc",   "ref": "inventory.reserve", "deps": []},
-    {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
-])
+    # Multi-step workflow with parallel steps
+    await sb.workflow("checkout.flow", [
+        {"id": "charge",  "type": "rpc",   "ref": "payments.charge",   "deps": []},
+        {"id": "reserve", "type": "rpc",   "ref": "inventory.reserve", "deps": []},
+        {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
+    ])
 
-asyncio.run(sb.serve())`,
+    await sb.serve()
+
+asyncio.run(bootstrap())`,
   },
 ] as const;
 

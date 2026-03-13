@@ -62,7 +62,9 @@ export function PageReliability() {
       <H2 id="rpc-reliability">RPC reliability</H2>
       <P>
         RPC calls use exponential backoff retries (configurable via <Mono>retries</Mono> and{" "}
-        <Mono>retryDelay</Mono>). The SDK caches service endpoint lists from the last successful
+        <Mono>retryDelay</Mono>). Each attempt has a hard timeout, so silent downstream services
+        are cut off and retried instead of staying pending forever. The SDK caches service endpoint
+        lists from the last successful
         discovery refresh — so direct RPC calls between services continue working even if the
         control plane is temporarily unreachable.
       </P>

@@ -22,7 +22,7 @@ export function PageInstallation() {
         The script asks for install directory, public URL, and ports, then prints the generated admin
         password at the end. After install, the dashboard is at{" "}
         <Mono>http://localhost:14444</Mono> and the gRPC control plane at{" "}
-        <Mono>127.0.0.1:14445</Mono>.
+        <Mono>localhost:14445</Mono>.
       </P>
 
       <H3 id="non-interactive">Non-interactive (CI, cloud-init, Ansible)</H3>
@@ -75,7 +75,7 @@ docker compose down                      # stop`}
     volumes:
       - servicebridge-pg:/var/lib/postgresql/data
     networks:
-      - servicebridge
+      - servicebridge-internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d servicebridge"]
       interval: 10s
@@ -92,7 +92,8 @@ docker compose down                      # stop`}
       - "14444:14444"
       - "14445:14445"
     networks:
-      - servicebridge
+      - servicebridge-internal
+      - servicebridge-external
     volumes:
       - servicebridge-tls:/etc/servicebridge/tls
     environment:
@@ -104,7 +105,9 @@ docker compose down                      # stop`}
       SERVICEBRIDGE_PG_URL: "postgres://postgres:postgres@postgres:5432/servicebridge"
 
 networks:
-  servicebridge:
+  servicebridge-internal:
+    driver: bridge
+  servicebridge-external:
     driver: bridge
 
 volumes:
@@ -141,11 +144,11 @@ docker compose up -d`}
           },
           {
             name: "SERVICEBRIDGE_PG_URL",
-            desc: "PostgreSQL connection string. Also accepted as DATABASE_URL.",
+            desc: "PostgreSQL connection string.",
           },
           {
             name: "SERVICEBRIDGE_PUBLIC_ORIGIN",
-            desc: "Public URL of the server. Must be https:// in production.",
+            desc: "Public URL(s) of the server. Comma-separated for multiple CORS origins. First is canonical. Must be https:// in production.",
           },
         ]}
       />

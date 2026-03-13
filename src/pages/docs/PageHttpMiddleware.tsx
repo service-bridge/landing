@@ -142,7 +142,7 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
 from service_bridge import ServiceBridge
 from service_bridge.http.fastapi import ServiceBridgeMiddleware, get_client
 
-sb = ServiceBridge("127.0.0.1:14445", "key", "api")
+sb = ServiceBridge("localhost:14445", "key", "api")
 app = FastAPI()
 
 app.add_middleware(
@@ -169,7 +169,7 @@ async def get_user(user_id: str, request: Request):
 from service_bridge import ServiceBridge
 from service_bridge.http.flask import init_servicebridge
 
-sb = ServiceBridge("127.0.0.1:14445", "key", "api")
+sb = ServiceBridge("localhost:14445", "key", "api")
 app = Flask(__name__)
 init_servicebridge(app, sb, auto_register=True)
 

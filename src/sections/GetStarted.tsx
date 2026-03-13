@@ -32,7 +32,7 @@ const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> 
     code: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
-  "127.0.0.1:14445",
+  "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
   "my-service"
 );
@@ -51,10 +51,11 @@ await sb.serve();`,
     filename: "app.py",
     lang: "py",
     code: `import asyncio
+import os
 from service_bridge import ServiceBridge
 
 sb = ServiceBridge(
-    "127.0.0.1:14445",
+    "localhost:14445",
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],
     "my-service"
 )
@@ -76,25 +77,31 @@ asyncio.run(sb.serve())`,
 
 import (
   "context"
+  "encoding/json"
   "fmt"
   "log"
+  "os"
+  "os/signal"
 
   sb "github.com/service-bridge/go"
 )
 
 func main() {
-  svc := sb.New("127.0.0.1:14445", serviceKey, "my-service")
+  ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+  defer cancel()
 
-  svc.HandleRpc("hello", func(ctx context.Context, payload map[string]any) (any, error) {
+  svc := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "my-service", nil)
+
+  svc.HandleRpc("hello", func(ctx context.Context, payload json.RawMessage) (any, error) {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil
   })
 
-  svc.HandleEvent("order.*", func(ctx context.Context, payload map[string]any, ectx sb.EventContext) error {
+  svc.HandleEvent("order.*", func(ctx context.Context, payload json.RawMessage, ectx *sb.EventContext) error {
     fmt.Println("Event received:", payload)
     return nil
-  })
+  }, nil)
 
-  log.Fatal(svc.Serve())
+  log.Fatal(svc.Serve(ctx, nil))
 }`,
   },
 };
@@ -145,7 +152,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
           <StepNumber n="01" />
           <div className="pb-8 flex-1 min-w-0">
             <h3 className="type-subsection-title mb-1">Install the runtime</h3>
-            <p className="type-body-sm mb-4">One command sets up ServiceBridge + PostgreSQL via Docker Compose and prints the generated admin password.</p>
+            <p className="type-body-sm mb-4">One command sets up ServiceBridge + PostgreSQL via Docker Compose, prints the generated admin password, and exports the control-plane CA to <code>~/.servicebridge/ca.crt</code> for local SDKs.</p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5">
                 <span className="type-overline-mono text-muted-foreground">terminal</span>

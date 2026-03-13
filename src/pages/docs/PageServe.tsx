@@ -28,8 +28,8 @@ export function PageServe() {
           Can be done in any order.
         </li>
         <li>
-          <strong className="text-foreground">serve()</strong> — Provisions mTLS cert, starts the worker
-          gRPC server, and registers the worker endpoint with the control plane.
+          <strong className="text-foreground">serve()</strong> — Provisions mTLS cert over gRPC, starts the worker
+          gRPC server, opens reverse worker session, and registers the worker endpoint with the control plane.
           Go/Python block here; Node returns when startup is complete.
         </li>
         <li>
@@ -53,7 +53,7 @@ sb.handleRpc("refund", refundHandler);
 sb.handleEvent("orders.*", orderEventHandler);
 
 // 3. Start worker and wait until ready
-await sb.serve({ host: "127.0.0.1" });`,
+await sb.serve({ host: "localhost" });`,
           go: `package main
 
 import (
@@ -88,7 +88,7 @@ func main() {
 from service_bridge import ServiceBridge
 
 sb = ServiceBridge(
-    "127.0.0.1:14445",
+    "localhost:14445",
     "your-service-key",
     "payments",
 )
@@ -111,24 +111,23 @@ asyncio.run(sb.serve())`,
         code={{
           ts: `serve(opts?: ServeOpts): Promise<void>`,
           go: `func (c *Client) Serve(ctx context.Context, opts *ServeOpts) error`,
-          py: `async def serve(*, host: str = "127.0.0.1", skip_tls: bool | None = None) -> None`,
+          py: `async def serve(*, host: str = "localhost", max_in_flight: int = 128) -> None`,
         }}
       />
 
       <H2 id="serve-opts">ServeOpts</H2>
       <ParamTable
         rows={[
-          { name: "host / Host / host", type: "string", default: '"127.0.0.1"', desc: "Bind address for the worker gRPC server. Use 0.0.0.0 inside Docker or Kubernetes." },
+          { name: "host / Host / host", type: "string", default: '"localhost"', desc: "Bind address for the worker gRPC server. Use 0.0.0.0 in Docker or Kubernetes so ServiceBridge can reach the worker." },
+          { name: "maxInFlight / MaxInFlight / max_in_flight", type: "number", default: "128", desc: "Per-worker reverse-session in-flight command window. Runtime enforces flow-control and backpressure." },
           { name: "instanceId (Node)", type: "string", default: "auto", desc: "Stable worker replica ID (Node only)." },
           { name: "weight (Node)", type: "number", default: "1", desc: "Load-balancing weight hint (Node only)." },
-          { name: "transport (Node)", type: '"tls"', default: '"tls"', desc: "Worker transport (Node only)." },
           { name: "tls (Node)", type: "WorkerTLSOpts", desc: "Explicit cert/key/CA for worker mTLS (Node only)." },
-          { name: "SkipTLS / skip_tls (Go/Python)", type: "boolean", default: "false", desc: "Disable mTLS auto-provisioning for local development." },
         ]}
       />
       <Callout type="info">
-        For portable examples across all SDKs, use only <Mono>host</Mono> plus <Mono>SkipTLS/skip_tls</Mono>.
-        Node-specific serve fields (<Mono>instanceId</Mono>, <Mono>weight</Mono>, <Mono>transport</Mono>, <Mono>tls</Mono>) are optional extensions.
+        For portable examples across all SDKs, use only <Mono>host</Mono>.
+        Node-specific serve fields (<Mono>instanceId</Mono>, <Mono>weight</Mono>, <Mono>tls</Mono>) are optional extensions.
       </Callout>
 
       {/* ── instanceId & weight ──────────────────────────────────── */}
@@ -141,41 +140,42 @@ asyncio.run(sb.serve())`,
       <MultiCodeBlock
         code={{
           ts: `await sb.serve({
-  host: "0.0.0.0",
+  host: "localhost",
   // Use pod name in K8s for readable replica IDs in the dashboard
   instanceId: process.env.POD_NAME ?? undefined,
   // This replica gets 2x more traffic than weight:1 instances
-  weight: 2,
+          weight: 2,
 });`,
-          go: `// Go SDK: ServeOpts only has Host and SkipTLS
+          go: `// Go SDK: ServeOpts exposes Host and MaxInFlight
 svc.Serve(ctx, &servicebridge.ServeOpts{
-  Host: "0.0.0.0",
+  Host: "localhost",
+  MaxInFlight: 256,
 })`,
           py: `# Python SDK: instance_id/weight are not serve() parameters
-await sb.serve(host="0.0.0.0")`,
+await sb.serve(host="localhost", max_in_flight=256)`,
         }}
       />
 
       {/* ── TLS / mTLS ───────────────────────────────────────────── */}
       <H2 id="tls-behavior">TLS / mTLS behavior</H2>
       <P>
-        By default, <Mono>serve()</Mono> auto-provisions an mTLS certificate. The process is
+        By default, <Mono>serve()</Mono> auto-provisions an mTLS certificate over gRPC. The process is
         fully automatic and the private key never leaves your process:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
         <li>SDK generates an ECDSA P-256 key pair in memory.</li>
-        <li>Sends <strong className="text-foreground">only the public key</strong> to the admin API.</li>
+        <li>Sends <strong className="text-foreground">only the public key</strong> to gRPC <Mono>ProvisionWorkerCertificate</Mono>.</li>
         <li>Server signs and returns a client cert + CA cert (cert valid for 7 days).</li>
-        <li>Worker gRPC server starts with full mTLS — only the control plane can call in.</li>
+        <li>Worker gRPC server starts with full mTLS and runtime control happens through reverse stream <Mono>OpenWorkerSession</Mono>.</li>
       </ol>
       <MultiCodeBlock
         code={{
           ts: `// Default — auto-provisions mTLS (recommended)
-await sb.serve({ host: "127.0.0.1" });
+await sb.serve({ host: "localhost" });
 
 // Bring your own certificates
 await sb.serve({
-  host: "0.0.0.0",
+  host: "localhost",
   tls: {
     caCert: process.env.CA_CERT!,
     cert: process.env.WORKER_CERT!,
@@ -183,22 +183,16 @@ await sb.serve({
   },
 });`,
           go: `// Default — auto-provisions mTLS
-svc.Serve(ctx, nil)
-
-// Skip TLS for local dev
-svc.Serve(ctx, &servicebridge.ServeOpts{SkipTLS: true})`,
+svc.Serve(ctx, nil)`,
           py: `# Default — auto-provisions mTLS
-await sb.serve()
-
-# Skip TLS for local dev
-await sb.serve(skip_tls=True)`,
+await sb.serve()`,
         }}
       />
 
       <Callout type="warning">
         Set <Mono>host: "0.0.0.0"</Mono> when running inside Docker or Kubernetes — the ServiceBridge
-        server must be able to reach your worker container over the network. <Mono>127.0.0.1</Mono>{" "}
-        only accepts connections from the same host and will cause registration failures in containers.
+        server must be able to reach your worker container over the network. <Mono>localhost</Mono>{" "}
+        only accepts connections from the same host and will cause RPC delivery failures.
       </Callout>
 
       {/* ── Graceful shutdown ────────────────────────────────────── */}
@@ -218,7 +212,7 @@ await sb.serve(skip_tls=True)`,
   process.exit(0);
 });
 
-await sb.serve({ host: "127.0.0.1" });`,
+await sb.serve({ host: "localhost" });`,
         }}
       />
 

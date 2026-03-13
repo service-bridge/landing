@@ -51,7 +51,7 @@ bun add service-bridge`,
           ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
-  process.env.SERVICEBRIDGE_URL ?? "127.0.0.1:14445",
+  process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
   "payments",
 );
@@ -60,7 +60,7 @@ sb.handleRpc("charge", async (payload: { orderId: string; amount: number }) => {
   return { ok: true, txId: \`tx_\${Date.now()}\`, orderId: payload.orderId };
 });
 
-await sb.serve({ host: "127.0.0.1" });`,
+await sb.serve({ host: "localhost" });`,
           go: `package main
 
 import (
@@ -78,7 +78,7 @@ func main() {
   ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
   defer cancel()
 
-  svc := servicebridge.New("127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
+  svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
 
   svc.HandleRpc("charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
     var req struct {
@@ -96,7 +96,7 @@ func main() {
           py: `import asyncio
 from service_bridge import ServiceBridge
 
-sb = ServiceBridge("127.0.0.1:14445", "your-service-key", "payments")
+sb = ServiceBridge("localhost:14445", "your-service-key", "payments")
 
 @sb.handle_rpc("charge")
 async def charge(payload: dict) -> dict:
@@ -116,7 +116,7 @@ asyncio.run(sb.serve())`,
           ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
-  process.env.SERVICEBRIDGE_URL ?? "127.0.0.1:14445",
+  process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
   "orders",
 );
@@ -140,7 +140,7 @@ import (
 )
 
 func main() {
-  svc := servicebridge.New("127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
+  svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
 
   result, err := svc.Rpc(context.Background(), "payments/charge", map[string]any{
     "order_id": "ord_42",
@@ -160,7 +160,7 @@ func main() {
           py: `import asyncio
 from service_bridge import ServiceBridge
 
-sb = ServiceBridge("127.0.0.1:14445", "your-service-key", "orders")
+sb = ServiceBridge("localhost:14445", "your-service-key", "orders")
 
 async def main():
     result = await sb.rpc("payments/charge", {
@@ -185,14 +185,14 @@ asyncio.run(main())`,
       </P>
       <MultiCodeBlock
         code={{
-          ts: `SERVICEBRIDGE_URL=127.0.0.1:14445
-SERVICEBRIDGE_SERVICE_KEY=sb_live_...
+          ts: `SERVICEBRIDGE_URL=localhost:14445
+SERVICEBRIDGE_SERVICE_KEY=sbv2.<id>.<secret>.<ca>
 SERVICEBRIDGE_SERVICE=orders`,
-          go: `SERVICEBRIDGE_URL=127.0.0.1:14445
-SERVICEBRIDGE_SERVICE_KEY=sb_live_...
+          go: `SERVICEBRIDGE_URL=localhost:14445
+SERVICEBRIDGE_SERVICE_KEY=sbv2.<id>.<secret>.<ca>
 SERVICEBRIDGE_SERVICE=orders`,
-          py: `SERVICEBRIDGE_URL=127.0.0.1:14445
-SERVICEBRIDGE_SERVICE_KEY=sb_live_...
+          py: `SERVICEBRIDGE_URL=localhost:14445
+SERVICEBRIDGE_SERVICE_KEY=sbv2.<id>.<secret>.<ca>
 SERVICEBRIDGE_SERVICE=orders`,
         }}
       />
@@ -201,7 +201,7 @@ SERVICEBRIDGE_SERVICE=orders`,
       <MultiCodeBlock
         code={{
           ts: `const sb = servicebridge(
-  process.env.SERVICEBRIDGE_URL ?? "127.0.0.1:14445",
+  process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
   process.env.SERVICEBRIDGE_SERVICE ?? "my-service",
 );`,
@@ -215,7 +215,7 @@ SERVICEBRIDGE_SERVICE=orders`,
 from service_bridge import ServiceBridge
 
 sb = ServiceBridge(
-    os.environ.get("SERVICEBRIDGE_URL", "127.0.0.1:14445"),
+    os.environ.get("SERVICEBRIDGE_URL", "localhost:14445"),
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],
     os.environ.get("SERVICEBRIDGE_SERVICE", "my-service"),
 )`,

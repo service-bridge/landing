@@ -14,8 +14,8 @@ export function PageServerConfig() {
         rows={[
           { name: "SERVICEBRIDGE_ADMIN_LOGIN", desc: "Admin username for the dashboard." },
           { name: "SERVICEBRIDGE_ADMIN_PASSWORD_HASH", desc: "bcrypt hash of admin password. Generate at servicebridge.dev/#hash-password." },
-          { name: "SERVICEBRIDGE_PG_URL", desc: "PostgreSQL connection string. Also accepted as DATABASE_URL." },
-          { name: "SERVICEBRIDGE_PUBLIC_ORIGIN", desc: "Public URL of the server (e.g. https://sb.example.com). Must be https:// in production." },
+          { name: "SERVICEBRIDGE_PG_URL", desc: "PostgreSQL connection string." },
+          { name: "SERVICEBRIDGE_PUBLIC_ORIGIN", desc: "Public URL(s) of the server. Comma-separated for multiple CORS origins. First is canonical. Must be https:// in production." },
         ]}
       />
 
@@ -36,8 +36,7 @@ export function PageServerConfig() {
         rows={[
           { name: "SERVICEBRIDGE_HTTP_PORT", default: "14444", desc: "HTTP port for UI, REST API, WebSocket." },
           { name: "SERVICEBRIDGE_GRPC_PORT", default: "14445", desc: "gRPC port for SDK control plane (TLS)." },
-          { name: "SERVICEBRIDGE_GRPC_HOST", default: "127.0.0.1", desc: 'gRPC bind address. Set "0.0.0.0" in Docker.' },
-          { name: "SERVICEBRIDGE_ALLOWED_ORIGINS", desc: "Extra CORS origins (comma-separated). PUBLIC_ORIGIN is always allowed." },
+          { name: "SERVICEBRIDGE_GRPC_HOST", default: "0.0.0.0", desc: 'gRPC bind address. Use "0.0.0.0" in Docker to accept connections via port mapping.' },
           { name: "SERVICEBRIDGE_TLS_DIR", default: "./tls", desc: "Directory for auto-generated TLS certificates." },
         ]}
       />
@@ -58,6 +57,10 @@ export function PageServerConfig() {
           { name: "SERVICEBRIDGE_MAX_PENDING_DELIVERIES", default: "200000", desc: "Max events waiting for delivery before backpressure." },
           { name: "SERVICEBRIDGE_HEARTBEAT_TTL_MS", default: "30000", desc: "A service is considered offline after this many ms without heartbeat." },
           { name: "SERVICEBRIDGE_RPC_REQUEST_TIMEOUT_MS", default: "30000", desc: "Timeout for RPC calls forwarded to worker services." },
+          { name: "SERVICEBRIDGE_WORKER_SESSION_TTL_MS", default: "30000", desc: "TTL for reverse worker sessions before fencing stale sessions." },
+          { name: "SERVICEBRIDGE_WORKER_SESSION_DEFAULT_MAX_INFLIGHT", default: "128", desc: "Default in-flight command window per worker session." },
+          { name: "SERVICEBRIDGE_WORKER_COMMAND_CLAIM_LEASE_MS", default: "35000", desc: "Lease duration while a node owns a claimed worker command row." },
+          { name: "SERVICEBRIDGE_WORKER_COMMANDS_TTL_DAYS", default: "1", desc: "Retention for completed/failed worker command rows. 0 disables cleanup." },
           { name: "SERVICEBRIDGE_DELIVERY_LEASE_MS", default: "45000", desc: "How long a delivery attempt is locked before retry." },
           { name: "SERVICEBRIDGE_DISPATCH_CONCURRENCY", default: "100", desc: "Parallel delivery workers." },
           { name: "SERVICEBRIDGE_WORKFLOW_CONCURRENCY", default: "50", desc: "Parallel workflow step workers." },

@@ -230,7 +230,7 @@ export const NAV: NavGroup[] = [
         label: "TLS / mTLS",
         toc: [
           { id: "tls-auto", label: "Auto-generated certs" },
-          { id: "tls-provision", label: "SDK auto-provisioning" },
+          { id: "tls-provision", label: "SDK gRPC provisioning" },
           { id: "tls-arch", label: "Architecture" },
         ],
       },

@@ -14,7 +14,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 const RPC_CODE: CodeLangs = {
   ts: `import { servicebridge } from "service-bridge";
 
-const sb = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // Register — advertises endpoint to the registry
 sb.handleRpc("orders.create", async (payload) => {
@@ -37,7 +37,7 @@ import (
 )
 
 func main() {
-    sb := servicebridge.New("127.0.0.1:14445",
+    sb := servicebridge.New("localhost:14445",
         os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
 
     sb.HandleRpc("orders.create",
@@ -47,13 +47,13 @@ func main() {
             return map[string]any{"ok": true, "txId": charge["txId"]}, nil
         })
 
-    _ = sb.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})
+    _ = sb.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})
 }`,
 
   py: `from service_bridge import ServiceBridge
 import os
 
-sb = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
+sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
 
 @sb.handle_rpc("orders.create")
 async def orders_create(payload: dict) -> dict:

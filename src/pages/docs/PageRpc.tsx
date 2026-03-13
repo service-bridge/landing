@@ -37,7 +37,7 @@ export function PageRpc() {
         rows={[
           { name: "fn", type: "string", desc: 'Target in "service/method" format, e.g. "payments/charge". Use canonical form to avoid ambiguity.' },
           { name: "payload", type: "any", default: "undefined", desc: "JSON-serialisable request payload." },
-          { name: "timeout / timeout_ms / TimeoutMs", type: "number (ms)", default: "30000 (from Options)", desc: "Per-attempt timeout. The whole call may take up to timeout × retries ms." },
+          { name: "timeout / timeout_ms / TimeoutMs", type: "number (ms)", default: "30000 (from Options)", desc: "Per-attempt timeout. Total wall time is bounded by roughly (retries + 1) × timeout plus backoff." },
           { name: "retries / Retries", type: "number", default: "3 (from Options)", desc: "Retry count on transient failures. Each retry uses exponential backoff." },
           { name: "retryDelay (Node, per-call) / retry_delay_ms (Python, per-call) / RetryDelayMs (Go, per-call)", type: "number (ms)", default: "300 (from Options)", desc: "Base backoff delay. Formula: delay × 2^(attempt-1). Available in all SDKs as a per-call override." },
           { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request." },
@@ -96,6 +96,12 @@ result = await sb.rpc(
         <Mono>event()</Mono>, <Mono>job()</Mono>, and <Mono>workflow()</Mono>, an RPC call fails
         immediately (after retries) if the target service is unreachable. Use events or workflows
         for operations that must survive transient outages.
+      </Callout>
+
+      <Callout type="info">
+        If a target service accepts a call but does not respond, the SDK still terminates each
+        attempt at the configured timeout and moves to the next retry (if any). The call cannot
+        stay in pending forever.
       </Callout>
 
       <H3 id="rpc-errors">Error handling</H3>

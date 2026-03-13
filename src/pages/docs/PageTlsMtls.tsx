@@ -7,7 +7,7 @@ export function PageTlsMtls() {
       <PageHeader
         badge="Production"
         title="TLS / mTLS"
-        description="The control plane uses one-way TLS with service-key auth. Worker-to-worker direct calls use full mTLS. Certificates are provisioned automatically — no cert-manager or Vault needed."
+        description="The control plane uses one-way TLS with service-key auth. Worker traffic and direct RPC use full mTLS. Certificates are provisioned automatically over gRPC — no cert-manager or Vault needed."
       />
 
       <H2 id="tls-auto">Server-side auto-generated certs</H2>
@@ -17,7 +17,7 @@ export function PageTlsMtls() {
         across restarts. Certs auto-renew 30 days before expiry.
       </P>
 
-      <H2 id="tls-provision">SDK auto-provisioning</H2>
+      <H2 id="tls-provision">SDK gRPC provisioning</H2>
       <P>
         When you call <Mono>serve()</Mono>, the SDK automatically provisions mTLS client
         certificates:
@@ -26,8 +26,7 @@ export function PageTlsMtls() {
         <li>SDK generates an <strong className="text-foreground">RSA 2048</strong> key pair locally (Go and Python SDKs; the server's own cert uses ECDSA P-256).</li>
         <li>
           Sends <strong className="text-foreground">only the public key</strong> to{" "}
-          <Mono>POST /api/tls/provision</Mono> (authenticated with the service key).
-          Go SDK sends a CSR (<Mono>{"{ \"csr\": \"...\" }"}</Mono>); Python SDK sends a raw public key (<Mono>{"{ \"public_key_pem\": \"...\" }"}</Mono>). Both formats are accepted by the server.
+          gRPC <Mono>ProvisionWorkerCertificate</Mono> (authenticated with the service key).
         </li>
         <li>Server signs the public key and returns a client cert + CA cert. Worker certificates are valid for <strong className="text-foreground">7 days</strong>; the SDK handles re-provisioning automatically on startup if the cert is missing or expired.</li>
         <li>
@@ -35,29 +34,28 @@ export function PageTlsMtls() {
           <strong className="text-foreground">The private key never leaves your process.</strong>
         </li>
       </ol>
+      <H2 id="tls-advanced-overrides">Advanced TLS overrides</H2>
+      <P>
+        Use explicit TLS materials only when you need custom trust/pki behavior. Otherwise keep
+        auto-provisioning enabled.
+      </P>
       <MultiCodeBlock
         code={{
           ts: `// Default — auto-provisions mTLS (just a service key needed)
 const sb = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 await sb.serve();  // ← provisions TLS here
 
-// Optional: explicit certs override auto-provisioning
+// Advanced TLS overrides: explicit certs override auto-provisioning
 const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders", {
   workerTLS: { caCert: CA_PEM, cert: CERT_PEM, key: KEY_PEM },
 });
 
-// Node SDK has no skipTLS flag — use auto-provisioning or explicit workerTLS.
+// Node SDK auto-provisions mTLS by default; set workerTLS only for explicit certs.
 await sb.serve();`,
           go: `// Default — auto-provisions mTLS
-svc.Serve(ctx, nil)
-
-// Skip TLS for local dev
-svc.Serve(ctx, &servicebridge.ServeOpts{SkipTLS: true})`,
+svc.Serve(ctx, nil)`,
           py: `# Default — auto-provisions mTLS
-await sb.serve()
-
-# Skip TLS for local dev
-await sb.serve(skip_tls=True)`,
+await sb.serve()`,
         }}
       />
 
@@ -68,8 +66,7 @@ await sb.serve(skip_tls=True)`,
           (server cert). Auth via <Mono>x-service-key</Mono> gRPC metadata.
         </li>
         <li>
-          <strong className="text-foreground">ServiceBridge runtime → worker:</strong> full mTLS.
-          Server presents its cert (CN=ServiceBridge Server).
+          <strong className="text-foreground">ServiceBridge runtime → worker session:</strong> gRPC reverse-stream <Mono>OpenWorkerSession</Mono> with worker-authenticated identity.
         </li>
         <li>
           <strong className="text-foreground">Worker → worker (direct RPC):</strong> full mTLS.
@@ -82,10 +79,9 @@ await sb.serve(skip_tls=True)`,
       </ul>
 
       <Callout type="warning">
-        The Node.js SDK does not currently include TLS auto-provisioning. Node.js services connect
-        without mTLS by default, or you can supply explicit TLS credentials via the{" "}
-        <Mono>workerTLS</Mono> option. For mTLS-enforced environments, use Go or Python services
-        for worker registration, or configure TLS externally.
+        SDK control-plane trust defaults to CA embedded in <Mono>sbv2</Mono> service key. Legacy
+        <Mono>sb_*</Mono> keys are rejected. Optional explicit CA override is still available via{" "}
+        <Mono>caCert</Mono>/<Mono>CACert</Mono>/<Mono>ca_cert</Mono>.
       </Callout>
 
       <Callout type="tip">

@@ -16,7 +16,7 @@ export function PageSdkOptions() {
           ts: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
-  url,         // gRPC control plane URL (e.g. "127.0.0.1:14445")
+  url,         // gRPC control plane URL (e.g. "localhost:14445")
   serviceKey,  // Service authentication key
   serviceName, // Service name in the registry
   {
@@ -27,11 +27,9 @@ const sb = servicebridge(
     queueMaxSize: 1_000,
     queueOverflow: "drop-oldest",
     heartbeatIntervalMs: 10_000,
-    workerTransport: "tls",
     captureLogs: true,
-    adminUrl: "http://127.0.0.1:14444",
     workerTLS: {
-      caCert: process.env.SERVICEBRIDGE_CA_PEM,
+      caCert: process.env.SERVICEBRIDGE_WORKER_CA_PEM,
       cert: process.env.SERVICEBRIDGE_CERT_PEM,
       key: process.env.SERVICEBRIDGE_KEY_PEM,
     },
@@ -40,11 +38,10 @@ const sb = servicebridge(
           go: `import servicebridge "github.com/service-bridge/go"
 
 svc := servicebridge.New(
-  "127.0.0.1:14445",   // gRPC URL
+  "localhost:14445",   // gRPC URL
   os.Getenv("SERVICEBRIDGE_SERVICE_KEY"),
   "my-service",
   &servicebridge.Options{
-    AdminURL:            "http://127.0.0.1:14444",
     HeartbeatIntervalMs: 10_000,
     CaptureLogs:         servicebridge.BoolPtr(true),
     QueueMaxSize:        1000,
@@ -55,20 +52,19 @@ svc := servicebridge.New(
     RetryDelayMs:        300,
   },
 )`,
-          py: `from service_bridge import ServiceBridge, Options
+          py: `import os
+from service_bridge import ServiceBridge, Options
 
 sb = ServiceBridge(
-    grpc_url="127.0.0.1:14445",
-    service_key="sb_live_...",
+    grpc_url="localhost:14445",
+    service_key="sbv2.<id>.<secret>.<ca>",
     service_name="my-service",
     opts=Options(
-        admin_url="http://127.0.0.1:14444",
         heartbeat_interval_ms=10_000,
         capture_logs=True,
         queue_max_size=1000,
         queue_overflow="drop-oldest",
         discovery_refresh_ms=10_000,
-        skip_tls=False,
         timeout_ms=30_000,
         retries=3,
         retry_delay_ms=300,
@@ -80,7 +76,7 @@ sb = ServiceBridge(
       <H2 id="options-table">All options</H2>
       <ParamTable
         rows={[
-          { name: "timeout / TimeoutMs / timeout_ms", type: "number (ms)", default: "30000", desc: "Global default RPC timeout. Per-call opts override. Available in all SDKs." },
+          { name: "timeout / TimeoutMs / timeout_ms", type: "number (ms)", default: "30000", desc: "Global default hard timeout per RPC attempt. Per-call opts override. Available in all SDKs." },
           { name: "retries / Retries / retries", type: "number", default: "3", desc: "Global default retry count for rpc(). 0 = no retry. Available in all SDKs." },
           { name: "retryDelay / RetryDelayMs / retry_delay_ms", type: "number (ms)", default: "300", desc: "Base exponential backoff delay: delay × 2^(attempt-1). Available in all SDKs." },
           { name: "discoveryRefreshMs / DiscoveryRefreshMs / discovery_refresh_ms", type: "number (ms)", default: "10000", desc: "How often endpoint lists are refreshed from runtime registry." },
@@ -88,14 +84,15 @@ sb = ServiceBridge(
           { name: "queueOverflow / QueueOverflow / queue_overflow", type: '"drop-oldest" | "drop-newest" | "error"', default: '"drop-oldest"', desc: "Overflow strategy when offline queue is full." },
           { name: "heartbeatIntervalMs / HeartbeatIntervalMs / heartbeat_interval_ms", type: "number (ms)", default: "10000", desc: "Heartbeat period for worker registrations." },
           { name: "captureLogs / CaptureLogs / capture_logs", type: "boolean", default: "true", desc: "Auto-capture logs and forward them to ServiceBridge runtime." },
-          { name: "adminUrl / AdminURL / admin_url", type: "string", default: "derived from gRPC URL", desc: "HTTP admin base URL used by TLS provisioning and management calls." },
-          { name: "adminSessionCookie / AdminSessionCookie / admin_session_cookie", type: "string", default: '""', desc: "Admin session cookie for browser-authenticated endpoints (e.g. cancelWorkflowRun)." },
-          { name: "adminCsrfToken / AdminCSRFToken / admin_csrf_token", type: "string", default: '""', desc: "CSRF token paired with adminSessionCookie for unsafe HTTP methods." },
-          { name: "adminOrigin / AdminOrigin / admin_origin", type: "string", default: '""', desc: "Origin header required by admin CSRF/origin checks." },
-          { name: "workerTransport (Node)", type: '"tls"', default: '"tls"', desc: "Worker server transport type." },
-          { name: "workerTLS (Node)", type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }", desc: "Explicit mTLS materials for the worker gRPC server." },
-          { name: "skip_tls (Python)", type: "boolean", default: "false", desc: "Disable mTLS auto-provisioning for local development." },
           { name: "Logger (Go)", type: "func(format string, args ...any)", default: "log.Printf", desc: "Custom logger function for SDK internals." },
+        ]}
+      />
+
+      <H2 id="advanced-tls">Advanced TLS overrides</H2>
+      <ParamTable
+        rows={[
+          { name: "caCert / CACert / ca_cert", type: "string (PEM)", default: "from service key", desc: "Optional control-plane CA override. By default SDK reads CA from sbv2 service key." },
+          { name: "workerTLS (Node)", type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }", desc: "Explicit mTLS materials for the worker gRPC server." },
         ]}
       />
 
@@ -106,9 +103,10 @@ sb = ServiceBridge(
       </P>
       <ParamTable
         rows={[
-          { name: "Node-only constructor options", type: "workerTransport/workerTLS", desc: "Explicit TLS cert materials and transport config." },
+          { name: "Node-only constructor options", type: "workerTLS (+ caCert override)", desc: "Explicit worker cert materials and control-plane CA override." },
           { name: "Node-only handler hints", type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch", desc: "Accepted by Node API as hints; currently not strict runtime limits." },
-          { name: "Node-only serve fields", type: "instanceId/weight/transport/tls", desc: "Go/Python expose host + SkipTLS/skip_tls only." },
+          { name: "Serve flow-control field (all SDKs)", type: "maxInFlight / MaxInFlight / max_in_flight", desc: "Bounded runtime-originated command concurrency over OpenWorkerSession." },
+          { name: "Node-only serve fields", type: "instanceId/weight/tls", desc: "Extra serve extensions beyond shared host/maxInFlight fields." },
         ]}
       />
 
@@ -143,6 +141,12 @@ await sb.job("billing/collect", opts);    // queued`,
         The offline queue is in-memory. Operations queued while offline are lost if the process
         restarts before the control plane reconnects. For critical operations, implement your own
         persistence layer on top.
+      </Callout>
+
+      <Callout type="info">
+        RPC calls are bounded even when a downstream service is silent: each attempt is cut by{" "}
+        <Mono>timeout</Mono>/<Mono>TimeoutMs</Mono>/<Mono>timeout_ms</Mono>, retries are finite,
+        and exhausted calls end in terminal <Mono>error</Mono>.
       </Callout>
     </div>
   );

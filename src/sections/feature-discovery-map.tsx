@@ -15,12 +15,12 @@ const DISCOVERY_CODE: CodeLangs = {
   ts: `import { servicebridge } from "service-bridge";
 
 // Worker: endpoint is advertised on serve()
-const payments = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "payments");
+const payments = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "payments");
 payments.handleRpc("payments.charge", handler);
 await payments.serve();  // → RegisterFunction + Heartbeat loop
 
 // Caller: lazy resolution on first rpc() call
-const orders = servicebridge("127.0.0.1:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+const orders = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
 
 // First call  → LookupFunction → opens persistent gRPC channel
 // All after   → direct wire, zero lookup overhead
@@ -28,18 +28,18 @@ const result = await orders.rpc("payments.charge", { amount: 4990 });`,
 
   go: `// Worker: endpoint is advertised on Serve()
 payments := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
+    "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
 
 payments.HandleRpc("payments.charge",
     func(ctx context.Context, p json.RawMessage) (any, error) {
         return map[string]any{"ok": true, "txId": "tx_001"}, nil
     })
 
-go payments.Serve(ctx, &servicebridge.ServeOpts{Host: "127.0.0.1"})
+go payments.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})
 
 // Caller: first Rpc() → LookupFunction → opens gRPC channel
 orders := servicebridge.New(
-    "127.0.0.1:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
+    "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "orders", nil)
 
 result, _ := orders.Rpc(ctx, "payments.charge",
     map[string]any{"amount": 4990}, nil)`,
@@ -47,16 +47,16 @@ result, _ := orders.Rpc(ctx, "payments.charge",
   py: `from service_bridge import ServiceBridge
 
 # Worker: endpoint is advertised on serve()
-payments = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "payments")
+payments = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "payments")
 
 @payments.handle_rpc("payments.charge")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "txId": "tx_001"}
 
-asyncio.create_task(payments.serve(host="127.0.0.1"))
+asyncio.create_task(payments.serve(host="localhost"))
 
 # Caller: first rpc() → LookupFunction → opens gRPC channel
-orders = ServiceBridge("127.0.0.1:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
+orders = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "orders")
 result = await orders.rpc("payments.charge", {"amount": 4990})`,
 };
 

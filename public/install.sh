@@ -11,6 +11,7 @@
 #   bash install.sh
 #
 # Password is always auto-generated. To set a specific one, pass SB_ADMIN_PASSWORD.
+# The installer also exports runtime CA to ~/.servicebridge/ca.crt for local SDK trust.
 
 set -euo pipefail
 
@@ -82,6 +83,30 @@ gen_password() {
   SB_PASSWORD_GENERATED=true
 }
 
+export_ca_for_local_sdks() {
+  local ca_dir="${HOME}/.servicebridge"
+  local ca_path="${ca_dir}/ca.crt"
+  local tries=30
+
+  mkdir -p "$ca_dir"
+
+  while [ "$tries" -gt 0 ]; do
+    if compose exec -T servicebridge sh -c 'test -s /etc/servicebridge/tls/ca.crt' >/dev/null 2>&1; then
+      if compose exec -T servicebridge cat /etc/servicebridge/tls/ca.crt > "$ca_path"; then
+        chmod 600 "$ca_path" 2>/dev/null || true
+        ok "Exported control-plane CA to ${ca_path}"
+        return 0
+      fi
+      break
+    fi
+    sleep 1
+    tries=$((tries - 1))
+  done
+
+  warn "Could not export CA automatically."
+  warn "Run manually: docker compose exec -T servicebridge cat /etc/servicebridge/tls/ca.crt > ${ca_path}"
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 main() {
   echo
@@ -96,7 +121,7 @@ main() {
   ask SB_DIR         "Installation directory"              "$SB_DIR"
   ask SB_IMAGE       "Docker image"                        "$SB_IMAGE"
   ask SB_ADMIN_LOGIN "Admin username"                      "admin"
-  ask SB_PUBLIC_ORIGIN "Public URL (used in the UI and CORS)" "http://localhost:14444"
+  ask SB_PUBLIC_ORIGIN "Public URL(s), comma-separated for multiple CORS origins" "http://localhost:14444"
   ask SB_HTTP_PORT   "HTTP port"                           "14444"
   ask SB_GRPC_PORT   "gRPC port"                          "14445"
 
@@ -138,7 +163,7 @@ services:
     volumes:
       - servicebridge-pg:/var/lib/postgresql/data
     networks:
-      - servicebridge
+      - servicebridge-internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d servicebridge"]
       interval: 10s
@@ -155,25 +180,32 @@ services:
       - "${SB_HTTP_PORT}:14444"
       - "${SB_GRPC_PORT}:14445"
     networks:
-      - servicebridge
+      - servicebridge-internal
+      - servicebridge-external
     volumes:
       - servicebridge-tls:/etc/servicebridge/tls
     environment:
       SERVICEBRIDGE_ADMIN_LOGIN: ${SB_ADMIN_LOGIN}
       SERVICEBRIDGE_ADMIN_PASSWORD_HASH: "${SB_PASSWORD_HASH_ESCAPED}"
-      SERVICEBRIDGE_PUBLIC_ORIGIN: ${SB_PUBLIC_ORIGIN}
+      SERVICEBRIDGE_PUBLIC_ORIGIN: \${SB_PUBLIC_ORIGIN}
       SERVICEBRIDGE_TLS_DIR: /etc/servicebridge/tls
       SERVICEBRIDGE_GRPC_HOST: "0.0.0.0"
       SERVICEBRIDGE_PG_URL: "postgres://postgres:postgres@postgres:5432/servicebridge"
+      SERVICEBRIDGE_WORKER_SESSION_TTL_MS: "30000"
+      SERVICEBRIDGE_WORKER_SESSION_DEFAULT_MAX_INFLIGHT: "128"
+      SERVICEBRIDGE_WORKER_COMMAND_CLAIM_LEASE_MS: "35000"
+      SERVICEBRIDGE_WORKER_COMMANDS_TTL_DAYS: "1"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:14444/health || exit 1"]
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:14444/health || exit 1"]
       interval: 15s
       timeout: 3s
       retries: 5
       start_period: 20s
 
 networks:
-  servicebridge:
+  servicebridge-internal:
+    driver: bridge
+  servicebridge-external:
     driver: bridge
 
 volumes:
@@ -186,6 +218,7 @@ COMPOSE
   step "4/4  Starting services"
 
   compose up -d
+  export_ca_for_local_sdks
 
   echo
   log "ServiceBridge is running!"

@@ -50,8 +50,7 @@ export function PageServiceKeys() {
       <Callout type="info">
         Service keys can be provided in two ways: <Mono>x-service-key: {"<key>"}</Mono> header OR{" "}
         <Mono>Authorization: Bearer {"<key>"}</Mono> header. Both are accepted by the runtime.
-        All service keys start with the prefix <Mono>sb_</Mono> — this enables secret-scanning
-        tools (e.g. GitHub secret scanning) to detect accidentally committed keys.
+        Valid keys start with <Mono>sbv2.</Mono>; legacy <Mono>sb_</Mono> keys are disabled.
       </Callout>
 
       <Callout type="info">
