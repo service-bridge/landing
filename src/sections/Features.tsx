@@ -138,11 +138,11 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       },
       {
         title: "Auto mTLS",
-        desc: "The SDK generates a keypair locally — the private key never leaves the process. A cert with CN bound to the service name is provisioned automatically, making caller identity cryptographic rather than header-based. No cert-manager, no Vault PKI, no sidecar. Every service-to-service connection is mTLS from the first call.",
+        desc: "The SDK generates a local ECDSA P-256 keypair and sends only the public key to gRPC ProvisionWorkerCertificate. Worker cert CN is bound to the service name from the key; private key never leaves the process. Worker certificates are auto-reprovisioned when missing/expired (7-day validity). No cert-manager, no Vault PKI, no sidecar.",
         icon: Lock,
         iconBg: "bg-teal-500/10",
         iconColor: "text-teal-400",
-        badge: "mTLS, certs at key creation",
+        badge: "gRPC provisioning",
         badgeTone: "text-teal-400 bg-teal-400/10 border-teal-400/20",
       },
     ],

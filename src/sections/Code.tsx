@@ -20,8 +20,12 @@ const LANG_TABS = [
     filename: "orders-service.ts",
     code: `import { servicebridge } from "service-bridge";
 
-// Connect: control plane address + service key + service name
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, "orders");
+// Connect: control plane address + sbv2 service key + service name
+const sb = servicebridge(
+  process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
+  process.env.SERVICEBRIDGE_SERVICE_KEY!, // sbv2.<id>.<secret>.<ca>
+  "orders"
+);
 
 // RPC handler — direct gRPC, zero proxy hops
 sb.handleRpc("orders.create", async (payload) => {
@@ -49,7 +53,7 @@ await sb.workflow("checkout.flow", [
   { id: "confirm",  type: "event", ref: "order.confirmed",   deps: ["charge", "reserve"] },
 ]);
 
-await sb.serve();`,
+await sb.serve(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   {
     id: "go",
@@ -68,10 +72,14 @@ import (
 )
 
 func main() {
-  // Connect: control plane address + service key + service name
+  // Connect: control plane address + sbv2 service key + service name
   ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
   defer cancel()
-  svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
+  grpcURL := os.Getenv("SERVICEBRIDGE_URL")
+  if grpcURL == "" {
+    grpcURL = "localhost:14445"
+  }
+  svc := servicebridge.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "payments", nil)
 
   // RPC handler — direct gRPC, context carries trace
   svc.HandleRpc("payments.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
@@ -100,7 +108,7 @@ func main() {
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   })
 
-  log.Fatal(svc.Serve(ctx, nil))
+  log.Fatal(svc.Serve(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
 }`,
   },
   {
@@ -111,8 +119,12 @@ func main() {
 import os
 from service_bridge import ServiceBridge
 
-# Connect: control plane address + service key + service name
-sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"], "notify")
+# Connect: control plane address + sbv2 service key + service name
+sb = ServiceBridge(
+    os.environ.get("SERVICEBRIDGE_URL", "localhost:14445"),
+    os.environ["SERVICEBRIDGE_SERVICE_KEY"],  # sbv2.<id>.<secret>.<ca>
+    "notify",
+)
 
 # RPC handler — direct gRPC, zero proxy hops
 @sb.handle_rpc("notify.send")
@@ -138,7 +150,7 @@ async def bootstrap():
         {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
     ])
 
-    await sb.serve()
+    await sb.serve()  # auto-provisions worker mTLS via ProvisionWorkerCertificate
 
 asyncio.run(bootstrap())`,
   },
@@ -337,6 +349,7 @@ export function CodeSection() {
             Zero manual instrumentation.
           </>
         }
+        subtitle="Examples match docs/readme: sbv2 service keys, embedded CA trust by default, and auto-provisioned worker mTLS on serve()."
       />
 
       <div className="grid items-start gap-6 xl:grid-cols-[1.08fr_0.92fr] max-w-6xl mx-auto">

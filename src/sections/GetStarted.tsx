@@ -32,7 +32,7 @@ const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> 
     code: `import { servicebridge } from "service-bridge";
 
 const sb = servicebridge(
-  "localhost:14445",
+  process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
   "my-service"
 );
@@ -45,7 +45,7 @@ sb.handleEvent("order.*", async (payload) => {
   console.log("Event received:", payload);
 });
 
-await sb.serve();`,
+await sb.serve(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   python: {
     filename: "app.py",
@@ -55,7 +55,7 @@ import os
 from service_bridge import ServiceBridge
 
 sb = ServiceBridge(
-    "localhost:14445",
+    os.environ.get("SERVICEBRIDGE_URL", "localhost:14445"),
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],
     "my-service"
 )
@@ -68,7 +68,7 @@ async def hello(payload: dict) -> dict:
 async def on_order(payload: dict, ctx) -> None:
     print("Event received:", payload)
 
-asyncio.run(sb.serve())`,
+asyncio.run(sb.serve())  # auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   go: {
     filename: "main.go",
@@ -90,7 +90,12 @@ func main() {
   ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
   defer cancel()
 
-  svc := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "my-service", nil)
+  grpcURL := os.Getenv("SERVICEBRIDGE_URL")
+  if grpcURL == "" {
+    grpcURL = "localhost:14445"
+  }
+
+  svc := sb.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "my-service", nil)
 
   svc.HandleRpc("hello", func(ctx context.Context, payload json.RawMessage) (any, error) {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil
@@ -101,7 +106,7 @@ func main() {
     return nil
   }, nil)
 
-  log.Fatal(svc.Serve(ctx, nil))
+  log.Fatal(svc.Serve(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
 }`,
   },
 };
@@ -187,7 +192,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
           <StepNumber n="03" last />
           <div className="pb-8 flex-1 min-w-0">
             <h3 className="type-subsection-title mb-1">Connect your service</h3>
-            <p className="type-body-sm mb-4">Register RPC handlers, subscribe to events, and call other services.</p>
+            <p className="type-body-sm mb-4">Register RPC handlers, subscribe to events, and call other services. Use <code>SERVICEBRIDGE_SERVICE_KEY</code> in <code>sbv2.&lt;id&gt;.&lt;secret&gt;.&lt;ca&gt;</code> format.</p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-3 py-2 flex items-center justify-between">
                 <TabStrip size="sm" items={SDK_TABS} active={activeTab} onChange={setActiveTab} />
@@ -210,6 +215,9 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 <code>{highlightCode(connect.code, connect.lang)}</code>
               </pre>
             </div>
+            <p className="type-caption mt-3 text-muted-foreground/80">
+              Control plane trust is read from the embedded CA in the <code>sbv2</code> key by default. On <code>serve()</code>, SDK generates a local ECDSA P-256 key pair and sends only the public key for worker cert provisioning.
+            </p>
           </div>
         </div>
 
