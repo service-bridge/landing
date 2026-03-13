@@ -23,7 +23,7 @@ export function PageTlsMtls() {
         certificates:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
-        <li>SDK generates an <strong className="text-foreground">RSA 2048</strong> key pair locally (Go and Python SDKs; the server's own cert uses ECDSA P-256).</li>
+        <li>SDK generates an <strong className="text-foreground">ECDSA P-256</strong> key pair locally (all SDKs; server certs also use ECDSA P-256).</li>
         <li>
           Sends <strong className="text-foreground">only the public key</strong> to{" "}
           gRPC <Mono>ProvisionWorkerCertificate</Mono> (authenticated with the service key).
@@ -50,7 +50,7 @@ const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!
   workerTLS: { caCert: CA_PEM, cert: CERT_PEM, key: KEY_PEM },
 });
 
-// Node SDK auto-provisions mTLS by default; set workerTLS only for explicit certs.
+// All SDKs auto-provision mTLS by default; set workerTLS/WorkerTLS/worker_tls only for explicit certs.
 await sb.serve();`,
           go: `// Default — auto-provisions mTLS
 svc.Serve(ctx, nil)`,
