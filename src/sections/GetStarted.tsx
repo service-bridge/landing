@@ -128,7 +128,9 @@ function StepNumber({ n, last }: { n: string; last?: boolean }) {
 
 export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   const [activeTab, setActiveTab] = useState<TabId>("node");
-  const [copied, setCopied] = useState(false);
+  const [copiedRuntime, setCopiedRuntime] = useState(false);
+  const [copiedSdk, setCopiedSdk] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
   const connect = CONNECT[activeTab];
 
   const maxConnectLines = Math.max(
@@ -136,10 +138,22 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   );
   const minConnectHeight = maxConnectLines * 16 + 32;
 
+  const copyRuntime = () => {
+    navigator.clipboard.writeText("bash <(curl -fsSL https://servicebridge.dev/install.sh)");
+    setCopiedRuntime(true);
+    setTimeout(() => setCopiedRuntime(false), 2000);
+  };
+
+  const copySdk = () => {
+    navigator.clipboard.writeText(INSTALL_CMDS[activeTab]);
+    setCopiedSdk(true);
+    setTimeout(() => setCopiedSdk(false), 2000);
+  };
+
   const copyCode = () => {
     navigator.clipboard.writeText(connect.code.trim());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
 
   return (
@@ -159,8 +173,20 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             <h3 className="type-subsection-title mb-1">Install the runtime</h3>
             <p className="type-body-sm mb-4">One command sets up ServiceBridge + PostgreSQL via Docker Compose, prints the generated admin password, and exports the control-plane CA to <code>~/.servicebridge/ca.crt</code> for local SDKs.</p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
-              <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5">
+              <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5 flex items-center justify-between">
                 <span className="type-overline-mono text-muted-foreground">terminal</span>
+                <button
+                  type="button"
+                  onClick={copyRuntime}
+                  aria-label="Copy runtime install command"
+                  className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
+                >
+                  {copiedRuntime ? (
+                    <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                  ) : (
+                    <><Copy className="w-3 h-3" /><span>Copy</span></>
+                  )}
+                </button>
               </div>
               <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
                 <code>$ bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)</code>
@@ -178,7 +204,18 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-3 py-2 flex items-center justify-between">
                 <TabStrip size="sm" items={SDK_TABS} active={activeTab} onChange={setActiveTab} />
-                <span className="type-caption text-muted-foreground/50">Install SDK</span>
+                <button
+                  type="button"
+                  onClick={copySdk}
+                  aria-label="Copy SDK install command"
+                  className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
+                >
+                  {copiedSdk ? (
+                    <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                  ) : (
+                    <><Copy className="w-3 h-3" /><span>Copy</span></>
+                  )}
+                </button>
               </div>
               <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
                 <code>$ {INSTALL_CMDS[activeTab]}</code>
@@ -201,7 +238,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                   onClick={copyCode}
                   className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
                 >
-                  {copied ? (
+                  {copiedCode ? (
                     <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
                   ) : (
                     <><Copy className="w-3 h-3" /><span>Copy</span></>
