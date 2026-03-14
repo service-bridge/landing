@@ -47,9 +47,13 @@ export function PageAlertsOverview() {
 
       <H2 id="getting-started">Getting started</H2>
       <ol className="list-decimal pl-6 space-y-1 text-sm text-muted-foreground my-3">
-        <li>Open the dashboard and navigate to <strong>Alerts → Channels</strong>.</li>
+        <li>
+          Open the dashboard and navigate to <strong>Alerts → Channels</strong>.
+        </li>
         <li>Add a notification channel (UI, Telegram, or Webhook).</li>
-        <li>Navigate to <strong>Alerts → Rules</strong> and create a rule.</li>
+        <li>
+          Navigate to <strong>Alerts → Rules</strong> and create a rule.
+        </li>
         <li>Select a condition type, set parameters, attach the channel.</li>
         <li>Save — the rule starts evaluating immediately.</li>
       </ol>

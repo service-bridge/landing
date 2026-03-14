@@ -10,9 +10,13 @@ export function PageDlqReplay() {
       />
 
       <H2 id="via-ui">Via dashboard</H2>
-      <P>Navigate to the <strong>DLQ</strong> page in the dashboard:</P>
+      <P>
+        Navigate to the <strong>DLQ</strong> page in the dashboard:
+      </P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li>Click <strong>Replay All</strong> to re-publish up to 500 entries at once.</li>
+        <li>
+          Click <strong>Replay All</strong> to re-publish up to 500 entries at once.
+        </li>
         <li>Click the action button on any individual entry to replay it.</li>
         <li>Admin login required for all DLQ operations.</li>
       </ul>
@@ -45,9 +49,9 @@ export function PageDlqReplay() {
 
       <H2 id="monitor">Monitoring DLQ depth</H2>
       <P>
-        The <Mono>sb_dlq_size</Mono> Prometheus metric tracks the current DLQ depth. Set up an
-        alert rule with <Mono>dlq_new</Mono> condition type in the dashboard to get notified when
-        new DLQ entries appear.
+        The <Mono>sb_dlq_size</Mono> Prometheus metric tracks the current DLQ depth. Set up an alert
+        rule with <Mono>dlq_new</Mono> condition type in the dashboard to get notified when new DLQ
+        entries appear.
       </P>
     </div>
   );

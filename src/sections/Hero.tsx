@@ -1,5 +1,15 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Copy, Zap, Container, ShieldCheck, Activity, Layers, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  Check,
+  Container,
+  Copy,
+  Layers,
+  RefreshCw,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Section } from "../ui/Section";
@@ -70,9 +80,9 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="type-body-lg mx-auto mt-8 max-w-2xl leading-relaxed text-muted-foreground sm:text-xl"
         >
-          <span className="text-foreground font-medium">One Go binary, one PostgreSQL</span> — with enterprise session resilience,
-          zero-loss bidirectional replay, Full Mesh routing with circuit breakers,
-          and hot-reload config. Three SDKs, identical API.
+          <span className="text-foreground font-medium">One Go binary, one PostgreSQL</span> — with
+          enterprise session resilience, zero-loss bidirectional replay, Full Mesh routing with
+          circuit breakers, and hot-reload config. Three SDKs, identical API.
         </motion.p>
 
         <motion.div
@@ -81,14 +91,22 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.5, delay: 0.28 }}
           className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground/70"
         >
-          {["RPC", "Events", "Jobs", "Workflows", "mTLS", "Tracing", "Discovery", "Alerts", "Dashboard"].map(
-            (cap, i) => (
-              <span key={cap} className="flex items-center gap-1.5">
-                {i > 0 && <span className="hidden sm:inline text-surface-border">·</span>}
-                <span>{cap}</span>
-              </span>
-            )
-          )}
+          {[
+            "RPC",
+            "Events",
+            "Jobs",
+            "Workflows",
+            "mTLS",
+            "Tracing",
+            "Discovery",
+            "Alerts",
+            "Dashboard",
+          ].map((cap, i) => (
+            <span key={cap} className="flex items-center gap-1.5">
+              {i > 0 && <span className="hidden sm:inline text-surface-border">·</span>}
+              <span>{cap}</span>
+            </span>
+          ))}
         </motion.div>
 
         <motion.div
@@ -104,7 +122,9 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
             className="group flex w-full max-w-3xl cursor-pointer items-center gap-3 rounded-lg border border-surface-border bg-surface px-5 py-3 font-mono text-sm transition-all hover:border-white/[0.12] hover:bg-surface"
           >
             <span className="shrink-0 text-muted-foreground">$</span>
-            <span className="flex-1 text-left text-foreground">bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)</span>
+            <span className="flex-1 text-left text-foreground">
+              bash &lt;(curl -fsSL https://servicebridge.dev/install.sh)
+            </span>
             <span className="type-caption hidden shrink-0 font-sans text-muted-foreground/50 sm:block">
               Runtime + Postgres
             </span>

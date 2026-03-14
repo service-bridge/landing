@@ -10,6 +10,37 @@ const SERVICES_LEFT = ["Service A", "Service B"];
 const SERVICES_RIGHT = ["Service C", "Service D"];
 const PRIMITIVES = ["RPC", "Events", "Jobs", "Workflows", "Traces", "RBAC"];
 
+const GRPC_SERVICES = [
+  {
+    name: "ControlPlane",
+    role: "Управляет сессиями воркеров: Hello/HelloAck, drain, goaway, replay буфер 120 с.",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/[0.06]",
+    border: "border-emerald-500/20",
+  },
+  {
+    name: "SessionService",
+    role: "Bidirectional gRPC stream (Channel). Доставляет команды, телеметрию, flow-control permits.",
+    color: "text-sky-400",
+    bg: "bg-sky-500/[0.06]",
+    border: "border-sky-500/20",
+  },
+  {
+    name: "RegistryService",
+    role: "Subscribe/Lookup: xDS-подобный стриминг эндпоинтов функций с delta-апдейтами.",
+    color: "text-violet-400",
+    bg: "bg-violet-500/[0.06]",
+    border: "border-violet-500/20",
+  },
+  {
+    name: "WorkerHandler",
+    role: "Handle (RPC) и Deliver (Events) — прямой gRPC к воркеру, 0 промежуточных хопов.",
+    color: "text-yellow-400",
+    bg: "bg-yellow-500/[0.06]",
+    border: "border-yellow-500/20",
+  },
+];
+
 const LEGEND = [
   { label: "RPC path", value: "0 hops", color: "text-yellow-400" },
   { label: "Session FSM states", value: "8-state", color: "text-lime-400" },
@@ -117,8 +148,34 @@ export function ArchitectureSection() {
             </div>
           </div>
 
+          {/* gRPC Services */}
+          <div className="mt-6 pt-6 border-t border-surface-border">
+            <p className="text-2xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-3">
+              gRPC Services
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {GRPC_SERVICES.map((svc) => (
+                <div
+                  key={svc.name}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 flex gap-2.5 items-start",
+                    svc.bg,
+                    svc.border
+                  )}
+                >
+                  <span
+                    className={cn("text-2xs font-mono font-semibold shrink-0 mt-px", svc.color)}
+                  >
+                    {svc.name}
+                  </span>
+                  <span className="text-2xs text-muted-foreground leading-relaxed">{svc.role}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Legend */}
-          <div className="mt-8 pt-6 border-t border-surface-border grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs">
+          <div className="mt-6 pt-6 border-t border-surface-border grid grid-cols-2 sm:grid-cols-5 gap-4 text-center text-xs">
             {LEGEND.map((item) => (
               <div key={item.label}>
                 <p className={cn("type-subsection-title font-mono", item.color)}>{item.value}</p>

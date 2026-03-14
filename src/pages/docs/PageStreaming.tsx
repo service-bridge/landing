@@ -14,17 +14,16 @@ export function PageStreaming() {
       <H2 id="how-it-works">How it works</H2>
       <P>
         Every handler execution writes into a <strong>run stream</strong> identified by{" "}
-        <Mono>runId</Mono> (typically a trace ID).
-        From inside the handler, call <Mono>ctx.stream.write(data, key)</Mono> to push chunks into
-        that run's stream. Any process with the <Mono>runId</Mono> can subscribe via{" "}
-        <Mono>watchRun()</Mono> — live or from the beginning. Chunks are persisted in PostgreSQL
-        for the full retention period.
+        <Mono>runId</Mono> (typically a trace ID). From inside the handler, call{" "}
+        <Mono>ctx.stream.write(data, key)</Mono> to push chunks into that run's stream. Any process
+        with the <Mono>runId</Mono> can subscribe via <Mono>watchRun()</Mono> — live or from the
+        beginning. Chunks are persisted in PostgreSQL for the full retention period.
       </P>
       <P>
         Stream keys act as named lanes within a run. A handler can write to <Mono>"output"</Mono>,
         <Mono>"progress"</Mono>, and <Mono>"log"</Mono> simultaneously — consumers filter by key.
-        Multiple handlers in the same run can write to the same key; chunks remain ordered by
-        stream sequence.
+        Multiple handlers in the same run can write to the same key; chunks remain ordered by stream
+        sequence.
       </P>
 
       {/* ── Getting runId ────────────────────────────────────────── */}
@@ -38,8 +37,7 @@ export function PageStreaming() {
       <P>
         The most reliable pattern: generate a trace ID on the caller side, pass it to{" "}
         <Mono>rpc()</Mono> or <Mono>event()</Mono>, then use that same ID as the <Mono>runId</Mono>
-        for <Mono>watchRun()</Mono>. The handler's run is always stored under the caller's
-        trace ID.
+        for <Mono>watchRun()</Mono>. The handler's run is always stored under the caller's trace ID.
       </P>
       <MultiCodeBlock
         code={{
@@ -95,11 +93,10 @@ async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequen
         response. The frontend can read it and pass it to a streaming endpoint:
       </P>
       <Callout type="warning">
-        ServiceBridge streaming is <strong>gRPC-based</strong> — there is no native SSE endpoint.
-        To expose an SSE endpoint to browser clients, create your own endpoint in your service that
-        calls <Mono>sb.watchRun(runId)</Mono> /{" "}
-        <Mono>svc.WatchRun(ctx, runId, opts)</Mono> internally and proxies the chunks to the client.
-        The Express and Go examples in the{" "}
+        ServiceBridge streaming is <strong>gRPC-based</strong> — there is no native SSE endpoint. To
+        expose an SSE endpoint to browser clients, create your own endpoint in your service that
+        calls <Mono>sb.watchRun(runId)</Mono> / <Mono>svc.WatchRun(ctx, runId, opts)</Mono>{" "}
+        internally and proxies the chunks to the client. The Express and Go examples in the{" "}
         <strong>SSE endpoint</strong> section below show the correct proxy pattern.
       </Callout>
       <MultiCodeBlock
@@ -137,8 +134,8 @@ async with httpx.AsyncClient() as client:
 
       <H3 id="runid-workflow">Pattern 3 — from a workflow step</H3>
       <P>
-        Inside a workflow, the <Mono>runId</Mono> of a step is its trace ID, which is visible in
-        the dashboard Run Detail. Use it after the workflow completes to replay logged chunks.
+        Inside a workflow, the <Mono>runId</Mono> of a step is its trace ID, which is visible in the
+        dashboard Run Detail. Use it after the workflow completes to replay logged chunks.
       </P>
 
       {/* ── Writing chunks ───────────────────────────────────────── */}
@@ -201,8 +198,8 @@ async def on_order(payload: dict, ctx) -> None:
       <H2 id="watch-run">watchRun() — consume the stream</H2>
       <Callout type="info">
         <Mono>watchRun()</Mono> requires the <Mono>events.publish</Mono> capability on the service
-        key. Services that only have <Mono>events.handle</Mono> cannot call{" "}
-        <Mono>watchRun()</Mono> directly.
+        key. Services that only have <Mono>events.handle</Mono> cannot call <Mono>watchRun()</Mono>{" "}
+        directly.
       </Callout>
 
       <H3 id="watch-signature">Signature</H3>
@@ -217,11 +214,24 @@ async def on_order(payload: dict, ctx) -> None:
       <H3 id="watch-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "key / Key / key", type: "string", default: '"" (all SDKs)', desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".' },
-          { name: "fromSequence / FromSequence / from_sequence", type: "number", default: "0", desc: "Replay from this sequence cursor. 0 = replay all past chunks, then follow live." },
+          {
+            name: "key / Key / key",
+            type: "string",
+            default: '"" (all SDKs)',
+            desc: 'Stream key to filter by. Matches the key passed to stream.write(), e.g. "output", "progress".',
+          },
+          {
+            name: "fromSequence / FromSequence / from_sequence",
+            type: "number",
+            default: "0",
+            desc: "Replay from this sequence cursor. 0 = replay all past chunks, then follow live.",
+          },
         ]}
       />
-      <Callout type="info">Pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example, <Mono>"output"</Mono>) when you only need one stream lane.</Callout>
+      <Callout type="info">
+        Pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example,{" "}
+        <Mono>"output"</Mono>) when you only need one stream lane.
+      </Callout>
 
       {/* ── LLM streaming ────────────────────────────────────────── */}
       <H2 id="llm-streaming">LLM token streaming</H2>
@@ -458,8 +468,8 @@ class RunStreamEvent:
       <H2 id="replay">Replay and resumability</H2>
       <P>
         Chunks are stored in PostgreSQL for the full <Mono>SERVICEBRIDGE_RETENTION_DAYS</Mono>{" "}
-        period. Set <Mono>fromSequence: 0</Mono> to replay from the beginning — reconnecting
-        clients catch up on missed chunks automatically without any extra handler logic.
+        period. Set <Mono>fromSequence: 0</Mono> to replay from the beginning — reconnecting clients
+        catch up on missed chunks automatically without any extra handler logic.
       </P>
       <P>
         When the client reconnects after a disconnect, read the last received{" "}

@@ -73,23 +73,77 @@ sb = ServiceBridge(
       <H2 id="options-table">All options</H2>
       <ParamTable
         rows={[
-          { name: "timeout / TimeoutMs / timeout_ms", type: "number (ms)", default: "30000", desc: "Global default hard timeout per RPC attempt. Per-call opts override. Available in all SDKs." },
-          { name: "retries / Retries / retries", type: "number", default: "3", desc: "Global default retry count for rpc(). 0 = no retry. Available in all SDKs." },
-          { name: "retryDelay / RetryDelayMs / retry_delay_ms", type: "number (ms)", default: "300", desc: "Base exponential backoff delay: delay × 2^(attempt-1). Available in all SDKs." },
-          { name: "discoveryRefreshMs / DiscoveryRefreshMs / discovery_refresh_ms", type: "number (ms)", default: "10000", desc: "How often endpoint lists are refreshed from runtime registry." },
-          { name: "queueMaxSize / QueueMaxSize / queue_max_size", type: "number", default: "1000", desc: "Max operations buffered in the offline queue while control plane is unavailable." },
-          { name: "queueOverflow / QueueOverflow / queue_overflow", type: '"drop-oldest" | "drop-newest" | "error"', default: '"drop-oldest"', desc: "Overflow strategy when offline queue is full." },
-          { name: "heartbeatIntervalMs / HeartbeatIntervalMs / heartbeat_interval_ms", type: "number (ms)", default: "10000", desc: "Heartbeat period for worker registrations." },
-          { name: "captureLogs / CaptureLogs / capture_logs", type: "boolean", default: "true", desc: "Auto-capture logs and forward them to ServiceBridge runtime." },
-          { name: "Logger (Go)", type: "func(format string, args ...any)", default: "log.Printf", desc: "Custom logger function for SDK internals." },
+          {
+            name: "timeout / TimeoutMs / timeout_ms",
+            type: "number (ms)",
+            default: "30000",
+            desc: "Global default hard timeout per RPC attempt. Per-call opts override. Available in all SDKs.",
+          },
+          {
+            name: "retries / Retries / retries",
+            type: "number",
+            default: "3",
+            desc: "Global default retry count for rpc(). 0 = no retry. Available in all SDKs.",
+          },
+          {
+            name: "retryDelay / RetryDelayMs / retry_delay_ms",
+            type: "number (ms)",
+            default: "300",
+            desc: "Base exponential backoff delay: delay × 2^(attempt-1). Available in all SDKs.",
+          },
+          {
+            name: "discoveryRefreshMs / DiscoveryRefreshMs / discovery_refresh_ms",
+            type: "number (ms)",
+            default: "10000",
+            desc: "How often endpoint lists are refreshed from runtime registry.",
+          },
+          {
+            name: "queueMaxSize / QueueMaxSize / queue_max_size",
+            type: "number",
+            default: "1000",
+            desc: "Max operations buffered in the offline queue while control plane is unavailable.",
+          },
+          {
+            name: "queueOverflow / QueueOverflow / queue_overflow",
+            type: '"drop-oldest" | "drop-newest" | "error"',
+            default: '"drop-oldest"',
+            desc: "Overflow strategy when offline queue is full.",
+          },
+          {
+            name: "heartbeatIntervalMs / HeartbeatIntervalMs / heartbeat_interval_ms",
+            type: "number (ms)",
+            default: "10000",
+            desc: "Heartbeat period for worker registrations.",
+          },
+          {
+            name: "captureLogs / CaptureLogs / capture_logs",
+            type: "boolean",
+            default: "true",
+            desc: "Auto-capture logs and forward them to ServiceBridge runtime.",
+          },
+          {
+            name: "Logger (Go)",
+            type: "func(format string, args ...any)",
+            default: "log.Printf",
+            desc: "Custom logger function for SDK internals.",
+          },
         ]}
       />
 
       <H2 id="advanced-tls">Advanced TLS overrides</H2>
       <ParamTable
         rows={[
-          { name: "caCert / CACert / ca_cert", type: "string (PEM)", default: "from service key", desc: "Optional control-plane CA override. By default SDK reads CA from sbv2 service key." },
-          { name: "workerTLS (Node)", type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }", desc: "Explicit mTLS materials for the worker gRPC server." },
+          {
+            name: "caCert / CACert / ca_cert",
+            type: "string (PEM)",
+            default: "from service key",
+            desc: "Optional control-plane CA override. By default SDK reads CA from sbv2 service key.",
+          },
+          {
+            name: "workerTLS (Node)",
+            type: "{ caCert?: string|Buffer; cert?: string|Buffer; key?: string|Buffer; serverName?: string }",
+            desc: "Explicit mTLS materials for the worker gRPC server.",
+          },
         ]}
       />
 
@@ -100,10 +154,26 @@ sb = ServiceBridge(
       </P>
       <ParamTable
         rows={[
-          { name: "Node-only constructor options", type: "workerTLS (+ caCert override)", desc: "Explicit worker cert materials and control-plane CA override." },
-          { name: "Node-only handler hints", type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch", desc: "Accepted by Node API as hints; currently not strict runtime limits." },
-          { name: "Serve flow-control field (all SDKs)", type: "maxInFlight / MaxInFlight / max_in_flight", desc: "Bounded runtime-originated command concurrency over OpenWorkerSession." },
-          { name: "Node-only serve fields", type: "instanceId/weight/tls", desc: "Extra serve extensions beyond shared host/maxInFlight fields." },
+          {
+            name: "Node-only constructor options",
+            type: "workerTLS (+ caCert override)",
+            desc: "Explicit worker cert materials and control-plane CA override.",
+          },
+          {
+            name: "Node-only handler hints",
+            type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch",
+            desc: "Accepted by Node API as hints; currently not strict runtime limits.",
+          },
+          {
+            name: "Serve flow-control field (all SDKs)",
+            type: "maxInFlight / MaxInFlight / max_in_flight",
+            desc: "Bounded runtime-originated command concurrency over OpenWorkerSession.",
+          },
+          {
+            name: "Node-only serve fields",
+            type: "instanceId/weight/tls",
+            desc: "Extra serve extensions beyond shared host/maxInFlight fields.",
+          },
         ]}
       />
 
@@ -142,8 +212,8 @@ await sb.job("billing/collect", opts);    // queued`,
 
       <Callout type="info">
         RPC calls are bounded even when a downstream service is silent: each attempt is cut by{" "}
-        <Mono>timeout</Mono>/<Mono>TimeoutMs</Mono>/<Mono>timeout_ms</Mono>, retries are finite,
-        and exhausted calls end in terminal <Mono>error</Mono>.
+        <Mono>timeout</Mono>/<Mono>TimeoutMs</Mono>/<Mono>timeout_ms</Mono>, retries are finite, and
+        exhausted calls end in terminal <Mono>error</Mono>.
       </Callout>
     </div>
   );

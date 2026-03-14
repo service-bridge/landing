@@ -27,11 +27,7 @@ export function CopyButton({ text, className }: CopyButtonProps) {
       )}
       aria-label="Copy to clipboard"
     >
-      {copied ? (
-        <Check className="w-3 h-3" />
-      ) : (
-        <Copy className="w-3 h-3" />
-      )}
+      {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
       <span>{copied ? "Copied" : "Copy"}</span>
     </button>
   );

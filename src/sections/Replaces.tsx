@@ -344,7 +344,9 @@ export function ReplacesSection() {
           <div className="overflow-x-auto">
             <div className="min-w-[640px]">
               <div className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-b border-surface-border">
-                <div className="type-overline-mono px-4 py-2.5 text-muted-foreground/60">Capability</div>
+                <div className="type-overline-mono px-4 py-2.5 text-muted-foreground/60">
+                  Capability
+                </div>
                 <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-red-500/60">
                   Istio / Linkerd
                 </div>
@@ -361,7 +363,9 @@ export function ReplacesSection() {
                     <div key={cat}>
                       <div className="border-t border-surface-border bg-white/[0.01]">
                         <div className="col-span-3 flex items-center gap-3 px-4 py-1.5">
-                          <span className="type-overline-mono shrink-0 text-muted-foreground/60">{cat}</span>
+                          <span className="type-overline-mono shrink-0 text-muted-foreground/60">
+                            {cat}
+                          </span>
                           <div className="h-px flex-1 bg-white/[0.04]" />
                         </div>
                       </div>

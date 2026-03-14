@@ -41,31 +41,32 @@ export function PageSessionLifecycle() {
 
       <H2 id="epoch-fencing">Epoch Fencing</H2>
       <P>
-        When a new worker connects with the same <Mono>(service_name, instance_id)</Mono>, the server sends{" "}
-        <Mono>GoawaySignal(FENCED)</Mono> to the old session. This prevents split-brain scenarios where two
-        instances believe they are the active handler for the same logical slot.
+        When a new worker connects with the same <Mono>(service_name, instance_id)</Mono>, the
+        server sends <Mono>GoawaySignal(FENCED)</Mono> to the old session. This prevents split-brain
+        scenarios where two instances believe they are the active handler for the same logical slot.
       </P>
       <Callout type="warning">
-        Epoch fencing is based on the Kafka KIP-848 pattern. The old session transitions immediately to{" "}
-        <Mono>Closed</Mono> — any in-flight commands must be retried by the caller.
+        Epoch fencing is based on the Kafka KIP-848 pattern. The old session transitions immediately
+        to <Mono>Closed</Mono> — any in-flight commands must be retried by the caller.
       </Callout>
 
       <H2 id="suspended-recovery">Suspended Recovery</H2>
       <P>
-        If 2 or more consecutive heartbeats are missed, the session moves to <Mono>Suspended</Mono> state.
-        Worker registrations are preserved in the registry. If a heartbeat resumes within 30 seconds, the
-        session recovers to <Mono>Ready</Mono> without re-registration — no command replay is needed.
+        If 2 or more consecutive heartbeats are missed, the session moves to <Mono>Suspended</Mono>{" "}
+        state. Worker registrations are preserved in the registry. If a heartbeat resumes within 30
+        seconds, the session recovers to <Mono>Ready</Mono> without re-registration — no command
+        replay is needed.
       </P>
       <Callout type="tip">
-        The Suspended state follows the ZooKeeper ephemeral node pattern: the session is logically alive
-        but temporarily unreachable. Callers will not route to a suspended worker.
+        The Suspended state follows the ZooKeeper ephemeral node pattern: the session is logically
+        alive but temporarily unreachable. Callers will not route to a suspended worker.
       </Callout>
 
       <H2 id="drain-path">Drain Path</H2>
       <P>
-        Graceful shutdown sends a <Mono>DrainSignal</Mono> to the session. The worker stops accepting new
-        commands and waits for in-flight work to complete. Once all inflight commands drain, the session
-        moves to <Mono>Closed</Mono> and is removed from the manager.
+        Graceful shutdown sends a <Mono>DrainSignal</Mono> to the session. The worker stops
+        accepting new commands and waits for in-flight work to complete. Once all inflight commands
+        drain, the session moves to <Mono>Closed</Mono> and is removed from the manager.
       </P>
     </div>
   );

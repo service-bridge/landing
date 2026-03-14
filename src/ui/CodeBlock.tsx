@@ -1,4 +1,10 @@
-import { type CodeLangs, type FilenameLangs, type SdkLang, SDK_LANGS, useSdkLang } from "../lib/language-context";
+import {
+  type CodeLangs,
+  type FilenameLangs,
+  SDK_LANGS,
+  type SdkLang,
+  useSdkLang,
+} from "../lib/language-context";
 import { CodePanel } from "./CodePanel";
 import { CopyButton } from "./CopyButton";
 import { TabStrip } from "./Tabs";
@@ -6,26 +12,123 @@ import { TabStrip } from "./Tabs";
 // ─── Keyword sets ─────────────────────────────────────────────────────────────
 
 const TS_KW = new Set([
-  "const", "let", "var", "async", "await", "import", "from", "export",
-  "function", "return", "new", "true", "false", "null", "undefined",
-  "if", "else", "for", "of", "in", "while", "do", "break", "continue",
-  "try", "catch", "finally", "throw", "interface", "extends", "implements",
-  "class", "this", "typeof", "void", "delete", "switch", "case", "default",
-  "static", "readonly", "as", "type",
+  "const",
+  "let",
+  "var",
+  "async",
+  "await",
+  "import",
+  "from",
+  "export",
+  "function",
+  "return",
+  "new",
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "if",
+  "else",
+  "for",
+  "of",
+  "in",
+  "while",
+  "do",
+  "break",
+  "continue",
+  "try",
+  "catch",
+  "finally",
+  "throw",
+  "interface",
+  "extends",
+  "implements",
+  "class",
+  "this",
+  "typeof",
+  "void",
+  "delete",
+  "switch",
+  "case",
+  "default",
+  "static",
+  "readonly",
+  "as",
+  "type",
 ]);
 
 const GO_KW = new Set([
-  "package", "import", "func", "var", "type", "struct", "interface", "return",
-  "if", "else", "for", "range", "go", "defer", "chan", "map", "nil", "true",
-  "false", "const", "switch", "case", "break", "continue", "fallthrough",
-  "select", "default", "make", "new", "len", "cap", "append", "error",
+  "package",
+  "import",
+  "func",
+  "var",
+  "type",
+  "struct",
+  "interface",
+  "return",
+  "if",
+  "else",
+  "for",
+  "range",
+  "go",
+  "defer",
+  "chan",
+  "map",
+  "nil",
+  "true",
+  "false",
+  "const",
+  "switch",
+  "case",
+  "break",
+  "continue",
+  "fallthrough",
+  "select",
+  "default",
+  "make",
+  "new",
+  "len",
+  "cap",
+  "append",
+  "error",
 ]);
 
 const PY_KW = new Set([
-  "def", "async", "await", "import", "from", "return", "if", "elif", "else",
-  "for", "in", "with", "as", "class", "None", "True", "False", "self",
-  "not", "and", "or", "pass", "raise", "try", "except", "finally", "lambda",
-  "yield", "break", "continue", "global", "nonlocal", "del", "is", "while",
+  "def",
+  "async",
+  "await",
+  "import",
+  "from",
+  "return",
+  "if",
+  "elif",
+  "else",
+  "for",
+  "in",
+  "with",
+  "as",
+  "class",
+  "None",
+  "True",
+  "False",
+  "self",
+  "not",
+  "and",
+  "or",
+  "pass",
+  "raise",
+  "try",
+  "except",
+  "finally",
+  "lambda",
+  "yield",
+  "break",
+  "continue",
+  "global",
+  "nonlocal",
+  "del",
+  "is",
+  "while",
 ]);
 
 // ─── Stable line key helper ───────────────────────────────────────────────────
@@ -40,17 +143,17 @@ function toStableLines(code: string) {
 
 // ─── Generic token-based highlighter ─────────────────────────────────────────
 
-function highlight(
-  code: string,
-  kw: Set<string>,
-  commentChar: string,
-): React.ReactNode[] {
+function highlight(code: string, kw: Set<string>, commentChar: string): React.ReactNode[] {
   return toStableLines(code).map(({ key, line }) => {
     const parts: React.ReactNode[] = [];
     let i = 0;
     let k = 0;
     const push = (text: string, cls?: string) =>
-      parts.push(<span key={k++} className={cls}>{text}</span>);
+      parts.push(
+        <span key={k++} className={cls}>
+          {text}
+        </span>
+      );
 
     while (i < line.length) {
       const ch = line[i];
@@ -78,8 +181,14 @@ function highlight(
       if (ch === '"' || ch === "'" || ch === "`") {
         let j = i + 1;
         while (j < line.length) {
-          if (line[j] === "\\") { j += 2; continue; }
-          if (line[j] === ch) { j++; break; }
+          if (line[j] === "\\") {
+            j += 2;
+            continue;
+          }
+          if (line[j] === ch) {
+            j++;
+            break;
+          }
           j++;
         }
         push(line.slice(i, j), "text-amber-300");
@@ -141,7 +250,8 @@ function highlight(
 
     return (
       <span key={key} className="block leading-relaxed">
-        {parts}{"\n"}
+        {parts}
+        {"\n"}
       </span>
     );
   });
@@ -167,10 +277,7 @@ export function CodeBlock({
   const displayLang: SdkLang = lang === "js" ? "ts" : (lang as SdkLang);
 
   return (
-    <CodePanel 
-      title={filename} 
-      headerActions={<CopyButton text={code} />}
-    >
+    <CodePanel title={filename} headerActions={<CopyButton text={code} />}>
       <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-foreground/90">
         <code>{highlightCode(code.trim(), displayLang)}</code>
       </pre>
@@ -194,7 +301,10 @@ export function MultiCodeBlock({
   const displayCode = code[displayLang] ?? code.ts;
   const displayFilename =
     typeof filename === "string"
-      ? filename.replace(/\.(ts|go|py)$/, `.${displayLang === "py" ? "py" : displayLang === "go" ? "go" : "ts"}`)
+      ? filename.replace(
+          /\.(ts|go|py)$/,
+          `.${displayLang === "py" ? "py" : displayLang === "go" ? "go" : "ts"}`
+        )
       : (filename?.[displayLang] ?? filename?.ts);
 
   const maxLines = Math.max(...available.map((l) => (code[l.id] ?? "").trim().split("\n").length));

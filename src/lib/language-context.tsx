@@ -36,11 +36,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   };
 
-  return (
-    <LanguageContext.Provider value={{ lang, setLang }}>
-      {children}
-    </LanguageContext.Provider>
-  );
+  return <LanguageContext.Provider value={{ lang, setLang }}>{children}</LanguageContext.Provider>;
 }
 
 export function useSdkLang(): LanguageCtx {

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { Section } from "./Section";
 import { SectionHeader } from "./SectionHeader";
 
@@ -37,11 +37,7 @@ export function FeatureSection({
           {demo}
         </div>
       </div>
-      {cards && (
-        <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {cards}
-        </div>
-      )}
+      {cards && <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{cards}</div>}
     </Section>
   );
 }

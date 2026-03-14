@@ -69,7 +69,10 @@ export default function HashPasswordPage({ onBack }: { onBack: () => void }) {
             </div>
             <h1 className="text-2xl font-display font-bold">Generate password hash</h1>
             <p className="text-sm text-muted-foreground">
-              For <code className="text-xs bg-surface border border-surface-border rounded px-1.5 py-0.5">SERVICEBRIDGE_ADMIN_PASSWORD_HASH</code>
+              For{" "}
+              <code className="text-xs bg-surface border border-surface-border rounded px-1.5 py-0.5">
+                SERVICEBRIDGE_ADMIN_PASSWORD_HASH
+              </code>
             </p>
           </div>
 
@@ -77,8 +80,9 @@ export default function HashPasswordPage({ onBack }: { onBack: () => void }) {
           <div className="flex items-start gap-3 rounded-xl border border-surface-border bg-surface px-4 py-3">
             <ShieldCheck className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Your password is hashed <strong className="text-foreground">locally in the browser</strong> using bcrypt (cost {COST}).
-              It never leaves your device.
+              Your password is hashed{" "}
+              <strong className="text-foreground">locally in the browser</strong> using bcrypt (cost{" "}
+              {COST}). It never leaves your device.
             </p>
           </div>
 
@@ -109,11 +113,7 @@ export default function HashPasswordPage({ onBack }: { onBack: () => void }) {
               </button>
             </div>
 
-            <Button
-              onClick={generate}
-              disabled={!password || loading}
-              className="w-full gap-2"
-            >
+            <Button onClick={generate} disabled={!password || loading} className="w-full gap-2">
               {loading ? (
                 <>
                   <span className="inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
@@ -135,10 +135,12 @@ export default function HashPasswordPage({ onBack }: { onBack: () => void }) {
                 bcrypt hash
               </label>
               <div className="relative group">
-                <div className={cn(
-                  "w-full rounded-xl border border-green-500/30 bg-green-500/5 px-4 py-3 pr-12",
-                  "font-mono text-xs text-green-400 break-all leading-relaxed"
-                )}>
+                <div
+                  className={cn(
+                    "w-full rounded-xl border border-green-500/30 bg-green-500/5 px-4 py-3 pr-12",
+                    "font-mono text-xs text-green-400 break-all leading-relaxed"
+                  )}
+                >
                   {hash}
                 </div>
                 <button
@@ -147,24 +149,34 @@ export default function HashPasswordPage({ onBack }: { onBack: () => void }) {
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors p-1"
                   title="Copy to clipboard"
                 >
-                  {copied
-                    ? <Check className="w-4 h-4 text-green-500" />
-                    : <Copy className="w-4 h-4" />
-                  }
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Paste this value into your <code className="text-xs bg-surface border border-surface-border rounded px-1 py-0.5">.env</code> file or{" "}
-                <code className="text-xs bg-surface border border-surface-border rounded px-1 py-0.5">docker compose</code> environment.
+                Paste this value into your{" "}
+                <code className="text-xs bg-surface border border-surface-border rounded px-1 py-0.5">
+                  .env
+                </code>{" "}
+                file or{" "}
+                <code className="text-xs bg-surface border border-surface-border rounded px-1 py-0.5">
+                  docker compose
+                </code>{" "}
+                environment.
               </p>
             </div>
           )}
 
           {/* Usage hint */}
           <div className="rounded-xl border border-surface-border bg-surface p-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Usage in .env</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Usage in .env
+            </p>
             <pre className="text-xs text-foreground/80 font-mono leading-relaxed overflow-x-auto">
-{`SERVICEBRIDGE_ADMIN_LOGIN=admin
+              {`SERVICEBRIDGE_ADMIN_LOGIN=admin
 SERVICEBRIDGE_ADMIN_PASSWORD_HASH=${hash || "<paste hash here>"}`}
             </pre>
           </div>

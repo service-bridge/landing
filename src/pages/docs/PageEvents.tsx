@@ -1,5 +1,14 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import {
+  Callout,
+  DocCodeBlock,
+  H2,
+  H3,
+  Mono,
+  P,
+  PageHeader,
+  ParamTable,
+} from "../../ui/DocComponents";
 
 export function PageEvents() {
   return (
@@ -19,8 +28,8 @@ export function PageEvents() {
       <H2 id="event-publish">event() — publish</H2>
       <P>
         Publish a JSON payload to a topic. Every registered consumer group receives it independently
-        with retries and DLQ on failure. Returns the <Mono>messageId</Mono> (UUID) on success, or
-        an empty string while in offline-queue mode (flushed automatically on reconnect).
+        with retries and DLQ on failure. Returns the <Mono>messageId</Mono> (UUID) on success, or an
+        empty string while in offline-queue mode (flushed automatically on reconnect).
       </P>
 
       <H3 id="event-signature">Signature</H3>
@@ -35,12 +44,39 @@ export function PageEvents() {
       <H3 id="event-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "topic", type: "string", desc: 'Dot-separated topic name, e.g. "orders.created". Supports wildcard subscriptions.' },
-          { name: "payload", type: "any", default: "undefined", desc: "JSON-serialisable event payload." },
-          { name: "idempotencyKey", type: "string", desc: "Deduplication key — runtime rejects duplicates per (producer_service, key) pair." },
-          { name: "headers", type: "Record<string, string>", desc: "Custom metadata forwarded to all consumers via EventContext.refs.headers." },
-          { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate publishing with the consumer trace." },
-          { name: "parentSpanId (Node) / parent_span_id (Python)", type: "string", default: "auto", desc: "Override parent span ID. Available in Node.js (parentSpanId) and Python (parent_span_id)." },
+          {
+            name: "topic",
+            type: "string",
+            desc: 'Dot-separated topic name, e.g. "orders.created". Supports wildcard subscriptions.',
+          },
+          {
+            name: "payload",
+            type: "any",
+            default: "undefined",
+            desc: "JSON-serialisable event payload.",
+          },
+          {
+            name: "idempotencyKey",
+            type: "string",
+            desc: "Deduplication key — runtime rejects duplicates per (producer_service, key) pair.",
+          },
+          {
+            name: "headers",
+            type: "Record<string, string>",
+            desc: "Custom metadata forwarded to all consumers via EventContext.refs.headers.",
+          },
+          {
+            name: "traceId",
+            type: "string",
+            default: "auto",
+            desc: "Pass your own trace ID to correlate publishing with the consumer trace.",
+          },
+          {
+            name: "parentSpanId (Node) / parent_span_id (Python)",
+            type: "string",
+            default: "auto",
+            desc: "Override parent span ID. Available in Node.js (parentSpanId) and Python (parent_span_id).",
+          },
         ]}
       />
 
@@ -85,8 +121,8 @@ message_id = await sb.event(
 
       <Callout type="warning">
         Event delivery is <strong>at-least-once</strong>. Design consumers to be idempotent, or use{" "}
-        <Mono>idempotencyKey</Mono> on the publisher side. If the SDK reconnects after an outage, any
-        offline-queued events are flushed — use idempotency keys to prevent duplicates.
+        <Mono>idempotencyKey</Mono> on the publisher side. If the SDK reconnects after an outage,
+        any offline-queued events are flushed — use idempotency keys to prevent duplicates.
       </Callout>
 
       {/* ── handleEvent() ────────────────────────────────────────── */}
@@ -114,33 +150,100 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
       <H3 id="handle-event-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "pattern / topic", type: "string", desc: 'Topic pattern. Use * for single-segment wildcard: "orders.*" matches "orders.created" but not "orders.created.sub".' },
-          { name: "groupName / GroupName / group_name", type: "string", default: "<service>.<topic> (all SDKs)", desc: "Consumer group name. All instances sharing this name receive load-balanced delivery." },
-          { name: "concurrency (Node)", type: "number", desc: "Max concurrent handler executions per worker (reserved, not yet enforced)." },
-          { name: "prefetch (Node)", type: "number", desc: "Messages to pre-fetch from the runtime (reserved, not yet enforced)." },
-          { name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json", type: "string (JSON)", desc: "JSON retry policy. See Retry policy section below." },
-          { name: "filterExpr / FilterExpr / filter_expr", type: "string", desc: "Server-side filter expression. Non-matching messages are never delivered to this group." },
+          {
+            name: "pattern / topic",
+            type: "string",
+            desc: 'Topic pattern. Use * for single-segment wildcard: "orders.*" matches "orders.created" but not "orders.created.sub".',
+          },
+          {
+            name: "groupName / GroupName / group_name",
+            type: "string",
+            default: "<service>.<topic> (all SDKs)",
+            desc: "Consumer group name. All instances sharing this name receive load-balanced delivery.",
+          },
+          {
+            name: "concurrency (Node)",
+            type: "number",
+            desc: "Max concurrent handler executions per worker (reserved, not yet enforced).",
+          },
+          {
+            name: "prefetch (Node)",
+            type: "number",
+            desc: "Messages to pre-fetch from the runtime (reserved, not yet enforced).",
+          },
+          {
+            name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json",
+            type: "string (JSON)",
+            desc: "JSON retry policy. See Retry policy section below.",
+          },
+          {
+            name: "filterExpr / FilterExpr / filter_expr",
+            type: "string",
+            desc: "Server-side filter expression. Non-matching messages are never delivered to this group.",
+          },
         ]}
       />
       <Callout type="info">
-        Cross-SDK parity: <Mono>groupName/group_name</Mono>, retry policy, and <Mono>filterExpr/filter_expr</Mono> are available in all SDKs.
-        In Python, registering a duplicate group name raises a <Mono>ValueError</Mono>. In Go and Node.js, the duplicate is silently ignored (the original handler is kept).
-        Node-only <Mono>concurrency</Mono>/<Mono>prefetch</Mono> are currently hint fields.
+        Cross-SDK parity: <Mono>groupName/group_name</Mono>, retry policy, and{" "}
+        <Mono>filterExpr/filter_expr</Mono> are available in all SDKs. In Python, registering a
+        duplicate group name raises a <Mono>ValueError</Mono>. In Go and Node.js, the duplicate is
+        silently ignored (the original handler is kept). Node-only <Mono>concurrency</Mono>/
+        <Mono>prefetch</Mono> are currently hint fields.
       </Callout>
 
       <H3 id="handle-event-ctx">EventContext</H3>
       <ParamTable
         rows={[
-          { name: "ctx.retry(delayMs?)", type: "method", desc: "Schedule redelivery with optional delay (overrides computed backoff for this attempt)." },
-          { name: "ctx.reject(reason)", type: "method", desc: "Reject permanently — moves to DLQ immediately, bypassing remaining retry attempts." },
-          { name: "ctx.refs.topic (Node/Go) / ctx.topic (Python)", type: "string", desc: "The actual topic that matched the pattern." },
-          { name: "ctx.refs.groupName (Node/Go) / ctx.group_name (Python)", type: "string", desc: "This consumer group's name." },
-          { name: "ctx.refs.messageId (Node/Go) / ctx.message_id (Python)", type: "string", desc: "Queue message ID." },
-          { name: "ctx.refs.attempt (Node/Go) / ctx.attempt (Python)", type: "number", desc: "Current delivery attempt number (1-indexed)." },
-          { name: "ctx.refs.headers (Node/Go) / ctx.headers (Python)", type: "map[string]string / dict[str,str]", desc: "Headers set by publisher." },
-          { name: "ctx.traceId (Node/Go) / ctx.trace_id (Python)", type: "string", desc: "Distributed trace ID for this event delivery — use with watchRun() for run correlation." },
-          { name: "ctx.spanId (Node/Go) / ctx.span_id (Python)", type: "string", desc: "Span ID for linking back to the producer's span." },
-          { name: "ctx.stream.write(data, key)", type: "method", desc: "Append a real-time chunk to the run stream (visible in dashboard, consumable via watchRun)." },
+          {
+            name: "ctx.retry(delayMs?)",
+            type: "method",
+            desc: "Schedule redelivery with optional delay (overrides computed backoff for this attempt).",
+          },
+          {
+            name: "ctx.reject(reason)",
+            type: "method",
+            desc: "Reject permanently — moves to DLQ immediately, bypassing remaining retry attempts.",
+          },
+          {
+            name: "ctx.refs.topic (Node/Go) / ctx.topic (Python)",
+            type: "string",
+            desc: "The actual topic that matched the pattern.",
+          },
+          {
+            name: "ctx.refs.groupName (Node/Go) / ctx.group_name (Python)",
+            type: "string",
+            desc: "This consumer group's name.",
+          },
+          {
+            name: "ctx.refs.messageId (Node/Go) / ctx.message_id (Python)",
+            type: "string",
+            desc: "Queue message ID.",
+          },
+          {
+            name: "ctx.refs.attempt (Node/Go) / ctx.attempt (Python)",
+            type: "number",
+            desc: "Current delivery attempt number (1-indexed).",
+          },
+          {
+            name: "ctx.refs.headers (Node/Go) / ctx.headers (Python)",
+            type: "map[string]string / dict[str,str]",
+            desc: "Headers set by publisher.",
+          },
+          {
+            name: "ctx.traceId (Node/Go) / ctx.trace_id (Python)",
+            type: "string",
+            desc: "Distributed trace ID for this event delivery — use with watchRun() for run correlation.",
+          },
+          {
+            name: "ctx.spanId (Node/Go) / ctx.span_id (Python)",
+            type: "string",
+            desc: "Span ID for linking back to the producer's span.",
+          },
+          {
+            name: "ctx.stream.write(data, key)",
+            type: "method",
+            desc: "Append a real-time chunk to the run stream (visible in dashboard, consumable via watchRun).",
+          },
         ]}
       />
 
@@ -205,9 +308,10 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
       <H2 id="retry-policy">Retry policy</H2>
       <P>
         Pass a JSON string to <Mono>retryPolicyJson</Mono> to configure per-group retry behaviour.
-        The delay formula is: <Mono>min(baseDelayMs × factor^(attempt-1), maxDelayMs) ± jitter</Mono>.
-        Calling <Mono>ctx.retry(delayMs)</Mono> inside a handler overrides the computed delay for
-        that specific attempt.
+        The delay formula is:{" "}
+        <Mono>min(baseDelayMs × factor^(attempt-1), maxDelayMs) ± jitter</Mono>. Calling{" "}
+        <Mono>ctx.retry(delayMs)</Mono> inside a handler overrides the computed delay for that
+        specific attempt.
       </P>
       <DocCodeBlock
         lang="json"
@@ -254,7 +358,9 @@ async def on_payment(payload: dict, ctx) -> None:
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "dlq-replay" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "dlq-replay" }))
+          }
         >
           DLQ & Replay
         </button>{" "}
@@ -269,7 +375,9 @@ async def on_payment(payload: dict, ctx) -> None:
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "filter-expr" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "filter-expr" }))
+          }
         >
           Filter Expressions
         </button>{" "}
@@ -299,23 +407,33 @@ async def on_high_value_order(payload: dict, ctx: EventContext) -> None:
         does not match multiple segments:
       </P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li><Mono>orders.*</Mono> matches <Mono>orders.created</Mono> ✓</li>
-        <li><Mono>orders.*</Mono> matches <Mono>orders.updated</Mono> ✓</li>
-        <li><Mono>orders.*</Mono> does <strong className="text-foreground">not</strong> match <Mono>orders.created.eu</Mono> ✗ (two segments after prefix)</li>
-        <li><Mono>orders.*.*</Mono> matches <Mono>orders.created.eu</Mono> ✓</li>
+        <li>
+          <Mono>orders.*</Mono> matches <Mono>orders.created</Mono> ✓
+        </li>
+        <li>
+          <Mono>orders.*</Mono> matches <Mono>orders.updated</Mono> ✓
+        </li>
+        <li>
+          <Mono>orders.*</Mono> does <strong className="text-foreground">not</strong> match{" "}
+          <Mono>orders.created.eu</Mono> ✗ (two segments after prefix)
+        </li>
+        <li>
+          <Mono>orders.*.*</Mono> matches <Mono>orders.created.eu</Mono> ✓
+        </li>
       </ul>
 
       <Callout type="tip">
         Use a unique <Mono>groupName</Mono> per service for fan-out — each group gets every matching
-        event independently. Omit it and all instances of the same service share a load-balanced queue
-        (competing consumers). For real-time chunk streaming from a handler, see{" "}
+        event independently. Omit it and all instances of the same service share a load-balanced
+        queue (competing consumers). For real-time chunk streaming from a handler, see{" "}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
           onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "streaming" }))}
         >
           Streaming
-        </button>.
+        </button>
+        .
       </Callout>
     </div>
   );

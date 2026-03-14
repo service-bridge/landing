@@ -8,35 +8,35 @@ import { NAV, type NavItem, type TocItem } from "./docs/nav";
 
 // ── Page imports ───────────────────────────────────────────────────────────────
 
-import { PageInstallation } from "./docs/PageInstallation";
-import { PageQuickStart } from "./docs/PageQuickStart";
-import { PageEndToEnd } from "./docs/PageEndToEnd";
-import { PageRpc } from "./docs/PageRpc";
-import { PageEvents } from "./docs/PageEvents";
-import { PageJobs } from "./docs/PageJobs";
-import { PageWorkflows } from "./docs/PageWorkflows";
-import { PageStreaming } from "./docs/PageStreaming";
-import { PageServe } from "./docs/PageServe";
-import { PageHttpMiddleware } from "./docs/PageHttpMiddleware";
-import { PageManualSpans } from "./docs/PageManualSpans";
-import { PageTracing } from "./docs/PageTracing";
-import { PageMetricsLogs } from "./docs/PageMetricsLogs";
-import { PageSdkOptions } from "./docs/PageSdkOptions";
-import { PageServerConfig } from "./docs/PageServerConfig";
-import { PageServiceKeys } from "./docs/PageServiceKeys";
-import { PageTlsMtls } from "./docs/PageTlsMtls";
-import { PageReliability } from "./docs/PageReliability";
-import { PageOfflineQueue } from "./docs/PageOfflineQueue";
-import { PageFilterExpr } from "./docs/PageFilterExpr";
-import { PageDlqReplay } from "./docs/PageDlqReplay";
+import { PageAlertsChannels } from "./docs/PageAlertsChannels";
 import { PageAlertsOverview } from "./docs/PageAlertsOverview";
 import { PageAlertsRules } from "./docs/PageAlertsRules";
-import { PageAlertsChannels } from "./docs/PageAlertsChannels";
 import { PageAlertsTelegram } from "./docs/PageAlertsTelegram";
-import { PageSessionLifecycle } from "./docs/PageSessionLifecycle";
-import { PageTransportModes } from "./docs/PageTransportModes";
-import { PageReconnectResume } from "./docs/PageReconnectResume";
 import { PageConfigPush } from "./docs/PageConfigPush";
+import { PageDlqReplay } from "./docs/PageDlqReplay";
+import { PageEndToEnd } from "./docs/PageEndToEnd";
+import { PageEvents } from "./docs/PageEvents";
+import { PageFilterExpr } from "./docs/PageFilterExpr";
+import { PageHttpMiddleware } from "./docs/PageHttpMiddleware";
+import { PageInstallation } from "./docs/PageInstallation";
+import { PageJobs } from "./docs/PageJobs";
+import { PageManualSpans } from "./docs/PageManualSpans";
+import { PageMetricsLogs } from "./docs/PageMetricsLogs";
+import { PageOfflineQueue } from "./docs/PageOfflineQueue";
+import { PageQuickStart } from "./docs/PageQuickStart";
+import { PageReconnectResume } from "./docs/PageReconnectResume";
+import { PageReliability } from "./docs/PageReliability";
+import { PageRpc } from "./docs/PageRpc";
+import { PageSdkOptions } from "./docs/PageSdkOptions";
+import { PageServe } from "./docs/PageServe";
+import { PageServerConfig } from "./docs/PageServerConfig";
+import { PageServiceKeys } from "./docs/PageServiceKeys";
+import { PageSessionLifecycle } from "./docs/PageSessionLifecycle";
+import { PageStreaming } from "./docs/PageStreaming";
+import { PageTlsMtls } from "./docs/PageTlsMtls";
+import { PageTracing } from "./docs/PageTracing";
+import { PageTransportModes } from "./docs/PageTransportModes";
+import { PageWorkflows } from "./docs/PageWorkflows";
 import { PageZoneAware } from "./docs/PageZoneAware";
 
 // ── Pages registry ────────────────────────────────────────────────────────────
@@ -45,11 +45,11 @@ const PAGES: Record<string, () => React.ReactNode> = {
   installation: PageInstallation,
   "quick-start": PageQuickStart,
   "end-to-end": PageEndToEnd,
-  "rpc": PageRpc,
-  "events": PageEvents,
+  rpc: PageRpc,
+  events: PageEvents,
   jobs: PageJobs,
   workflows: PageWorkflows,
-  "streaming": PageStreaming,
+  streaming: PageStreaming,
   serve: PageServe,
   "http-middleware": PageHttpMiddleware,
   "manual-spans": PageManualSpans,
@@ -255,28 +255,30 @@ function RightToc({
   if (!toc.length) return null;
 
   return (
-    <aside className="hidden xl:block w-52 shrink-0 pr-4"><div className="sticky top-0 py-8 pl-8">
-      <p className="text-3xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">
-        On this page
-      </p>
-      <nav className="space-y-px border-l border-border">
-        {toc.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => scrollTo(item.id)}
-            className={cn(
-              "block w-full text-left text-xs py-1.5 pl-3.5 -ml-px transition-all cursor-pointer border-l",
-              activeId === item.id
-                ? "text-primary border-primary font-medium"
-                : "text-muted-foreground border-transparent hover:text-foreground hover:border-muted-foreground/30"
-            )}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
-    </div></aside>
+    <aside className="hidden xl:block w-52 shrink-0 pr-4">
+      <div className="sticky top-0 py-8 pl-8">
+        <p className="text-3xs font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">
+          On this page
+        </p>
+        <nav className="space-y-px border-l border-border">
+          {toc.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => scrollTo(item.id)}
+              className={cn(
+                "block w-full text-left text-xs py-1.5 pl-3.5 -ml-px transition-all cursor-pointer border-l",
+                activeId === item.id
+                  ? "text-primary border-primary font-medium"
+                  : "text-muted-foreground border-transparent hover:text-foreground hover:border-muted-foreground/30"
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </aside>
   );
 }
 
@@ -422,7 +424,11 @@ export default function DocsPage({ onBack }: { onBack: () => void }) {
           </button>
         </div>
         <div className="flex-1 overflow-hidden">
-          <Sidebar activePage={activePage} onSelect={navigateTo} onSearch={() => setSearchOpen(true)} />
+          <Sidebar
+            activePage={activePage}
+            onSelect={navigateTo}
+            onSearch={() => setSearchOpen(true)}
+          />
         </div>
       </aside>
 

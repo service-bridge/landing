@@ -24,7 +24,9 @@ function ServiceNode({
 }) {
   return (
     <div className={cn("rounded-xl border px-3 py-2.5 text-center", colorClass, className)}>
-      <p className="type-body-sm font-semibold font-display leading-tight whitespace-nowrap">{label}</p>
+      <p className="type-body-sm font-semibold font-display leading-tight whitespace-nowrap">
+        {label}
+      </p>
       {sub && <p className="type-overline-mono text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
@@ -214,9 +216,7 @@ function RpcDiagram() {
       </div>
 
       <div className="flex justify-center gap-1.5 flex-wrap">
-        <Badge tone="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">
-          0 proxy hops
-        </Badge>
+        <Badge tone="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">0 proxy hops</Badge>
         <Badge tone="text-violet-400 bg-violet-400/10 border-violet-400/20">
           mTLS cert identity
         </Badge>
@@ -279,12 +279,8 @@ function EventFanOutDiagram() {
       <FanDown nodes={subscribers} dotColor="bg-blue-400" lineColor="border-blue-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge tone="text-blue-400 bg-blue-400/10 border-blue-400/20">
-          wildcard topics
-        </Badge>
-        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">
-          DLQ + replay
-        </Badge>
+        <Badge tone="text-blue-400 bg-blue-400/10 border-blue-400/20">wildcard topics</Badge>
+        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">DLQ + replay</Badge>
         <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
           filter expressions
         </Badge>
@@ -415,12 +411,8 @@ function StreamDiagram() {
       </div>
 
       <div className="flex justify-center gap-1.5 flex-wrap">
-        <Badge tone="text-sky-400 bg-sky-400/10 border-sky-400/20">
-          persisted chunks
-        </Badge>
-        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">
-          late subscriber replay
-        </Badge>
+        <Badge tone="text-sky-400 bg-sky-400/10 border-sky-400/20">persisted chunks</Badge>
+        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">late subscriber replay</Badge>
         <Badge tone="text-indigo-400 bg-indigo-400/10 border-indigo-400/20">
           LLM · progress · logs
         </Badge>
@@ -484,9 +476,7 @@ function WorkflowDiagram() {
         <Badge tone="text-violet-400 bg-violet-400/10 border-violet-400/20">
           state in PostgreSQL
         </Badge>
-        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">
-          full step trace
-        </Badge>
+        <Badge tone="text-cyan-400 bg-cyan-400/10 border-cyan-400/20">full step trace</Badge>
       </div>
     </div>
   );
@@ -551,12 +541,8 @@ function ScheduledDiagram() {
       <FanDown nodes={workers} dotColor="bg-amber-400" lineColor="border-amber-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">
-          cron + one-shot
-        </Badge>
-        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
-          misfire handling
-        </Badge>
+        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">cron + one-shot</Badge>
+        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">misfire handling</Badge>
         <Badge tone="text-yellow-400 bg-yellow-400/10 border-yellow-400/20">
           round-robin dispatch
         </Badge>
@@ -625,15 +611,9 @@ function AlertsDiagram() {
       <FanDown nodes={channels} dotColor="bg-red-400" lineColor="border-red-500/30" />
 
       <div className="flex justify-center gap-1.5 flex-wrap pt-4">
-        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">
-          6 condition types
-        </Badge>
-        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">
-          storm cooldown
-        </Badge>
-        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">
-          multi-channel
-        </Badge>
+        <Badge tone="text-red-400 bg-red-400/10 border-red-400/20">6 condition types</Badge>
+        <Badge tone="text-orange-400 bg-orange-400/10 border-orange-400/20">storm cooldown</Badge>
+        <Badge tone="text-amber-400 bg-amber-400/10 border-amber-400/20">multi-channel</Badge>
       </div>
     </div>
   );

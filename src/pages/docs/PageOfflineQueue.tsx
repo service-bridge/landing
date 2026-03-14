@@ -19,9 +19,9 @@ export function PageOfflineQueue() {
 
       <Callout type="warning">
         <Mono>stream.write()</Mono> / <Mono>ctx.stream.write()</Mono> calls are{" "}
-        <strong>not buffered offline</strong> — they are silently dropped when the control plane
-        is unreachable. Use <Mono>event()</Mono>, <Mono>job()</Mono>, or <Mono>workflow()</Mono>{" "}
-        for reliable delivery instead.
+        <strong>not buffered offline</strong> — they are silently dropped when the control plane is
+        unreachable. Use <Mono>event()</Mono>, <Mono>job()</Mono>, or <Mono>workflow()</Mono> for
+        reliable delivery instead.
       </Callout>
 
       <H2 id="behavior">How it works</H2>
@@ -64,9 +64,15 @@ await sb.event("order.created", payload)  # buffered if offline`,
         <li>
           <Mono>queueOverflow</Mono> — what to do when the queue is full:
           <ul className="list-disc pl-5 mt-1 space-y-1">
-            <li><Mono>"drop-oldest"</Mono> (default) — evict the oldest buffered operation</li>
-            <li><Mono>"drop-newest"</Mono> — reject the new operation</li>
-            <li><Mono>"error"</Mono> — throw/return an error immediately</li>
+            <li>
+              <Mono>"drop-oldest"</Mono> (default) — evict the oldest buffered operation
+            </li>
+            <li>
+              <Mono>"drop-newest"</Mono> — reject the new operation
+            </li>
+            <li>
+              <Mono>"error"</Mono> — throw/return an error immediately
+            </li>
           </ul>
         </li>
       </ul>
@@ -80,8 +86,8 @@ await sb.event("order.created", payload)  # buffered if offline`,
       <H2 id="return-values">Return values while offline</H2>
       <P>
         <Mono>event()</Mono> and <Mono>job()</Mono> return an empty string (instead of the real
-        message/job ID) when the operation is buffered. The real ID is available only after
-        flushing — currently no callback is provided for this. Design your code to handle empty IDs
+        message/job ID) when the operation is buffered. The real ID is available only after flushing
+        — currently no callback is provided for this. Design your code to handle empty IDs
         gracefully.
       </P>
     </div>

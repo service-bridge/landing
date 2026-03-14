@@ -14,22 +14,33 @@ export function PageWorkflows() {
       <H2 id="concept">How it works</H2>
       <P>
         A workflow is a directed acyclic graph (DAG) of steps. Each step declares its dependencies
-        via <Mono>deps</Mono>; steps without shared dependencies run in parallel automatically.
-        The runtime persists each step's completion state in PostgreSQL — workflows survive restarts
-        and resume from the last completed step. The full execution timeline is visible in the
+        via <Mono>deps</Mono>; steps without shared dependencies run in parallel automatically. The
+        runtime persists each step's completion state in PostgreSQL — workflows survive restarts and
+        resume from the last completed step. The full execution timeline is visible in the
         dashboard.
       </P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li><Mono>rpc</Mono> — calls a registered handler and waits for the response</li>
-        <li><Mono>event</Mono> — publishes a durable event and continues immediately</li>
-        <li><Mono>event_wait</Mono> — suspends the workflow until a matching event arrives (with optional timeout)</li>
-        <li><Mono>sleep</Mono> — pauses for N milliseconds durably (survives restarts)</li>
-        <li><Mono>workflow</Mono> — starts a child workflow and waits for it to complete</li>
+        <li>
+          <Mono>rpc</Mono> — calls a registered handler and waits for the response
+        </li>
+        <li>
+          <Mono>event</Mono> — publishes a durable event and continues immediately
+        </li>
+        <li>
+          <Mono>event_wait</Mono> — suspends the workflow until a matching event arrives (with
+          optional timeout)
+        </li>
+        <li>
+          <Mono>sleep</Mono> — pauses for N milliseconds durably (survives restarts)
+        </li>
+        <li>
+          <Mono>workflow</Mono> — starts a child workflow and waits for it to complete
+        </li>
       </ul>
 
       <Callout type="info">
         Use <Mono>runWorkflow(name, input)</Mono> to start a workflow on demand, or{" "}
-        <Mono>job(name, {"{ via: \"workflow\" }"})</Mono> to trigger on a cron schedule.
+        <Mono>job(name, {'{ via: "workflow" }'})</Mono> to trigger on a cron schedule.
       </Callout>
 
       {/* ── Handlers ─────────────────────────────────────────────── */}
@@ -111,21 +122,60 @@ async def on_fulfilled(payload: dict, ctx) -> None:
       <H3 id="step-fields">WorkflowStep fields</H3>
       <ParamTable
         rows={[
-          { name: "id", type: "string", desc: "Unique step identifier within this workflow definition." },
-          { name: "type", type: '"rpc" | "event" | "event_wait" | "sleep" | "workflow"', desc: "Step execution type." },
-          { name: "ref", type: "string", desc: 'Required for all step types except "sleep". RPC: "service/method". Event/event_wait: topic pattern. Workflow: child workflow name.' },
-          { name: "deps", type: "string[]", default: "[]", desc: "Step IDs that must complete before this step runs. Steps with no shared deps run in parallel." },
-          { name: "if (Go/Node) / if_expr (Python)", type: "string", desc: 'Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps). Python uses if_expr because "if" is a reserved keyword.' },
-          { name: "timeoutMs / TimeoutMs / timeout_ms", type: "number", desc: "Step-level timeout for rpc and event_wait steps." },
-          { name: "durationMs / DurationMs / duration_ms", type: "number", desc: 'Required for "sleep" steps. Pause duration in milliseconds.' },
+          {
+            name: "id",
+            type: "string",
+            desc: "Unique step identifier within this workflow definition.",
+          },
+          {
+            name: "type",
+            type: '"rpc" | "event" | "event_wait" | "sleep" | "workflow"',
+            desc: "Step execution type.",
+          },
+          {
+            name: "ref",
+            type: "string",
+            desc: 'Required for all step types except "sleep". RPC: "service/method". Event/event_wait: topic pattern. Workflow: child workflow name.',
+          },
+          {
+            name: "deps",
+            type: "string[]",
+            default: "[]",
+            desc: "Step IDs that must complete before this step runs. Steps with no shared deps run in parallel.",
+          },
+          {
+            name: "if (Go/Node) / if_expr (Python)",
+            type: "string",
+            desc: 'Filter expression evaluated against the resolved input. If false, step is skipped (and cascades to downstream-only deps). Python uses if_expr because "if" is a reserved keyword.',
+          },
+          {
+            name: "timeoutMs / TimeoutMs / timeout_ms",
+            type: "number",
+            desc: "Step-level timeout for rpc and event_wait steps.",
+          },
+          {
+            name: "durationMs / DurationMs / duration_ms",
+            type: "number",
+            desc: 'Required for "sleep" steps. Pause duration in milliseconds.',
+          },
         ]}
       />
 
       <H3 id="workflow-opts">WorkflowOpts</H3>
       <ParamTable
         rows={[
-          { name: "stateLimitBytes / StateLimitBytes / state_limit_bytes", type: "number", default: "262144 (256 KB)", desc: "Maximum size in bytes of accumulated step state stored in PostgreSQL for this workflow run." },
-          { name: "stepTimeoutMs / StepTimeoutMs / step_timeout_ms", type: "number", default: "30000 (30 s)", desc: "Default timeout applied to each step that does not have its own timeoutMs set." },
+          {
+            name: "stateLimitBytes / StateLimitBytes / state_limit_bytes",
+            type: "number",
+            default: "262144 (256 KB)",
+            desc: "Maximum size in bytes of accumulated step state stored in PostgreSQL for this workflow run.",
+          },
+          {
+            name: "stepTimeoutMs / StepTimeoutMs / step_timeout_ms",
+            type: "number",
+            default: "30000 (30 s)",
+            desc: "Default timeout applied to each step that does not have its own timeoutMs set.",
+          },
         ]}
       />
       <MultiCodeBlock
@@ -139,24 +189,33 @@ await sb.workflow("order.fulfillment", steps, WorkflowOpts(step_timeout_ms=60000
 
       {/* ── Output chaining ──────────────────────────────────────── */}
       <H2 id="output-chaining">Output chaining</H2>
-      <P>
-        The output of a step automatically becomes the input of dependent steps:
-      </P>
+      <P>The output of a step automatically becomes the input of dependent steps:</P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li><strong className="text-foreground">0 deps</strong> — step receives the original workflow run input</li>
-        <li><strong className="text-foreground">1 dep</strong> — step receives that dep's output directly</li>
-        <li><strong className="text-foreground">2+ deps</strong> — step receives <Mono>{"{ depId: depOutput, ... }"}</Mono> map</li>
+        <li>
+          <strong className="text-foreground">0 deps</strong> — step receives the original workflow
+          run input
+        </li>
+        <li>
+          <strong className="text-foreground">1 dep</strong> — step receives that dep's output
+          directly
+        </li>
+        <li>
+          <strong className="text-foreground">2+ deps</strong> — step receives{" "}
+          <Mono>{"{ depId: depOutput, ... }"}</Mono> map
+        </li>
+      </ul>
+      <P>Built-in step output shapes (in addition to whatever the handler returns):</P>
+      <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
+        <li>
+          <Mono>event</Mono> step output: <Mono>{'{ messageId: "...", committedAt: "..." }'}</Mono>
+        </li>
+        <li>
+          <Mono>sleep</Mono> step output: <Mono>{"{ sleepMs: N }"}</Mono>
+        </li>
       </ul>
       <P>
-        Built-in step output shapes (in addition to whatever the handler returns):
-      </P>
-      <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li><Mono>event</Mono> step output: <Mono>{"{ messageId: \"...\", committedAt: \"...\" }"}</Mono></li>
-        <li><Mono>sleep</Mono> step output: <Mono>{"{ sleepMs: N }"}</Mono></li>
-      </ul>
-      <P>
-        Use the <Mono>if</Mono> field (<Mono>if_expr</Mono> in Python) to inspect chained input
-        and conditionally skip a step.
+        Use the <Mono>if</Mono> field (<Mono>if_expr</Mono> in Python) to inspect chained input and
+        conditionally skip a step.
       </P>
 
       {/* ── Main example ─────────────────────────────────────────── */}
@@ -188,9 +247,7 @@ workflow_id = await sb.workflow("order.fulfillment", [
 
       {/* ── Parallel steps ───────────────────────────────────────── */}
       <H3 id="parallel-steps">Parallel steps</H3>
-      <P>
-        Steps without shared dependencies execute in parallel automatically — no extra syntax:
-      </P>
+      <P>Steps without shared dependencies execute in parallel automatically — no extra syntax:</P>
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("onboarding", [
@@ -221,8 +278,8 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <P>
         An <Mono>event_wait</Mono> step suspends the workflow until an event matching the topic
         pattern arrives. The matched event's payload becomes the step's output and is passed to
-        downstream steps. Set <Mono>timeoutMs</Mono> to fail the step if no event arrives within
-        the deadline — the step fails with <Mono>"event_wait timeout exceeded"</Mono>.
+        downstream steps. Set <Mono>timeoutMs</Mono> to fail the step if no event arrives within the
+        deadline — the step fails with <Mono>"event_wait timeout exceeded"</Mono>.
       </P>
       <MultiCodeBlock
         code={{
@@ -254,8 +311,8 @@ workflow_id = await sb.workflow("order.fulfillment", [
       {/* ── Conditional steps ────────────────────────────────────── */}
       <H2 id="conditional-if">Conditional steps</H2>
       <P>
-        Add an <Mono>if</Mono> field containing a filter expression to make a step conditional.
-        The expression is evaluated against the step's resolved input (chained from deps). If the
+        Add an <Mono>if</Mono> field containing a filter expression to make a step conditional. The
+        expression is evaluated against the step's resolved input (chained from deps). If the
         condition is false, the step status is set to <Mono>skipped</Mono> and downstream-only
         dependents cascade as skipped too.
       </P>
@@ -356,8 +413,8 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <H2 id="run-workflow">runWorkflow() — start a run</H2>
       <P>
         Starts a workflow run by name with an optional input payload. The workflow must be
-        registered first via <Mono>workflow()</Mono>. Returns an object with <Mono>runId</Mono>{" "}
-        and <Mono>traceId</Mono> that you can use with <Mono>watchRun()</Mono> or{" "}
+        registered first via <Mono>workflow()</Mono>. Returns an object with <Mono>runId</Mono> and{" "}
+        <Mono>traceId</Mono> that you can use with <Mono>watchRun()</Mono> or{" "}
         <Mono>cancelWorkflowRun()</Mono>.
       </P>
 
@@ -371,8 +428,17 @@ workflow_id = await sb.workflow("order.fulfillment", [
       />
       <ParamTable
         rows={[
-          { name: "name", type: "string", desc: "Name of a previously registered workflow definition." },
-          { name: "input", type: "object", default: "{}", desc: "JSON-serializable input passed to root steps (steps with no deps)." },
+          {
+            name: "name",
+            type: "string",
+            desc: "Name of a previously registered workflow definition.",
+          },
+          {
+            name: "input",
+            type: "object",
+            default: "{}",
+            desc: "JSON-serializable input passed to root steps (steps with no deps).",
+          },
         ]}
       />
 
@@ -410,10 +476,9 @@ print(f"started run {result['runId']}, trace {result['traceId']}")`,
       {/* ── Cancel ───────────────────────────────────────────────── */}
       <H2 id="cancel">Cancel a run</H2>
       <P>
-        Cancelling a run marks it as <Mono>cancelled</Mono>, clears any pending leases and
-        event waiters, and closes the root span with an error status. In-flight steps that are
-        already executing are not interrupted. Child workflows are <strong>not</strong>{" "}
-        auto-cancelled.
+        Cancelling a run marks it as <Mono>cancelled</Mono>, clears any pending leases and event
+        waiters, and closes the root span with an error status. In-flight steps that are already
+        executing are not interrupted. Child workflows are <strong>not</strong> auto-cancelled.
       </P>
       <MultiCodeBlock
         code={{
@@ -424,9 +489,9 @@ print(f"started run {result['runId']}, trace {result['traceId']}")`,
       />
 
       <Callout type="info">
-        Each step's completion state is persisted in PostgreSQL. The full execution timeline —
-        step statuses, inputs, outputs, timings — is visible in the dashboard. Workflows survive
-        runtime restarts and resume from the last completed step automatically.
+        Each step's completion state is persisted in PostgreSQL. The full execution timeline — step
+        statuses, inputs, outputs, timings — is visible in the dashboard. Workflows survive runtime
+        restarts and resume from the last completed step automatically.
       </Callout>
     </div>
   );

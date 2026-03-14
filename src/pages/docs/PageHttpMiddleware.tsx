@@ -1,5 +1,14 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import {
+  Callout,
+  DocCodeBlock,
+  H2,
+  H3,
+  Mono,
+  P,
+  PageHeader,
+  ParamTable,
+} from "../../ui/DocComponents";
 
 export function PageHttpMiddleware() {
   return (
@@ -12,15 +21,28 @@ export function PageHttpMiddleware() {
 
       {/* ── What it does ─────────────────────────────────────────── */}
       <H2 id="what-it-does">What it does</H2>
-      <P>
-        All middleware variants share the same behaviour on every request:
-      </P>
+      <P>All middleware variants share the same behaviour on every request:</P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li>Extract or generate a trace ID from the incoming <Mono>traceparent</Mono> or <Mono>x-trace-id</Mono> header</li>
-        <li>Start an <Mono>http:METHOD:path</Mono> span — automatically closed when the response is sent</li>
-        <li>Inject the SDK client into the request context so handlers can call <Mono>rpc()</Mono> / <Mono>event()</Mono> in the same trace</li>
-        <li>Set the <Mono>x-trace-id</Mono> response header — useful for frontend correlation and <Mono>watchRun()</Mono></li>
-        <li>Register route patterns in the ServiceBridge HTTP catalog (visible in the dashboard Service Map → Connections tab)</li>
+        <li>
+          Extract or generate a trace ID from the incoming <Mono>traceparent</Mono> or{" "}
+          <Mono>x-trace-id</Mono> header
+        </li>
+        <li>
+          Start an <Mono>http:METHOD:path</Mono> span — automatically closed when the response is
+          sent
+        </li>
+        <li>
+          Inject the SDK client into the request context so handlers can call <Mono>rpc()</Mono> /{" "}
+          <Mono>event()</Mono> in the same trace
+        </li>
+        <li>
+          Set the <Mono>x-trace-id</Mono> response header — useful for frontend correlation and{" "}
+          <Mono>watchRun()</Mono>
+        </li>
+        <li>
+          Register route patterns in the ServiceBridge HTTP catalog (visible in the dashboard
+          Service Map → Connections tab)
+        </li>
       </ul>
 
       {/* ── Express ──────────────────────────────────────────────── */}
@@ -56,16 +78,31 @@ app.listen(3000);`,
       <ParamTable
         rows={[
           { name: "client", type: "ServiceBridgeService", desc: "The SDK client instance." },
-          { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to skip — no span, no catalog registration." },
-          { name: "propagateTraceHeader", type: "boolean", default: "true", desc: "Set x-trace-id on every response." },
-          { name: "autoRegister", type: "boolean", default: "true", desc: "Register route pattern in catalog on first request hit." },
+          {
+            name: "excludePaths",
+            type: "string[]",
+            default: "[]",
+            desc: "Path prefixes to skip — no span, no catalog registration.",
+          },
+          {
+            name: "propagateTraceHeader",
+            type: "boolean",
+            default: "true",
+            desc: "Set x-trace-id on every response.",
+          },
+          {
+            name: "autoRegister",
+            type: "boolean",
+            default: "true",
+            desc: "Register route pattern in catalog on first request hit.",
+          },
         ]}
       />
 
       <H3 id="express-eager">Eager route registration</H3>
       <P>
-        Use <Mono>registerExpressRoutes</Mono> to register all routes at startup instead of on
-        first hit — recommended for services that need to appear in the Service Map immediately:
+        Use <Mono>registerExpressRoutes</Mono> to register all routes at startup instead of on first
+        hit — recommended for services that need to appear in the Service Map immediately:
       </P>
       <MultiCodeBlock
         code={{
@@ -79,10 +116,28 @@ app.listen(3000);`,
       <H3 id="express-eager-opts">registerExpressRoutes options</H3>
       <ParamTable
         rows={[
-          { name: "instanceId", type: "string", desc: "Unique instance identifier for this service instance." },
-          { name: "endpoint", type: "string", desc: "Publicly reachable address for this service instance, registered in the catalog." },
-          { name: "allowedCallers", type: "string[]", default: "[]", desc: "List of service names allowed to call these HTTP endpoints." },
-          { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to exclude from catalog registration." },
+          {
+            name: "instanceId",
+            type: "string",
+            desc: "Unique instance identifier for this service instance.",
+          },
+          {
+            name: "endpoint",
+            type: "string",
+            desc: "Publicly reachable address for this service instance, registered in the catalog.",
+          },
+          {
+            name: "allowedCallers",
+            type: "string[]",
+            default: "[]",
+            desc: "List of service names allowed to call these HTTP endpoints.",
+          },
+          {
+            name: "excludePaths",
+            type: "string[]",
+            default: "[]",
+            desc: "Path prefixes to exclude from catalog registration.",
+          },
         ]}
       />
 
@@ -119,18 +174,42 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
       <ParamTable
         rows={[
           { name: "client", type: "ServiceBridgeService", desc: "The SDK client instance." },
-          { name: "instanceId", type: "string", desc: "Unique instance identifier for this service instance. Used to disambiguate multiple instances in the Service Map." },
-          { name: "endpoint", type: "string", desc: "The gRPC endpoint address this worker listens on. Registered in the service catalog." },
-          { name: "allowedCallers", type: "string[]", default: "[]", desc: "List of service names allowed to call these HTTP endpoints. Enforced at the worker gRPC level." },
-          { name: "excludePaths", type: "string[]", default: "[]", desc: "Path prefixes to skip — no span, no catalog registration." },
-          { name: "autoRegister", type: "boolean", default: "true", desc: "Register route pattern in catalog on first request hit." },
+          {
+            name: "instanceId",
+            type: "string",
+            desc: "Unique instance identifier for this service instance. Used to disambiguate multiple instances in the Service Map.",
+          },
+          {
+            name: "endpoint",
+            type: "string",
+            desc: "The gRPC endpoint address this worker listens on. Registered in the service catalog.",
+          },
+          {
+            name: "allowedCallers",
+            type: "string[]",
+            default: "[]",
+            desc: "List of service names allowed to call these HTTP endpoints. Enforced at the worker gRPC level.",
+          },
+          {
+            name: "excludePaths",
+            type: "string[]",
+            default: "[]",
+            desc: "Path prefixes to skip — no span, no catalog registration.",
+          },
+          {
+            name: "autoRegister",
+            type: "boolean",
+            default: "true",
+            desc: "Register route pattern in catalog on first request hit.",
+          },
         ]}
       />
 
       <Callout type="warning">
-        Use <Mono>wrapHandler()</Mono> for Fastify handlers that call <Mono>request.servicebridge.rpc()</Mono> or <Mono>event()</Mono>.
-        Without it, SDK calls still work, but run outside async-local trace context and won't be
-        linked to the HTTP span in the trace waterfall.
+        Use <Mono>wrapHandler()</Mono> for Fastify handlers that call{" "}
+        <Mono>request.servicebridge.rpc()</Mono> or <Mono>event()</Mono>. Without it, SDK calls
+        still work, but run outside async-local trace context and won't be linked to the HTTP span
+        in the trace waterfall.
       </Callout>
 
       {/* ── FastAPI ──────────────────────────────────────────────── */}
@@ -247,14 +326,34 @@ e.GET("/users/:id", func(c echo.Context) error {
 
       <H3 id="go-options">Go middleware options</H3>
       <P>
-        All Go middleware variants accept <Mono>sbhttp.Options</Mono> as an optional second argument:
+        All Go middleware variants accept <Mono>sbhttp.Options</Mono> as an optional second
+        argument:
       </P>
       <ParamTable
         rows={[
-          { name: "ExcludePaths", type: "[]string", default: "nil", desc: "Path prefixes to skip — no span, no catalog registration." },
-          { name: "PropagateTraceHeader", type: "*bool", default: "true", desc: "Set x-trace-id on every response." },
-          { name: "AutoRegister", type: "*bool", default: "true", desc: "Register routes in catalog on first hit." },
-          { name: "RoutePatternFn", type: "func(*http.Request) string", desc: "Custom route pattern extractor (net/http only)." },
+          {
+            name: "ExcludePaths",
+            type: "[]string",
+            default: "nil",
+            desc: "Path prefixes to skip — no span, no catalog registration.",
+          },
+          {
+            name: "PropagateTraceHeader",
+            type: "*bool",
+            default: "true",
+            desc: "Set x-trace-id on every response.",
+          },
+          {
+            name: "AutoRegister",
+            type: "*bool",
+            default: "true",
+            desc: "Register routes in catalog on first hit.",
+          },
+          {
+            name: "RoutePatternFn",
+            type: "func(*http.Request) string",
+            desc: "Custom route pattern extractor (net/http only).",
+          },
         ]}
       />
 

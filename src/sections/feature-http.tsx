@@ -108,16 +108,51 @@ async def create_order(body: dict):
 type FrameworkId = (typeof FRAMEWORK_TABS)[number]["id"];
 
 const TRACE_HEADERS = [
-  { label: "traceparent", desc: "W3C standard → uses traceId + parentSpanId", tone: "text-indigo-400 border-indigo-500/25 bg-indigo-500/10", priority: "1st" },
-  { label: "x-trace-id", desc: "ServiceBridge native → continues existing trace", tone: "text-blue-400 border-blue-500/25 bg-blue-500/10", priority: "2nd" },
-  { label: "none", desc: "New trace ID generated automatically", tone: "text-muted-foreground border-zinc-500/25 bg-zinc-500/10", priority: "3rd" },
+  {
+    label: "traceparent",
+    desc: "W3C standard → uses traceId + parentSpanId",
+    tone: "text-indigo-400 border-indigo-500/25 bg-indigo-500/10",
+    priority: "1st",
+  },
+  {
+    label: "x-trace-id",
+    desc: "ServiceBridge native → continues existing trace",
+    tone: "text-blue-400 border-blue-500/25 bg-blue-500/10",
+    priority: "2nd",
+  },
+  {
+    label: "none",
+    desc: "New trace ID generated automatically",
+    tone: "text-muted-foreground border-zinc-500/25 bg-zinc-500/10",
+    priority: "3rd",
+  },
 ];
 
 const REQUEST_PATH = [
-  { label: "client", sub: "POST /api/orders", color: "bg-zinc-500", tone: "text-muted-foreground bg-surface border-surface-border" },
-  { label: "middleware", sub: "span starts · x-trace-id injected", color: "bg-indigo-400", tone: "text-indigo-300 bg-indigo-500/[0.06] border-indigo-500/20" },
-  { label: "handler", sub: "sb.rpc('orders.create', …)", color: "bg-blue-400", tone: "text-blue-300 bg-blue-500/[0.06] border-blue-500/20" },
-  { label: "orders service", sub: "child span · direct gRPC", color: "bg-emerald-400", tone: "text-emerald-300 bg-emerald-500/[0.06] border-emerald-500/20" },
+  {
+    label: "client",
+    sub: "POST /api/orders",
+    color: "bg-zinc-500",
+    tone: "text-muted-foreground bg-surface border-surface-border",
+  },
+  {
+    label: "middleware",
+    sub: "span starts · x-trace-id injected",
+    color: "bg-indigo-400",
+    tone: "text-indigo-300 bg-indigo-500/[0.06] border-indigo-500/20",
+  },
+  {
+    label: "handler",
+    sub: "sb.rpc('orders.create', …)",
+    color: "bg-blue-400",
+    tone: "text-blue-300 bg-blue-500/[0.06] border-blue-500/20",
+  },
+  {
+    label: "orders service",
+    sub: "child span · direct gRPC",
+    color: "bg-emerald-400",
+    tone: "text-emerald-300 bg-emerald-500/[0.06] border-emerald-500/20",
+  },
 ];
 
 export function HttpSection() {
@@ -145,16 +180,27 @@ export function HttpSection() {
         <motion.div variants={fadeInUp}>
           <CodePanel>
             <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
-              <TabStrip size="sm" items={FRAMEWORK_TABS} active={activeTab} onChange={setActiveTab} />
+              <TabStrip
+                size="sm"
+                items={FRAMEWORK_TABS}
+                active={activeTab}
+                onChange={setActiveTab}
+              />
               <button
                 type="button"
                 onClick={copyCode}
                 className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
               >
                 {copied ? (
-                  <><CheckCircle2 className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                  <>
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                    <span className="text-emerald-400">Copied</span>
+                  </>
                 ) : (
-                  <><Copy className="w-3 h-3" /><span>Copy</span></>
+                  <>
+                    <Copy className="w-3 h-3" />
+                    <span>Copy</span>
+                  </>
                 )}
               </button>
             </div>
@@ -174,16 +220,24 @@ export function HttpSection() {
             <p className="mt-2 type-subsection-title">One middleware, full request chain.</p>
             <p className="mt-2 type-body-sm">
               Every inbound request starts a span. Downstream{" "}
-              <code className="text-foreground/80 bg-surface px-1 rounded">rpc()</code>{" "}
-              calls inherit the trace context automatically.
+              <code className="text-foreground/80 bg-surface px-1 rounded">rpc()</code> calls
+              inherit the trace context automatically.
             </p>
 
             <div className="mt-5 space-y-1.5">
               <p className="type-overline-mono text-muted-foreground mb-3">trace header priority</p>
               {TRACE_HEADERS.map((item) => (
-                <div key={item.label} className="flex items-center gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2">
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2"
+                >
                   <Badge tone={item.tone}>{item.priority}</Badge>
-                  <code className={cn("text-xs font-mono font-semibold shrink-0", item.tone.split(" ")[0])}>
+                  <code
+                    className={cn(
+                      "text-xs font-mono font-semibold shrink-0",
+                      item.tone.split(" ")[0]
+                    )}
+                  >
                     {item.label}
                   </code>
                   <span className="text-2xs text-muted-foreground min-w-0">{item.desc}</span>
@@ -197,10 +251,24 @@ export function HttpSection() {
                 <div key={step.label} className="flex items-start gap-2">
                   <div className="flex flex-col items-center shrink-0">
                     <div className={cn("w-1.5 h-1.5 rounded-full mt-2.5 shrink-0", step.color)} />
-                    {i < REQUEST_PATH.length - 1 && <div className="w-px flex-1 min-h-[12px] bg-surface-border mt-0.5" />}
+                    {i < REQUEST_PATH.length - 1 && (
+                      <div className="w-px flex-1 min-h-[12px] bg-surface-border mt-0.5" />
+                    )}
                   </div>
-                  <div className={cn("flex-1 flex items-center gap-3 rounded-xl border px-3 py-2", step.tone)}>
-                    <span className={cn("text-xs font-semibold font-display shrink-0", step.tone.split(" ")[0])}>{step.label}</span>
+                  <div
+                    className={cn(
+                      "flex-1 flex items-center gap-3 rounded-xl border px-3 py-2",
+                      step.tone
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "text-xs font-semibold font-display shrink-0",
+                        step.tone.split(" ")[0]
+                      )}
+                    >
+                      {step.label}
+                    </span>
                     <span className="text-2xs text-muted-foreground font-mono">{step.sub}</span>
                   </div>
                 </div>
@@ -212,7 +280,8 @@ export function HttpSection() {
                 <Route className="w-3.5 h-3.5 text-indigo-400" />
               </div>
               <p className="type-body-sm">
-                Routes appear in the <span className="text-zinc-200">HTTP catalog</span> automatically — method, path, allowed callers, request schema.
+                Routes appear in the <span className="text-zinc-200">HTTP catalog</span>{" "}
+                automatically — method, path, allowed callers, request schema.
               </p>
             </div>
           </Card>
@@ -220,9 +289,27 @@ export function HttpSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={Globe} title="Express, Fastify, Gin, FastAPI" description="One middleware API across Node.js, Go, and Python frameworks. Same behavior, same trace format." iconClassName="text-indigo-400" />
-          <FeatureCard variant="compact" icon={Zap} title="Zero handler changes" description="Add middleware once. Every route gets tracing, trace ID propagation, and catalog registration automatically." iconClassName="text-blue-400" />
-          <FeatureCard variant="compact" icon={CheckCircle2} title="OTLP compatible" description="HTTP spans use the same span format as RPC and event spans. Full cross-service waterfall in the dashboard." iconClassName="text-emerald-400" />
+          <FeatureCard
+            variant="compact"
+            icon={Globe}
+            title="Express, Fastify, Gin, FastAPI"
+            description="One middleware API across Node.js, Go, and Python frameworks. Same behavior, same trace format."
+            iconClassName="text-indigo-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Zap}
+            title="Zero handler changes"
+            description="Add middleware once. Every route gets tracing, trace ID propagation, and catalog registration automatically."
+            iconClassName="text-blue-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={CheckCircle2}
+            title="OTLP compatible"
+            description="HTTP spans use the same span format as RPC and event spans. Full cross-service waterfall in the dashboard."
+            iconClassName="text-emerald-400"
+          />
         </>
       }
     />

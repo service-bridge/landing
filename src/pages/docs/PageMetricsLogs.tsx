@@ -26,15 +26,33 @@ scrape_configs:
       />
       <P>Key metric families (30+ total):</P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li><Mono>sb_rpc_calls_total</Mono> — RPC calls by service, function, and status</li>
-        <li><Mono>sb_rpc_duration_seconds</Mono> — RPC latency histogram</li>
-        <li><Mono>sb_events_published_total</Mono> — events published by topic</li>
-        <li><Mono>sb_deliveries_total</Mono> — event deliveries by topic, group, and status</li>
-        <li><Mono>sb_dlq_size</Mono> — current DLQ depth</li>
-        <li><Mono>sb_workflow_runs_total</Mono> — workflow runs by name and status</li>
-        <li><Mono>sb_job_runs_total</Mono> — job executions by target and status</li>
-        <li><Mono>sb_active_services</Mono> — number of connected services</li>
-        <li><Mono>sb_offline_queue_size</Mono> — SDK offline queue depth per service</li>
+        <li>
+          <Mono>sb_rpc_calls_total</Mono> — RPC calls by service, function, and status
+        </li>
+        <li>
+          <Mono>sb_rpc_duration_seconds</Mono> — RPC latency histogram
+        </li>
+        <li>
+          <Mono>sb_events_published_total</Mono> — events published by topic
+        </li>
+        <li>
+          <Mono>sb_deliveries_total</Mono> — event deliveries by topic, group, and status
+        </li>
+        <li>
+          <Mono>sb_dlq_size</Mono> — current DLQ depth
+        </li>
+        <li>
+          <Mono>sb_workflow_runs_total</Mono> — workflow runs by name and status
+        </li>
+        <li>
+          <Mono>sb_job_runs_total</Mono> — job executions by target and status
+        </li>
+        <li>
+          <Mono>sb_active_services</Mono> — number of connected services
+        </li>
+        <li>
+          <Mono>sb_offline_queue_size</Mono> — SDK offline queue depth per service
+        </li>
       </ul>
 
       <H2 id="logs">Log capture</H2>
@@ -45,8 +63,8 @@ scrape_configs:
 
       <H3 id="ts-logs">TypeScript / Node.js</H3>
       <P>
-        By default (<Mono>captureLogs: true</Mono>), the SDK intercepts <Mono>console.*</Mono>{" "}
-        calls and forwards them to ServiceBridge with batching.
+        By default (<Mono>captureLogs: true</Mono>), the SDK intercepts <Mono>console.*</Mono> calls
+        and forwards them to ServiceBridge with batching.
       </P>
       <MultiCodeBlock
         code={{
@@ -62,8 +80,8 @@ const sb = servicebridge(url, key, { captureLogs: false });`,
 
       <H3 id="go-logs">Go</H3>
       <P>
-        By default, the SDK intercepts the standard <Mono>log</Mono> package. For structured
-        logging with <Mono>log/slog</Mono>:
+        By default, the SDK intercepts the standard <Mono>log</Mono> package. For structured logging
+        with <Mono>log/slog</Mono>:
       </P>
       <MultiCodeBlock
         code={{
@@ -105,8 +123,8 @@ sb = ServiceBridge(url, key, opts=Options(capture_logs=False))`,
       <H2 id="log-query">Querying logs</H2>
       <P>
         Logs are queryable via the built-in dashboard and via the Loki-compatible API at{" "}
-        <Mono>/loki/api/v1/query_range</Mono>. Point Grafana at the runtime to query logs
-        alongside traces and metrics.
+        <Mono>/loki/api/v1/query_range</Mono>. Point Grafana at the runtime to query logs alongside
+        traces and metrics.
       </P>
       <DocCodeBlock
         lang="bash"
@@ -118,9 +136,9 @@ curl 'http://your-runtime:14444/loki/api/v1/query_range' \\
       />
 
       <Callout type="info">
-        Logs are retained for <Mono>SERVICEBRIDGE_LOGS_TTL_DAYS</Mono> days (default: 3). Set to
-        a higher value for longer retention, or <Mono>0</Mono> to keep indefinitely (not
-        recommended for production).
+        Logs are retained for <Mono>SERVICEBRIDGE_LOGS_TTL_DAYS</Mono> days (default: 3). Set to a
+        higher value for longer retention, or <Mono>0</Mono> to keep indefinitely (not recommended
+        for production).
       </Callout>
     </div>
   );

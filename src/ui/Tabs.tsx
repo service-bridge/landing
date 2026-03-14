@@ -22,12 +22,7 @@ export function TabStrip<T extends string>({
   className,
 }: TabStripProps<T>) {
   return (
-    <div
-      className={cn(
-        "flex gap-0.5 rounded-lg bg-surface p-0.5 w-fit",
-        className,
-      )}
-    >
+    <div className={cn("flex gap-0.5 rounded-lg bg-surface p-0.5 w-fit", className)}>
       {items.map((item) => (
         <button
           key={item.id}
@@ -35,12 +30,10 @@ export function TabStrip<T extends string>({
           onClick={() => onChange(item.id)}
           className={cn(
             "rounded-md font-medium transition-colors cursor-pointer",
-            size === "sm"
-              ? "px-2.5 py-1 text-xs"
-              : "px-3 py-1.5 text-sm",
+            size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm",
             active === item.id
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           {item.label}

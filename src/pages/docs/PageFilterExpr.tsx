@@ -60,10 +60,26 @@ async def on_high_value_order(payload: dict, ctx) -> None:
             {[
               ["=", "equals", "string, number"],
               ["!=", "not equals", "string, number"],
-              [">", "greater than", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
-              [">=", "greater than or equal", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
-              ["<", "less than", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
-              ["<=", "less than or equal", "number; falls back to lexicographic string comparison if expected value is non-numeric"],
+              [
+                ">",
+                "greater than",
+                "number; falls back to lexicographic string comparison if expected value is non-numeric",
+              ],
+              [
+                ">=",
+                "greater than or equal",
+                "number; falls back to lexicographic string comparison if expected value is non-numeric",
+              ],
+              [
+                "<",
+                "less than",
+                "number; falls back to lexicographic string comparison if expected value is non-numeric",
+              ],
+              [
+                "<=",
+                "less than or equal",
+                "number; falls back to lexicographic string comparison if expected value is non-numeric",
+              ],
             ].map(([op, meaning, works]) => (
               <tr key={op}>
                 <td className="px-4 py-2.5 text-primary">{op}</td>

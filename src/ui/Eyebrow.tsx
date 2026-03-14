@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { cn } from "../lib/utils";
 
 interface EyebrowProps {
@@ -9,20 +9,12 @@ interface EyebrowProps {
   className?: string;
 }
 
-export function Eyebrow({
-  children,
-  variant = "plain",
-  tone,
-  icon,
-  className,
-}: EyebrowProps) {
+export function Eyebrow({ children, variant = "plain", tone, icon, className }: EyebrowProps) {
   const textClasses = "text-sm font-semibold uppercase tracking-widest";
 
   if (variant === "plain") {
     return (
-      <p className={cn(textClasses, "mb-4", tone ?? "text-emerald-400", className)}>
-        {children}
-      </p>
+      <p className={cn(textClasses, "mb-4", tone ?? "text-emerald-400", className)}>{children}</p>
     );
   }
 

@@ -302,9 +302,9 @@ export function FeaturesSection() {
           <div key={group.label} className="contents">
             <CategoryDivider label={group.label} />
             {group.features.map((feature) => (
-              <motion.div 
-                key={feature.title} 
-                variants={fadeInUp} 
+              <motion.div
+                key={feature.title}
+                variants={fadeInUp}
                 className={group.wide ? "md:col-span-3" : "md:col-span-2"}
               >
                 <FeatureCard

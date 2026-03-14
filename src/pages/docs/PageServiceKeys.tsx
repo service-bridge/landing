@@ -11,8 +11,8 @@ export function PageServiceKeys() {
 
       <P>
         Policies are enforced at the control plane, SDK, and worker levels. An empty policy field
-        means unrestricted. All non-empty fields are enforced independently — a request must
-        satisfy all applicable rules.
+        means unrestricted. All non-empty fields are enforced independently — a request must satisfy
+        all applicable rules.
       </P>
 
       <H2 id="capabilities">Capabilities</H2>
@@ -49,14 +49,14 @@ export function PageServiceKeys() {
 
       <Callout type="info">
         Service keys can be provided in two ways: <Mono>x-service-key: {"<key>"}</Mono> header OR{" "}
-        <Mono>Authorization: Bearer {"<key>"}</Mono> header. Both are accepted by the runtime.
-        Valid keys start with <Mono>sbv2.</Mono>; legacy <Mono>sb_</Mono> keys are disabled.
+        <Mono>Authorization: Bearer {"<key>"}</Mono> header. Both are accepted by the runtime. Valid
+        keys start with <Mono>sbv2.</Mono>; legacy <Mono>sb_</Mono> keys are disabled.
       </Callout>
 
       <Callout type="info">
         Keys support an optional expiration date (<Mono>expires_at</Mono>). Expired keys are
-        automatically rejected. Each key also tracks <Mono>last_used_at</Mono>, updated on every
-        use — useful for detecting dormant or potentially compromised keys.
+        automatically rejected. Each key also tracks <Mono>last_used_at</Mono>, updated on every use
+        — useful for detecting dormant or potentially compromised keys.
       </Callout>
 
       <H2 id="policy">Granular Policy</H2>
@@ -77,15 +77,37 @@ export function PageServiceKeys() {
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
             {[
-              ["allowed_topics", "Control plane (event())", "Topics this key may publish events to"],
-              ["allowed_subscribe_topics", "Control plane (RegisterConsumerGroup)", "Event patterns this service may subscribe to"],
-              ["allowed_functions", "Control plane (RegisterFunction)", "RPC function names this service may register"],
-              ["allowed_call_targets", "Registry filter + SDK", "RPC functions this service may discover and call"],
-              ["allowed_callers", "Registry + SDK + Worker", "Services allowed to call functions registered by this key"],
+              [
+                "allowed_topics",
+                "Control plane (event())",
+                "Topics this key may publish events to",
+              ],
+              [
+                "allowed_subscribe_topics",
+                "Control plane (RegisterConsumerGroup)",
+                "Event patterns this service may subscribe to",
+              ],
+              [
+                "allowed_functions",
+                "Control plane (RegisterFunction)",
+                "RPC function names this service may register",
+              ],
+              [
+                "allowed_call_targets",
+                "Registry filter + SDK",
+                "RPC functions this service may discover and call",
+              ],
+              [
+                "allowed_callers",
+                "Registry + SDK + Worker",
+                "Services allowed to call functions registered by this key",
+              ],
             ].map(([field, layer, desc]) => (
               <tr key={field} className="hover:bg-white/[0.02] text-muted-foreground">
                 <td className="px-4 py-2.5 font-mono text-xs text-violet-400">{field}</td>
-                <td className="px-4 py-2.5 text-xs text-muted-foreground/70 whitespace-nowrap">{layer}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground/70 whitespace-nowrap">
+                  {layer}
+                </td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{desc}</td>
               </tr>
             ))}
@@ -100,14 +122,29 @@ export function PageServiceKeys() {
       </Callout>
 
       <H2 id="key-example">Example: locked-down payments key</H2>
-      <P>Create a service key from the <strong>Service Keys</strong> page in the dashboard:</P>
+      <P>
+        Create a service key from the <strong>Service Keys</strong> page in the dashboard:
+      </P>
       <ul className="list-disc list-inside text-muted-foreground space-y-1 my-3 text-sm">
-        <li>Name: <Mono>payments-service</Mono></li>
-        <li>Capabilities: <Mono>events.publish</Mono>, <Mono>events.handle</Mono>, <Mono>rpc.call</Mono>, <Mono>rpc.handle</Mono></li>
-        <li>Allowed topics: <Mono>payments.*</Mono></li>
-        <li>Allowed subscribe topics: <Mono>orders.*</Mono></li>
-        <li>Allowed functions: <Mono>payments.*</Mono></li>
-        <li>Allowed callers: <Mono>api-gateway</Mono></li>
+        <li>
+          Name: <Mono>payments-service</Mono>
+        </li>
+        <li>
+          Capabilities: <Mono>events.publish</Mono>, <Mono>events.handle</Mono>,{" "}
+          <Mono>rpc.call</Mono>, <Mono>rpc.handle</Mono>
+        </li>
+        <li>
+          Allowed topics: <Mono>payments.*</Mono>
+        </li>
+        <li>
+          Allowed subscribe topics: <Mono>orders.*</Mono>
+        </li>
+        <li>
+          Allowed functions: <Mono>payments.*</Mono>
+        </li>
+        <li>
+          Allowed callers: <Mono>api-gateway</Mono>
+        </li>
       </ul>
       <P>
         This key can only handle/call <Mono>payments.*</Mono> RPC functions, publish to{" "}

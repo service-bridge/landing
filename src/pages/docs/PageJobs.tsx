@@ -1,5 +1,14 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import {
+  Callout,
+  DocCodeBlock,
+  H2,
+  H3,
+  Mono,
+  P,
+  PageHeader,
+  ParamTable,
+} from "../../ui/DocComponents";
 
 export function PageJobs() {
   return (
@@ -58,12 +67,40 @@ await sb.serve()`,
       <H3 id="schedule-opts">ScheduleOpts</H3>
       <ParamTable
         rows={[
-          { name: "cron / Cron", type: "string", desc: 'Standard 5- or 6-field cron expression (the optional 6th field specifies seconds), e.g. "0 * * * *" (hourly). Named descriptors are also supported: @hourly, @daily, @weekly, @monthly, @yearly, @midnight, @every <duration> (e.g. "@every 5m"). Mutually exclusive with delay.' },
-          { name: "delay / DelayMs / delay_ms", type: "number (ms)", default: "0", desc: "One-shot execution after N milliseconds. Mutually exclusive with cron." },
-          { name: "timezone / Timezone", type: "string", default: "UTC", desc: "IANA timezone for cron evaluation, e.g. America/New_York." },
-          { name: "misfire / Misfire", type: '"fire_now" | "skip"', default: '"fire_now"', desc: 'Behaviour when a scheduled tick was missed. "fire_now" runs immediately on recovery; "skip" drops the missed tick.' },
-          { name: "via / Via", type: '"rpc" | "event" | "workflow"', default: '"rpc"', desc: "How the job triggers the target — as an RPC call, event publish, or workflow start." },
-          { name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json", type: "string (JSON)", desc: "JSON retry policy. Default is single-attempt: maxAttempts=1, baseDelayMs=1000, factor=2, maxDelayMs=60000, jitter=0." },
+          {
+            name: "cron / Cron",
+            type: "string",
+            desc: 'Standard 5- or 6-field cron expression (the optional 6th field specifies seconds), e.g. "0 * * * *" (hourly). Named descriptors are also supported: @hourly, @daily, @weekly, @monthly, @yearly, @midnight, @every <duration> (e.g. "@every 5m"). Mutually exclusive with delay.',
+          },
+          {
+            name: "delay / DelayMs / delay_ms",
+            type: "number (ms)",
+            default: "0",
+            desc: "One-shot execution after N milliseconds. Mutually exclusive with cron.",
+          },
+          {
+            name: "timezone / Timezone",
+            type: "string",
+            default: "UTC",
+            desc: "IANA timezone for cron evaluation, e.g. America/New_York.",
+          },
+          {
+            name: "misfire / Misfire",
+            type: '"fire_now" | "skip"',
+            default: '"fire_now"',
+            desc: 'Behaviour when a scheduled tick was missed. "fire_now" runs immediately on recovery; "skip" drops the missed tick.',
+          },
+          {
+            name: "via / Via",
+            type: '"rpc" | "event" | "workflow"',
+            default: '"rpc"',
+            desc: "How the job triggers the target — as an RPC call, event publish, or workflow start.",
+          },
+          {
+            name: "retryPolicyJson / RetryPolicyJSON / retry_policy_json",
+            type: "string (JSON)",
+            desc: "JSON retry policy. Default is single-attempt: maxAttempts=1, baseDelayMs=1000, factor=2, maxDelayMs=60000, jitter=0.",
+          },
         ]}
       />
 
@@ -95,9 +132,9 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
 
       <H3 id="job-misfire">Misfire: skip</H3>
       <P>
-        Use <Mono>misfire: "skip"</Mono> for jobs where running a stale tick would cause harm —
-        for example, a job that sends a time-sensitive digest email. If the runtime was down when
-        the cron fired, the tick is silently dropped and the next scheduled tick runs normally:
+        Use <Mono>misfire: "skip"</Mono> for jobs where running a stale tick would cause harm — for
+        example, a job that sends a time-sensitive digest email. If the runtime was down when the
+        cron fired, the tick is silently dropped and the next scheduled tick runs normally:
       </P>
       <MultiCodeBlock
         code={{
@@ -148,9 +185,9 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       />
 
       <Callout type="warning">
-        The <Mono>delay</Mono>/<Mono>DelayMs</Mono>/<Mono>delay_ms</Mono> field is backed by a
-        proto <Mono>int32</Mono> — the maximum value is <Mono>2,147,483,647 ms</Mono> (~24.8 days).
-        Use a cron job or a durable workflow sleep step for longer delays.
+        The <Mono>delay</Mono>/<Mono>DelayMs</Mono>/<Mono>delay_ms</Mono> field is backed by a proto{" "}
+        <Mono>int32</Mono> — the maximum value is <Mono>2,147,483,647 ms</Mono> (~24.8 days). Use a
+        cron job or a durable workflow sleep step for longer delays.
       </Callout>
 
       <H3 id="job-event">Trigger via event</H3>
@@ -182,8 +219,7 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       <H2 id="job-workflow">Trigger a workflow</H2>
       <P>
         Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. You can also
-        trigger workflows on demand using{" "}
-        <Mono>sb.runWorkflow(name, input)</Mono> /{" "}
+        trigger workflows on demand using <Mono>sb.runWorkflow(name, input)</Mono> /{" "}
         <Mono>svc.RunWorkflow(ctx, name, input)</Mono> /{" "}
         <Mono>await sb.run_workflow(name, input)</Mono>. See the Workflows page for full details.
       </P>
@@ -208,8 +244,8 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       {/* ── Retry policy ─────────────────────────────────────────── */}
       <H2 id="job-retry">Retry policy</H2>
       <P>
-        Jobs default to a single attempt with no retry. Pass <Mono>retryPolicyJson</Mono> to
-        enable retries. The format is identical to the event retry policy:
+        Jobs default to a single attempt with no retry. Pass <Mono>retryPolicyJson</Mono> to enable
+        retries. The format is identical to the event retry policy:
       </P>
       <DocCodeBlock
         lang="json"
@@ -255,23 +291,24 @@ await sb.job("billing/collect", ScheduleOpts(
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>
           <strong className="text-foreground">Manual trigger</strong> —{" "}
-          <Mono>POST /api/jobs/{"<jobId>"}/run-now</Mono> fires the job immediately and returns
-          a new <Mono>runId</Mono>.
+          <Mono>POST /api/jobs/{"<jobId>"}/run-now</Mono> fires the job immediately and returns a
+          new <Mono>runId</Mono>.
         </li>
         <li>
-          <strong className="text-foreground">Cancel</strong> — Delete the job from the Jobs dashboard.
-          No SDK cancel method is available yet.
+          <strong className="text-foreground">Cancel</strong> — Delete the job from the Jobs
+          dashboard. No SDK cancel method is available yet.
         </li>
         <li>
           <strong className="text-foreground">Execution history</strong> — Each execution creates a
-          trace visible in the Runs dashboard, linked to the job via the <Mono>job:</Mono> span prefix.
+          trace visible in the Runs dashboard, linked to the job via the <Mono>job:</Mono> span
+          prefix.
         </li>
       </ul>
 
       <Callout type="info">
         Jobs are durable — stored in PostgreSQL. Scheduled jobs resume after a runtime restart
-        according to the <Mono>misfire</Mono> policy. The scheduler uses PostgreSQL leases so
-        at most one instance fires per tick even in multi-node setups.
+        according to the <Mono>misfire</Mono> policy. The scheduler uses PostgreSQL leases so at
+        most one instance fires per tick even in multi-node setups.
       </Callout>
     </div>
   );

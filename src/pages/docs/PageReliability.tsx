@@ -22,9 +22,17 @@ export function PageReliability() {
           <tbody className="divide-y divide-white/[0.04] text-xs">
             {[
               ["rpc()", "Best-effort with retries", "Uses cached registry — direct calls continue"],
-              ["event()", "At-least-once, durable (PostgreSQL-backed)", "SDK queues in memory, flushes after reconnect"],
+              [
+                "event()",
+                "At-least-once, durable (PostgreSQL-backed)",
+                "SDK queues in memory, flushes after reconnect",
+              ],
               ["job()", "At-least-once, durable", "SDK queues in memory, flushes after reconnect"],
-              ["workflow()", "Resumable, step-level durability", "Resumes from last completed step after restart"],
+              [
+                "workflow()",
+                "Resumable, step-level durability",
+                "Resumes from last completed step after restart",
+              ],
             ].map(([prim, guarantee, outage]) => (
               <tr key={prim as string} className="text-muted-foreground">
                 <td className="px-4 py-2.5 font-mono text-xs text-primary">{prim}</td>
@@ -37,9 +45,9 @@ export function PageReliability() {
       </div>
 
       <Callout type="warning">
-        Event delivery is <strong>at-least-once</strong>, not exactly-once. Design consumer
-        handlers to be idempotent, or use <Mono>idempotencyKey</Mono> on the publisher side to
-        prevent duplicate events from being created.
+        Event delivery is <strong>at-least-once</strong>, not exactly-once. Design consumer handlers
+        to be idempotent, or use <Mono>idempotencyKey</Mono> on the publisher side to prevent
+        duplicate events from being created.
       </Callout>
 
       <H2 id="outage">Event delivery status</H2>
@@ -62,19 +70,18 @@ export function PageReliability() {
       <H2 id="rpc-reliability">RPC reliability</H2>
       <P>
         RPC calls use exponential backoff retries (configurable via <Mono>retries</Mono> and{" "}
-        <Mono>retryDelay</Mono>). Each attempt has a hard timeout, so silent downstream services
-        are cut off and retried instead of staying pending forever. The SDK caches service endpoint
-        lists from the last successful
-        discovery refresh — so direct RPC calls between services continue working even if the
-        control plane is temporarily unreachable.
+        <Mono>retryDelay</Mono>). Each attempt has a hard timeout, so silent downstream services are
+        cut off and retried instead of staying pending forever. The SDK caches service endpoint
+        lists from the last successful discovery refresh — so direct RPC calls between services
+        continue working even if the control plane is temporarily unreachable.
       </P>
 
       <H2 id="workflow-reliability">Workflow reliability</H2>
       <P>
         Each workflow step's completion state is persisted in PostgreSQL. If the runtime restarts
-        mid-workflow, it resumes from the last completed step. <Mono>event_wait</Mono> steps
-        suspend the workflow coroutine and resume when the matching event arrives — surviving
-        arbitrary downtime.
+        mid-workflow, it resumes from the last completed step. <Mono>event_wait</Mono> steps suspend
+        the workflow coroutine and resume when the matching event arrives — surviving arbitrary
+        downtime.
       </P>
     </div>
   );

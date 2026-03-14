@@ -142,11 +142,7 @@ export function ParamTable({
 
 // ─── EnvTable ─────────────────────────────────────────────────────────────────
 
-export function EnvTable({
-  rows,
-}: {
-  rows: { name: string; default?: string; desc: string }[];
-}) {
+export function EnvTable({ rows }: { rows: { name: string; default?: string; desc: string }[] }) {
   return (
     <div className="my-5 overflow-x-auto rounded-lg border border-border shadow-sm">
       <table className="w-full text-sm">
@@ -188,11 +184,7 @@ const LANG_LABELS: Record<string, string> = {
 export function DocCodeBlock({ code, lang = "bash" }: { code: string; lang?: string }) {
   const label = LANG_LABELS[lang] ?? lang.toUpperCase();
   return (
-    <CodePanel 
-      className="my-4" 
-      title={label}
-      headerActions={<CopyButton text={code} />}
-    >
+    <CodePanel className="my-4" title={label} headerActions={<CopyButton text={code} />}>
       <pre className="p-4 overflow-x-auto font-mono text-xs text-foreground/80 bg-background/40">
         <code>{code.trim()}</code>
       </pre>

@@ -101,7 +101,11 @@ await svc.serve()`,
   {
     id: "delayed",
     label: "Delayed",
-    filename: { ts: "onboarding-service.ts", go: "onboarding_service.go", py: "onboarding_service.py" },
+    filename: {
+      ts: "onboarding-service.ts",
+      go: "onboarding_service.go",
+      py: "onboarding_service.py",
+    },
     code: {
       ts: `import { servicebridge } from "service-bridge";
 
@@ -224,15 +228,55 @@ interface JobRun {
 }
 
 const INITIAL_RUNS: JobRun[] = [
-  { id: "r1", name: "reports.generate", schedule: "0 * * * *", via: "rpc", status: "success", nextRun: "in 47m" },
-  { id: "r2", name: "sync.billing", schedule: "*/15 * * * *", via: "rpc", status: "running", nextRun: "running" },
-  { id: "r3", name: "trial.reminder", schedule: "delay 24h", via: "event", status: "success", nextRun: "one-shot" },
-  { id: "r4", name: "billing.daily", schedule: "0 2 * * *", via: "workflow", status: "pending", nextRun: "in 3h 14m" },
+  {
+    id: "r1",
+    name: "reports.generate",
+    schedule: "0 * * * *",
+    via: "rpc",
+    status: "success",
+    nextRun: "in 47m",
+  },
+  {
+    id: "r2",
+    name: "sync.billing",
+    schedule: "*/15 * * * *",
+    via: "rpc",
+    status: "running",
+    nextRun: "running",
+  },
+  {
+    id: "r3",
+    name: "trial.reminder",
+    schedule: "delay 24h",
+    via: "event",
+    status: "success",
+    nextRun: "one-shot",
+  },
+  {
+    id: "r4",
+    name: "billing.daily",
+    schedule: "0 2 * * *",
+    via: "workflow",
+    status: "pending",
+    nextRun: "in 3h 14m",
+  },
 ];
 
 const EXTRA_RUNS: Omit<JobRun, "id">[] = [
-  { name: "metrics.export", schedule: "*/5 * * * *", via: "rpc", status: "success", nextRun: "in 4m" },
-  { name: "cleanup.sessions", schedule: "0 0 * * *", via: "event", status: "success", nextRun: "in 20h" },
+  {
+    name: "metrics.export",
+    schedule: "*/5 * * * *",
+    via: "rpc",
+    status: "success",
+    nextRun: "in 4m",
+  },
+  {
+    name: "cleanup.sessions",
+    schedule: "0 0 * * *",
+    via: "event",
+    status: "success",
+    nextRun: "in 20h",
+  },
 ];
 
 let runCounter = INITIAL_RUNS.length + 1;
@@ -247,7 +291,10 @@ export function JobsSection() {
     if (!inView) return;
     let idx = 0;
     const t = setInterval(() => {
-      if (idx >= EXTRA_RUNS.length) { clearInterval(t); return; }
+      if (idx >= EXTRA_RUNS.length) {
+        clearInterval(t);
+        return;
+      }
       const extra = EXTRA_RUNS[idx++];
       setRuns((prev) => [{ ...extra, id: `r${runCounter++}` }, ...prev.slice(0, 5)]);
     }, 3200);
@@ -265,7 +312,8 @@ export function JobsSection() {
     const Icon = VIA_ICON[via];
     return (
       <Badge tone={cn(VIA_TONE[via], "inline-flex items-center gap-1 shrink-0")}>
-        <Icon className="w-2.5 h-2.5" />{via}
+        <Icon className="w-2.5 h-2.5" />
+        {via}
       </Badge>
     );
   };
@@ -283,10 +331,13 @@ export function JobsSection() {
             <h2 className="mt-2 type-subsection-title">Schedule once. Dispatch anywhere.</h2>
             <p className="mt-3 type-body-sm">
               Jobs are stored in PostgreSQL and scheduled with a 1s tick. On misfire,{" "}
-              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">fire_now</code>{" "}
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                fire_now
+              </code>{" "}
               catches up all missed ticks while{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">skip</code>{" "}
-              advances to the next slot. Lease-based locking ensures at most one active execution per job.
+              advances to the next slot. Lease-based locking ensures at most one active execution
+              per job.
             </p>
           </Card>
           <div className="rounded-2xl border border-surface-border overflow-hidden">
@@ -313,14 +364,24 @@ export function JobsSection() {
             </div>
 
             <div ref={tableRef} className="p-4 space-y-2">
-              <div className="grid gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-muted-foreground/60"
-                style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}>
-                <span>job</span><span>via</span><span>status</span><span>next</span>
+              <div
+                className="grid gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-muted-foreground/60"
+                style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
+              >
+                <span>job</span>
+                <span>via</span>
+                <span>status</span>
+                <span>next</span>
               </div>
 
               <AnimatePresence initial={false}>
                 {runs.map((run) => {
-                  const StatusIcon = run.status === "running" ? RefreshCcw : run.status === "success" ? CheckCircle2 : Clock;
+                  const StatusIcon =
+                    run.status === "running"
+                      ? RefreshCcw
+                      : run.status === "success"
+                        ? CheckCircle2
+                        : Clock;
                   return (
                     <motion.div
                       key={run.id}
@@ -331,15 +392,28 @@ export function JobsSection() {
                       style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold font-display text-zinc-200">{run.name}</p>
-                        <p className="text-3xs font-mono text-muted-foreground/60 mt-0.5">{run.schedule}</p>
+                        <p className="truncate text-sm font-semibold font-display text-zinc-200">
+                          {run.name}
+                        </p>
+                        <p className="text-3xs font-mono text-muted-foreground/60 mt-0.5">
+                          {run.schedule}
+                        </p>
                       </div>
                       <ViaIcon via={run.via} />
-                      <Badge tone={cn(STATUS_TONE[run.status], "inline-flex items-center gap-1 shrink-0")}>
-                        <StatusIcon className={cn("w-2.5 h-2.5", run.status === "running" && "animate-spin")} />
+                      <Badge
+                        tone={cn(
+                          STATUS_TONE[run.status],
+                          "inline-flex items-center gap-1 shrink-0"
+                        )}
+                      >
+                        <StatusIcon
+                          className={cn("w-2.5 h-2.5", run.status === "running" && "animate-spin")}
+                        />
                         {run.status}
                       </Badge>
-                      <span className="text-3xs font-mono text-muted-foreground/70 text-right">{run.nextRun}</span>
+                      <span className="text-3xs font-mono text-muted-foreground/70 text-right">
+                        {run.nextRun}
+                      </span>
                     </motion.div>
                   );
                 })}
@@ -350,10 +424,34 @@ export function JobsSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={AlarmClock} title="Cron + delayed" description="Full cron syntax with optional seconds and timezone. One-shot delayed tasks with millisecond precision." iconClassName="text-amber-400" />
-          <FeatureCard variant="compact" icon={CalendarClock} title="Misfire handling" description="fire_now catches up all missed ticks after downtime. skip discards backlog and advances to the next scheduled slot." iconClassName="text-blue-400" />
-          <FeatureCard variant="compact" icon={GitBranch} title="Dispatch anywhere" description="Jobs invoke an RPC function, publish a durable event, or kick off a full workflow run — the same primitives, scheduled." iconClassName="text-fuchsia-400" />
-          <FeatureCard variant="compact" icon={Timer} title="Lease-based recovery" description="At most one active execution per job. If a node dies, lease expiry lets another node reclaim and continue automatically." iconClassName="text-cyan-400" />
+          <FeatureCard
+            variant="compact"
+            icon={AlarmClock}
+            title="Cron + delayed"
+            description="Full cron syntax with optional seconds and timezone. One-shot delayed tasks with millisecond precision."
+            iconClassName="text-amber-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={CalendarClock}
+            title="Misfire handling"
+            description="fire_now catches up all missed ticks after downtime. skip discards backlog and advances to the next scheduled slot."
+            iconClassName="text-blue-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={GitBranch}
+            title="Dispatch anywhere"
+            description="Jobs invoke an RPC function, publish a durable event, or kick off a full workflow run — the same primitives, scheduled."
+            iconClassName="text-fuchsia-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Timer}
+            title="Lease-based recovery"
+            description="At most one active execution per job. If a node dies, lease expiry lets another node reclaim and continue automatically."
+            iconClassName="text-cyan-400"
+          />
         </>
       }
     />

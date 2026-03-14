@@ -11,10 +11,10 @@ export function PageTracing() {
       />
 
       <Callout type="tip">
-        <strong>Zero-config tracing.</strong> The SDK emits spans for every operation over the existing
-        gRPC connection. Traces are stored in PostgreSQL and surfaced in the built-in dashboard with a
-        Gantt-style timeline, per-span payload view, retry visualization, and inline correlated logs.
-        Nothing to install, nothing to configure.
+        <strong>Zero-config tracing.</strong> The SDK emits spans for every operation over the
+        existing gRPC connection. Traces are stored in PostgreSQL and surfaced in the built-in
+        dashboard with a Gantt-style timeline, per-span payload view, retry visualization, and
+        inline correlated logs. Nothing to install, nothing to configure.
       </Callout>
 
       {/* ── Automatic traces ─────────────────────────────────────── */}
@@ -38,14 +38,30 @@ export function PageTracing() {
           </thead>
           <tbody className="text-muted-foreground">
             {[
-              ["rpc:<service>/<fn>", "Caller on rpc()", "One span per call; retry attempts get child spans"],
-              ["attempt:<service>/<fn>", "Caller on each retry", "Groups in the trace waterfall; shows timing per attempt"],
+              [
+                "rpc:<service>/<fn>",
+                "Caller on rpc()",
+                "One span per call; retry attempts get child spans",
+              ],
+              [
+                "attempt:<service>/<fn>",
+                "Caller on each retry",
+                "Groups in the trace waterfall; shows timing per attempt",
+              ],
               ["event:<topic>", "Publisher on event()", "Linked to all consumer delivery spans"],
               ["job:<ref>", "Scheduler on each execution", "Full execution trace per job tick"],
               ["workflow:<name>", "workflow() call", "Root span; each step gets a child span"],
               ["sleep:<ms>", "sleep step", "Shown as a durable wait span in the workflow DAG"],
-              ["event_wait:<pattern>", "event_wait step", "Shows suspension duration; linked to waking event"],
-              ["http:<METHOD>:<path>", "HTTP middleware", "One span per request when middleware is installed"],
+              [
+                "event_wait:<pattern>",
+                "event_wait step",
+                "Shows suspension duration; linked to waking event",
+              ],
+              [
+                "http:<METHOD>:<path>",
+                "HTTP middleware",
+                "One span per request when middleware is installed",
+              ],
             ].map(([prefix, by, note]) => (
               <tr key={prefix} className="border-b border-border/50">
                 <td className="py-2 pr-6 font-mono text-foreground text-xs">{prefix}</td>
@@ -95,20 +111,22 @@ async def charge(payload: dict) -> dict:
       />
 
       <Callout type="info">
-        The SDK masks sensitive log fields automatically —{" "}
-        <Mono>password</Mono>, <Mono>secret</Mono>, <Mono>token</Mono>, <Mono>authorization</Mono>{" "}
-        are replaced with <Mono>"[REDACTED]"</Mono> before transmission.
+        The SDK masks sensitive log fields automatically — <Mono>password</Mono>,{" "}
+        <Mono>secret</Mono>, <Mono>token</Mono>, <Mono>authorization</Mono> are replaced with{" "}
+        <Mono>"[REDACTED]"</Mono> before transmission.
       </Callout>
 
       {/* ── x-trace-id header ────────────────────────────────────── */}
       <H2 id="trace-id-header">x-trace-id response header</H2>
       <P>
-        When HTTP middleware is installed, every response includes an{" "}
-        <Mono>x-trace-id</Mono> header containing the current trace ID. Use it to:
+        When HTTP middleware is installed, every response includes an <Mono>x-trace-id</Mono> header
+        containing the current trace ID. Use it to:
       </P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>Look up the exact trace in the dashboard Runs view</li>
-        <li>Pass to <Mono>watchRun()</Mono> to subscribe to real-time stream chunks</li>
+        <li>
+          Pass to <Mono>watchRun()</Mono> to subscribe to real-time stream chunks
+        </li>
         <li>Include in error responses for support/debugging</li>
       </ul>
       <MultiCodeBlock
@@ -138,7 +156,9 @@ trace_id = g.trace_id`,
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "manual-spans" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "manual-spans" }))
+          }
         >
           Manual Spans
         </button>{" "}
@@ -182,9 +202,8 @@ datasources:
       {/* ── OTLP ingest ──────────────────────────────────────────── */}
       <H2 id="otlp">OTLP trace ingest</H2>
       <P>
-        Drop external traces into ServiceBridge via the OTLP JSON endpoint. External spans appear
-        in the same Runs view alongside native spans — useful for mixing traces from non-SDK
-        services:
+        Drop external traces into ServiceBridge via the OTLP JSON endpoint. External spans appear in
+        the same Runs view alongside native spans — useful for mixing traces from non-SDK services:
       </P>
       <DocCodeBlock
         lang="bash"
@@ -196,12 +215,14 @@ Content-Type: application/json
       />
 
       <Callout type="info">
-        Trace retention is controlled by <Mono>SERVICEBRIDGE_RETENTION_DAYS</Mono> (default: 3 days).
-        Log retention uses a separate <Mono>SERVICEBRIDGE_LOGS_TTL_DAYS</Mono> setting. See{" "}
+        Trace retention is controlled by <Mono>SERVICEBRIDGE_RETENTION_DAYS</Mono> (default: 3
+        days). Log retention uses a separate <Mono>SERVICEBRIDGE_LOGS_TTL_DAYS</Mono> setting. See{" "}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "server-config" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "server-config" }))
+          }
         >
           Server Variables
         </button>{" "}

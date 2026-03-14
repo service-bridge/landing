@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { cn } from "../lib/utils";
 import { Badge } from "./Badge";
 import { Card } from "./Card";
@@ -35,13 +35,9 @@ export function FeatureCard({
   if (variant === "stat") {
     return (
       <Card className={cn("px-5 py-4 text-center", className)}>
-        {stat && (
-          <p className="font-display text-2xl font-bold tabular-nums">{stat}</p>
-        )}
+        {stat && <p className="font-display text-2xl font-bold tabular-nums">{stat}</p>}
         <p className="type-body-sm mt-1 leading-snug">{description}</p>
-        {statLabel && (
-          <p className="text-2xs mt-1.5 font-mono opacity-50">{statLabel}</p>
-        )}
+        {statLabel && <p className="text-2xs mt-1.5 font-mono opacity-50">{statLabel}</p>}
       </Card>
     );
   }
@@ -50,12 +46,7 @@ export function FeatureCard({
     return (
       <Card className={cn("flex items-start gap-3 p-4", className)}>
         {Icon && (
-          <Icon
-            className={cn(
-              "mt-0.5 h-5 w-5 shrink-0",
-              iconClassName ?? "text-emerald-400"
-            )}
-          />
+          <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", iconClassName ?? "text-emerald-400")} />
         )}
         <div className="min-w-0">
           <p className="text-sm font-semibold">{title}</p>
@@ -76,7 +67,7 @@ export function FeatureCard({
 
   // Shared styles for default and large variants
   const isLarge = variant === "large";
-  
+
   return (
     <Card
       className={cn(
@@ -93,7 +84,7 @@ export function FeatureCard({
           iconBg || "bg-white/[0.03]"
         )}
       />
-      
+
       <div className="relative flex h-full flex-col">
         {Icon && (
           <div
@@ -105,22 +96,17 @@ export function FeatureCard({
             <Icon className={cn("h-5 w-5", iconClassName)} />
           </div>
         )}
-        
+
         <div className="mb-2 flex flex-wrap items-start gap-2">
           <h3 className="type-subsection-title leading-snug">{title}</h3>
           {badge && <Badge tone={badgeTone}>{badge}</Badge>}
         </div>
-        
+
         <p className="type-body-sm flex-1 leading-relaxed">{description}</p>
-        
+
         {stat && (
           <div className="mt-5 flex items-baseline gap-1.5 border-t border-surface-border pt-4">
-            <span
-              className={cn(
-                "font-display text-3xl font-bold tabular-nums",
-                iconClassName
-              )}
-            >
+            <span className={cn("font-display text-3xl font-bold tabular-nums", iconClassName)}>
               {stat}
             </span>
             <span className="type-body-sm">{statLabel}</span>

@@ -172,11 +172,51 @@ const SDK_TO_LANG: Record<string, LangId> = {
 // ─── Live registry ────────────────────────────────────────────────────────────
 
 const REGISTRY_SERVICES = [
-  { name: "orders",    lang: "TypeScript", langColor: "text-blue-400",   langBg: "bg-blue-500/10",   base: 2, rpc: 3, evt: 2 },
-  { name: "payments",  lang: "Go",         langColor: "text-cyan-400",   langBg: "bg-cyan-500/10",   base: 1, rpc: 2, evt: 1 },
-  { name: "notify",    lang: "Python",     langColor: "text-yellow-400", langBg: "bg-yellow-500/10", base: 4, rpc: 1, evt: 3 },
-  { name: "inventory", lang: "Go",         langColor: "text-cyan-400",   langBg: "bg-cyan-500/10",   base: 2, rpc: 2, evt: 0 },
-  { name: "analytics", lang: "Python",     langColor: "text-yellow-400", langBg: "bg-yellow-500/10", base: 6, rpc: 0, evt: 2 },
+  {
+    name: "orders",
+    lang: "TypeScript",
+    langColor: "text-blue-400",
+    langBg: "bg-blue-500/10",
+    base: 2,
+    rpc: 3,
+    evt: 2,
+  },
+  {
+    name: "payments",
+    lang: "Go",
+    langColor: "text-cyan-400",
+    langBg: "bg-cyan-500/10",
+    base: 1,
+    rpc: 2,
+    evt: 1,
+  },
+  {
+    name: "notify",
+    lang: "Python",
+    langColor: "text-yellow-400",
+    langBg: "bg-yellow-500/10",
+    base: 4,
+    rpc: 1,
+    evt: 3,
+  },
+  {
+    name: "inventory",
+    lang: "Go",
+    langColor: "text-cyan-400",
+    langBg: "bg-cyan-500/10",
+    base: 2,
+    rpc: 2,
+    evt: 0,
+  },
+  {
+    name: "analytics",
+    lang: "Python",
+    langColor: "text-yellow-400",
+    langBg: "bg-yellow-500/10",
+    base: 6,
+    rpc: 0,
+    evt: 2,
+  },
 ];
 
 type ActivityType = "rpc" | "event";
@@ -189,27 +229,27 @@ interface ActivityRow {
 }
 
 const ACTIVITY_POOL: Omit<ActivityRow, "id">[] = [
-  { type: "rpc",   name: "orders.create",     ms: 12  },
-  { type: "event", name: "order.created",      ms: 3   },
-  { type: "rpc",   name: "inventory.reserve",  ms: 8   },
-  { type: "rpc",   name: "payments.charge",    ms: 94  },
-  { type: "event", name: "payment.completed",  ms: 4   },
-  { type: "rpc",   name: "notify.send",        ms: 6   },
-  { type: "event", name: "user.registered",    ms: 2   },
-  { type: "rpc",   name: "analytics.track",    ms: 15  },
-  { type: "rpc",   name: "billing.reconcile",  ms: 148 },
-  { type: "event", name: "billing.reconciled", ms: 5   },
+  { type: "rpc", name: "orders.create", ms: 12 },
+  { type: "event", name: "order.created", ms: 3 },
+  { type: "rpc", name: "inventory.reserve", ms: 8 },
+  { type: "rpc", name: "payments.charge", ms: 94 },
+  { type: "event", name: "payment.completed", ms: 4 },
+  { type: "rpc", name: "notify.send", ms: 6 },
+  { type: "event", name: "user.registered", ms: 2 },
+  { type: "rpc", name: "analytics.track", ms: 15 },
+  { type: "rpc", name: "billing.reconcile", ms: 148 },
+  { type: "event", name: "billing.reconciled", ms: 5 },
 ];
 
 const ACTIVITY_TONE: Record<ActivityType, string> = {
-  rpc:   "border-blue-500/20 bg-blue-500/[0.08] text-blue-300",
+  rpc: "border-blue-500/20 bg-blue-500/[0.08] text-blue-300",
   event: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
 };
 
 let actId = 0;
 
 function RegistryPanel() {
-  const [pings, setPings]       = useState(REGISTRY_SERVICES.map((s) => s.base));
+  const [pings, setPings] = useState(REGISTRY_SERVICES.map((s) => s.base));
   const [activity, setActivity] = useState<ActivityRow[]>(() =>
     ACTIVITY_POOL.slice(0, 3).map((r) => ({ ...r, id: actId++ }))
   );
@@ -226,7 +266,10 @@ function RegistryPanel() {
       setActivity((prev) => [{ ...next, id: actId++ }, ...prev.slice(0, 2)]);
     }, 2200);
 
-    return () => { clearInterval(pingId); clearInterval(actId2); };
+    return () => {
+      clearInterval(pingId);
+      clearInterval(actId2);
+    };
   }, []);
 
   return (
@@ -234,7 +277,9 @@ function RegistryPanel() {
       {/* Chrome */}
       <div className="flex items-center gap-2 border-b border-surface-border bg-code-chrome px-4 py-2.5">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="type-overline-mono text-muted-foreground/70 flex-1">control plane — service registry</span>
+        <span className="type-overline-mono text-muted-foreground/70 flex-1">
+          control plane — service registry
+        </span>
         <span className="type-overline-mono text-emerald-400">online</span>
       </div>
 
@@ -258,38 +303,44 @@ function RegistryPanel() {
                 className="grid gap-2 items-center px-4 py-2.5"
                 style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
               >
-            {/* Name + cert */}
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              <span className="text-xs font-mono text-zinc-200 truncate">{svc.name}</span>
-              <ShieldCheck className="w-3 h-3 text-teal-500/60 shrink-0" />
-            </div>
+                {/* Name + cert */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="text-xs font-mono text-zinc-200 truncate">{svc.name}</span>
+                  <ShieldCheck className="w-3 h-3 text-teal-500/60 shrink-0" />
+                </div>
 
-            {/* Language */}
-            <span className={cn("text-[11px] font-mono px-1.5 py-0.5 rounded border border-surface-border shrink-0", svc.langBg, svc.langColor)}>
-              {svc.lang}
-            </span>
+                {/* Language */}
+                <span
+                  className={cn(
+                    "text-[11px] font-mono px-1.5 py-0.5 rounded border border-surface-border shrink-0",
+                    svc.langBg,
+                    svc.langColor
+                  )}
+                >
+                  {svc.lang}
+                </span>
 
-            {/* Handlers */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              {svc.rpc > 0 && (
-                <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">
-                  {svc.rpc} rpc
-                </Badge>
-              )}
-              {svc.evt > 0 && (
-                <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300">
-                  {svc.evt} evt
-                </Badge>
-              )}
-            </div>
+                {/* Handlers */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {svc.rpc > 0 && (
+                    <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">
+                      {svc.rpc} rpc
+                    </Badge>
+                  )}
+                  {svc.evt > 0 && (
+                    <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300">
+                      {svc.evt} evt
+                    </Badge>
+                  )}
+                </div>
 
-            {/* RTT */}
-            <span className="text-[11px] font-mono text-muted-foreground tabular-nums text-right shrink-0">
-              {pings[i]}ms
-            </span>
-          </div>
-        ))}
+                {/* RTT */}
+                <span className="text-[11px] font-mono text-muted-foreground tabular-nums text-right shrink-0">
+                  {pings[i]}ms
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -312,8 +363,12 @@ function RegistryPanel() {
                 className="flex items-center gap-2"
               >
                 <Badge tone={ACTIVITY_TONE[row.type]}>{row.type}</Badge>
-                <span className="text-xs font-mono text-muted-foreground flex-1 truncate">{row.name}</span>
-                <span className="text-[11px] font-mono text-muted-foreground/60 tabular-nums">{row.ms}ms</span>
+                <span className="text-xs font-mono text-muted-foreground flex-1 truncate">
+                  {row.name}
+                </span>
+                <span className="text-[11px] font-mono text-muted-foreground/60 tabular-nums">
+                  {row.ms}ms
+                </span>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -343,12 +398,7 @@ export function CodeSection() {
     <Section id="code" className="border-y">
       <SectionHeader
         eyebrow="Developer Experience"
-        title={
-          <>
-            One SDK across languages.{" "}
-            Zero manual instrumentation.
-          </>
-        }
+        title={<>One SDK across languages. Zero manual instrumentation.</>}
         subtitle="Examples match docs/readme: sbv2 service keys, embedded CA trust by default, and auto-provisioned worker mTLS on serve()."
       />
 

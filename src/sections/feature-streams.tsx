@@ -155,7 +155,9 @@ function LiveTerminal() {
     <div ref={ref}>
       <CodePanel>
         <div className="flex items-center gap-2 px-4 py-2.5 border-b border-surface-border bg-code-chrome">
-          <span className="text-xs text-muted-foreground/70 font-mono">run:stream:chunk — output</span>
+          <span className="text-xs text-muted-foreground/70 font-mono">
+            run:stream:chunk — output
+          </span>
           {isLive && (
             <span className="ml-auto flex items-center gap-1.5 text-3xs text-amber-400 font-mono">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
@@ -182,7 +184,9 @@ function LiveTerminal() {
               <span className="text-muted-foreground/60 select-none w-6 text-right shrink-0">
                 {String(line.seq).padStart(4, "0")}
               </span>
-              <span className={idx === arr.length - 1 ? "text-emerald-400" : "text-muted-foreground"}>
+              <span
+                className={idx === arr.length - 1 ? "text-emerald-400" : "text-muted-foreground"}
+              >
                 {line.text}
               </span>
             </motion.div>
@@ -206,7 +210,9 @@ export function StreamsSection() {
 
   const allStreamCodes = [WRITER_CODE, READER_CODE];
   const maxStreamLines = Math.max(
-    ...allStreamCodes.flatMap((c) => Object.values(c).map((v) => (v ?? "").trim().split("\n").length))
+    ...allStreamCodes.flatMap((c) =>
+      Object.values(c).map((v) => (v ?? "").trim().split("\n").length)
+    )
   );
   const minStreamCodeHeight = maxStreamLines * 20 + 40;
 
@@ -265,9 +271,27 @@ export function StreamsSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={Terminal} title="Any handler" description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere." iconClassName="text-muted-foreground" />
-          <FeatureCard variant="compact" icon={Radio} title="Named keys" description="Use named stream keys (output, log, progress) to multiplex multiple data streams from a single run." iconClassName="text-emerald-400" />
-          <FeatureCard variant="compact" icon={Zap} title="Replay-safe" description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect." iconClassName="text-emerald-400" />
+          <FeatureCard
+            variant="compact"
+            icon={Terminal}
+            title="Any handler"
+            description="Write stream chunks from event handlers, RPC functions, or workflow steps — the same API everywhere."
+            iconClassName="text-muted-foreground"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Radio}
+            title="Named keys"
+            description="Use named stream keys (output, log, progress) to multiplex multiple data streams from a single run."
+            iconClassName="text-emerald-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Zap}
+            title="Replay-safe"
+            description="Chunks are stored in PostgreSQL. Late subscribers catch up from the beginning — no data lost on reconnect."
+            iconClassName="text-emerald-400"
+          />
         </>
       }
     />

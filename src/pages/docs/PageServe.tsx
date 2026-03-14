@@ -13,24 +13,25 @@ export function PageServe() {
       {/* ── Lifecycle ────────────────────────────────────────────── */}
       <H2 id="lifecycle">Worker lifecycle</H2>
       <P>
-        Every worker follows the same four-step lifecycle. Register all your handlers before
-        calling <Mono>serve()</Mono> — handlers registered after <Mono>serve()</Mono> is running
-        are accepted but may miss the initial registration window.
+        Every worker follows the same four-step lifecycle. Register all your handlers before calling{" "}
+        <Mono>serve()</Mono> — handlers registered after <Mono>serve()</Mono> is running are
+        accepted but may miss the initial registration window.
       </P>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-muted-foreground my-4">
         <li>
-          <strong className="text-foreground">Construct the client</strong> —
-          {" "}<Mono>servicebridge(url, key)</Mono> (or language equivalent).
+          <strong className="text-foreground">Construct the client</strong> —{" "}
+          <Mono>servicebridge(url, key)</Mono> (or language equivalent).
         </li>
         <li>
-          <strong className="text-foreground">Register handlers</strong> —
-          {" "}<Mono>handleRpc()</Mono>, <Mono>handleEvent()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>.
-          Can be done in any order.
+          <strong className="text-foreground">Register handlers</strong> — <Mono>handleRpc()</Mono>,{" "}
+          <Mono>handleEvent()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>. Can be done in
+          any order.
         </li>
         <li>
-          <strong className="text-foreground">serve()</strong> — Provisions mTLS cert over gRPC, starts the worker
-          gRPC server, opens reverse worker session, and registers the worker endpoint with the control plane.
-          Go/Python block here; Node returns when startup is complete.
+          <strong className="text-foreground">serve()</strong> — Provisions mTLS cert over gRPC,
+          starts the worker gRPC server, opens reverse worker session, and registers the worker
+          endpoint with the control plane. Go/Python block here; Node returns when startup is
+          complete.
         </li>
         <li>
           <strong className="text-foreground">stop()</strong> — Stops heartbeats, flushes telemetry,
@@ -115,16 +116,41 @@ asyncio.run(sb.serve())`,
       <H2 id="serve-opts">ServeOpts</H2>
       <ParamTable
         rows={[
-          { name: "host / Host / host", type: "string", default: '"localhost"', desc: "Bind address for the worker gRPC server. Use 0.0.0.0 in Docker or Kubernetes so ServiceBridge can reach the worker." },
-          { name: "maxInFlight / MaxInFlight / max_in_flight", type: "number", default: "128", desc: "Per-worker reverse-session in-flight command window. Runtime enforces flow-control and backpressure." },
-          { name: "instanceId (Node)", type: "string", default: "auto", desc: "Stable worker replica ID (Node only)." },
-          { name: "weight (Node)", type: "number", default: "1", desc: "Load-balancing weight hint (Node only)." },
-          { name: "tls (Node)", type: "WorkerTLSOpts", desc: "Explicit cert/key/CA for worker mTLS (Node only)." },
+          {
+            name: "host / Host / host",
+            type: "string",
+            default: '"localhost"',
+            desc: "Bind address for the worker gRPC server. Use 0.0.0.0 in Docker or Kubernetes so ServiceBridge can reach the worker.",
+          },
+          {
+            name: "maxInFlight / MaxInFlight / max_in_flight",
+            type: "number",
+            default: "128",
+            desc: "Per-worker reverse-session in-flight command window. Runtime enforces flow-control and backpressure.",
+          },
+          {
+            name: "instanceId (Node)",
+            type: "string",
+            default: "auto",
+            desc: "Stable worker replica ID (Node only).",
+          },
+          {
+            name: "weight (Node)",
+            type: "number",
+            default: "1",
+            desc: "Load-balancing weight hint (Node only).",
+          },
+          {
+            name: "tls (Node)",
+            type: "WorkerTLSOpts",
+            desc: "Explicit cert/key/CA for worker mTLS (Node only).",
+          },
         ]}
       />
       <Callout type="info">
-        For portable examples across all SDKs, use only <Mono>host</Mono>.
-        Node-specific serve fields (<Mono>instanceId</Mono>, <Mono>weight</Mono>, <Mono>tls</Mono>) are optional extensions.
+        For portable examples across all SDKs, use only <Mono>host</Mono>. Node-specific serve
+        fields (<Mono>instanceId</Mono>, <Mono>weight</Mono>, <Mono>tls</Mono>) are optional
+        extensions.
       </Callout>
 
       {/* ── instanceId & weight ──────────────────────────────────── */}
@@ -156,14 +182,20 @@ await sb.serve(host="localhost", max_in_flight=256)`,
       {/* ── TLS / mTLS ───────────────────────────────────────────── */}
       <H2 id="tls-behavior">TLS / mTLS behavior</H2>
       <P>
-        By default, <Mono>serve()</Mono> auto-provisions an mTLS certificate over gRPC. The process is
-        fully automatic and the private key never leaves your process:
+        By default, <Mono>serve()</Mono> auto-provisions an mTLS certificate over gRPC. The process
+        is fully automatic and the private key never leaves your process:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
         <li>SDK generates an ECDSA P-256 key pair in memory.</li>
-        <li>Sends <strong className="text-foreground">only the public key</strong> to gRPC <Mono>ProvisionWorkerCertificate</Mono>.</li>
+        <li>
+          Sends <strong className="text-foreground">only the public key</strong> to gRPC{" "}
+          <Mono>ProvisionWorkerCertificate</Mono>.
+        </li>
         <li>Server signs and returns a client cert + CA cert (cert valid for 7 days).</li>
-        <li>Worker gRPC server starts with full mTLS and runtime control happens through reverse stream <Mono>OpenWorkerSession</Mono>.</li>
+        <li>
+          Worker gRPC server starts with full mTLS and runtime control happens through reverse
+          stream <Mono>OpenWorkerSession</Mono>.
+        </li>
       </ol>
       <MultiCodeBlock
         code={{
@@ -187,17 +219,18 @@ await sb.serve()`,
       />
 
       <Callout type="warning">
-        Set <Mono>host: "0.0.0.0"</Mono> when running inside Docker or Kubernetes — the ServiceBridge
-        server must be able to reach your worker container over the network. <Mono>localhost</Mono>{" "}
-        only accepts connections from the same host and will cause RPC delivery failures.
+        Set <Mono>host: "0.0.0.0"</Mono> when running inside Docker or Kubernetes — the
+        ServiceBridge server must be able to reach your worker container over the network.{" "}
+        <Mono>localhost</Mono> only accepts connections from the same host and will cause RPC
+        delivery failures.
       </Callout>
 
       {/* ── Graceful shutdown ────────────────────────────────────── */}
       <H2 id="graceful-shutdown">Graceful shutdown</H2>
       <P>
-        On Go/Python, <Mono>serve()</Mono> blocks until cancellation. On Node, the returned
-        Promise resolves after startup and your process continues running. In all cases, use signal
-        handlers for predictable shutdown.
+        On Go/Python, <Mono>serve()</Mono> blocks until cancellation. On Node, the returned Promise
+        resolves after startup and your process continues running. In all cases, use signal handlers
+        for predictable shutdown.
       </P>
 
       <H3 id="shutdown-node">Node.js — SIGTERM handler</H3>

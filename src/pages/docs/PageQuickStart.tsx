@@ -24,9 +24,7 @@ bun add service-bridge`,
       />
 
       <H2 id="runtime">2. Start the runtime</H2>
-      <P>
-        The SDK connects to the ServiceBridge runtime. If you haven't installed it yet, run:
-      </P>
+      <P>The SDK connects to the ServiceBridge runtime. If you haven't installed it yet, run:</P>
       <DocCodeBlock lang="bash" code={`bash <(curl -fsSL https://servicebridge.dev/install.sh)`} />
       <P>
         The dashboard will be at <Mono>http://localhost:14444</Mono>. Create a service key there
@@ -34,7 +32,9 @@ bun add service-bridge`,
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "service-keys" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "service-keys" }))
+          }
         >
           Service Keys & RBAC
         </button>{" "}
@@ -172,8 +172,8 @@ asyncio.run(main())`,
       />
 
       <Callout type="tip">
-        Every call above is traced automatically. Open the dashboard to see the full trace
-        timeline — RPC spans, durations, and payloads.
+        Every call above is traced automatically. Open the dashboard to see the full trace timeline
+        — RPC spans, durations, and payloads.
       </Callout>
 
       <H2 id="env-setup">Environment variables</H2>

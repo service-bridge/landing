@@ -1,5 +1,14 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import {
+  Callout,
+  DocCodeBlock,
+  H2,
+  H3,
+  Mono,
+  P,
+  PageHeader,
+  ParamTable,
+} from "../../ui/DocComponents";
 
 export function PageRpc() {
   return (
@@ -11,16 +20,16 @@ export function PageRpc() {
       />
 
       <Callout type="tip">
-        Zero proxy hops in the data plane. Built-in load balancing, retries, and distributed
-        tracing — without a service mesh.
+        Zero proxy hops in the data plane. Built-in load balancing, retries, and distributed tracing
+        — without a service mesh.
       </Callout>
 
       {/* ── rpc() ────────────────────────────────────────────────── */}
       <H2 id="rpc-call">rpc() — call a handler</H2>
       <P>
         Call any registered <Mono>handleRpc</Mono> handler on another service. The runtime resolves
-        the target address automatically from its in-memory registry — zero SQL on every call.
-        If multiple instances are running, calls are automatically round-robin balanced.
+        the target address automatically from its in-memory registry — zero SQL on every call. If
+        multiple instances are running, calls are automatically round-robin balanced.
       </P>
 
       <H3 id="rpc-signature">Signature</H3>
@@ -35,13 +44,47 @@ export function PageRpc() {
       <H3 id="rpc-opts">Options</H3>
       <ParamTable
         rows={[
-          { name: "fn", type: "string", desc: 'Target in "service/method" format, e.g. "payments/charge". Use canonical form to avoid ambiguity.' },
-          { name: "payload", type: "any", default: "undefined", desc: "JSON-serialisable request payload." },
-          { name: "timeout / timeout_ms / TimeoutMs", type: "number (ms)", default: "30000 (from Options)", desc: "Per-attempt timeout. Total wall time is bounded by roughly (retries + 1) × timeout plus backoff." },
-          { name: "retries / Retries", type: "number", default: "3 (from Options)", desc: "Retry count on transient failures. Each retry uses exponential backoff." },
-          { name: "retryDelay (Node, per-call) / retry_delay_ms (Python, per-call) / RetryDelayMs (Go, per-call)", type: "number (ms)", default: "300 (from Options)", desc: "Base backoff delay. Formula: delay × 2^(attempt-1). Available in all SDKs as a per-call override." },
-          { name: "traceId", type: "string", default: "auto", desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request." },
-          { name: "parentSpanId (Node)", type: "string", default: "auto", desc: "Override the parent span ID." },
+          {
+            name: "fn",
+            type: "string",
+            desc: 'Target in "service/method" format, e.g. "payments/charge". Use canonical form to avoid ambiguity.',
+          },
+          {
+            name: "payload",
+            type: "any",
+            default: "undefined",
+            desc: "JSON-serialisable request payload.",
+          },
+          {
+            name: "timeout / timeout_ms / TimeoutMs",
+            type: "number (ms)",
+            default: "30000 (from Options)",
+            desc: "Per-attempt timeout. Total wall time is bounded by roughly (retries + 1) × timeout plus backoff.",
+          },
+          {
+            name: "retries / Retries",
+            type: "number",
+            default: "3 (from Options)",
+            desc: "Retry count on transient failures. Each retry uses exponential backoff.",
+          },
+          {
+            name: "retryDelay (Node, per-call) / retry_delay_ms (Python, per-call) / RetryDelayMs (Go, per-call)",
+            type: "number (ms)",
+            default: "300 (from Options)",
+            desc: "Base backoff delay. Formula: delay × 2^(attempt-1). Available in all SDKs as a per-call override.",
+          },
+          {
+            name: "traceId",
+            type: "string",
+            default: "auto",
+            desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request.",
+          },
+          {
+            name: "parentSpanId (Node)",
+            type: "string",
+            default: "auto",
+            desc: "Override the parent span ID.",
+          },
         ]}
       />
 
@@ -87,8 +130,9 @@ result = await sb.rpc(
 
       <Callout type="info">
         Service discovery is zero-latency at steady state — endpoint addresses are kept in an
-        in-memory snapshot, no SQL on every call. If a target service has <strong>no alive instances</strong>,
-        the call fails immediately with a "not found" error rather than waiting for the full timeout.
+        in-memory snapshot, no SQL on every call. If a target service has{" "}
+        <strong>no alive instances</strong>, the call fails immediately with a "not found" error
+        rather than waiting for the full timeout.
       </Callout>
 
       <Callout type="warning">
@@ -100,8 +144,8 @@ result = await sb.rpc(
 
       <Callout type="info">
         If a target service accepts a call but does not respond, the SDK still terminates each
-        attempt at the configured timeout and moves to the next retry (if any). The call cannot
-        stay in pending forever.
+        attempt at the configured timeout and moves to the next retry (if any). The call cannot stay
+        in pending forever.
       </Callout>
 
       <H3 id="rpc-errors">Error handling</H3>
@@ -139,8 +183,8 @@ except ServiceBridgeError as e:
       <H2 id="handle-rpc">handleRpc() — register a handler</H2>
       <P>
         Register a function that callers can invoke by name. The SDK starts a gRPC server on{" "}
-        <Mono>serve()</Mono> — only the ServiceBridge control plane can call in, authenticated
-        via mTLS. Unauthorized callers are rejected before the handler runs.
+        <Mono>serve()</Mono> — only the ServiceBridge control plane can call in, authenticated via
+        mTLS. Unauthorized callers are rejected before the handler runs.
       </P>
 
       <H3 id="handle-signature">Signature</H3>
@@ -165,16 +209,38 @@ async def handler(payload: dict, ctx = None) -> dict: ...`,
       <ParamTable
         rows={[
           { name: "fn", type: "string", desc: "Handler name. Callers reference it as service/fn." },
-          { name: "allowedCallers / allowed_callers", type: "string[]", desc: "If non-empty, only listed service names can call this handler. Enforced via mTLS peer CN." },
-          { name: "schema", type: "RpcSchemaOpts", desc: "Enable binary Protobuf encoding for this function. See Protobuf schema section below." },
-          { name: "timeout (Node)", type: "number (ms)", desc: "Handler execution timeout hint (accepted by runtime, not yet enforced client-side)." },
-          { name: "retryable (Node)", type: "boolean", default: "true", desc: "Hint to callers whether the call is safe to retry." },
-          { name: "concurrency (Node)", type: "number", desc: "Worker-side concurrency limit hint." },
+          {
+            name: "allowedCallers / allowed_callers",
+            type: "string[]",
+            desc: "If non-empty, only listed service names can call this handler. Enforced via mTLS peer CN.",
+          },
+          {
+            name: "schema",
+            type: "RpcSchemaOpts",
+            desc: "Enable binary Protobuf encoding for this function. See Protobuf schema section below.",
+          },
+          {
+            name: "timeout (Node)",
+            type: "number (ms)",
+            desc: "Handler execution timeout hint (accepted by runtime, not yet enforced client-side).",
+          },
+          {
+            name: "retryable (Node)",
+            type: "boolean",
+            default: "true",
+            desc: "Hint to callers whether the call is safe to retry.",
+          },
+          {
+            name: "concurrency (Node)",
+            type: "number",
+            desc: "Worker-side concurrency limit hint.",
+          },
         ]}
       />
       <Callout type="info">
-        Cross-SDK parity: <Mono>allowedCallers</Mono>/<Mono>allowed_callers</Mono> and <Mono>schema</Mono> are available in all SDKs.
-        Node-only <Mono>timeout</Mono>/<Mono>retryable</Mono>/<Mono>concurrency</Mono> are currently hint fields.
+        Cross-SDK parity: <Mono>allowedCallers</Mono>/<Mono>allowed_callers</Mono> and{" "}
+        <Mono>schema</Mono> are available in all SDKs. Node-only <Mono>timeout</Mono>/
+        <Mono>retryable</Mono>/<Mono>concurrency</Mono> are currently hint fields.
       </Callout>
 
       <H3 id="handle-basic">Basic handler</H3>
@@ -197,8 +263,8 @@ async def greet(payload: dict) -> dict:
       <H3 id="handle-streaming">Streaming responses</H3>
       <P>
         The <Mono>ctx</Mono> argument exposes a <Mono>stream.write(data, key)</Mono> method. Push
-        real-time chunks to the caller before returning the final result. Chunks are stored
-        and replayable via <Mono>watchRun()</Mono>. See the{" "}
+        real-time chunks to the caller before returning the final result. Chunks are stored and
+        replayable via <Mono>watchRun()</Mono>. See the{" "}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
@@ -235,10 +301,10 @@ async def generate(payload: dict, ctx) -> dict:
       <H3 id="handle-acl">Access control</H3>
       <P>
         Restrict which services can call a handler using <Mono>allowedCallers</Mono>. Registry-level
-        enforcement comes from the API key's configured <Mono>allowed_callers</Mono> list. The
-        SDK's <Mono>allowedCallers</Mono> option controls worker-side gRPC authentication (mTLS CN
-        checking). Set both the SDK option AND the API key's <Mono>allowed_callers</Mono> policy
-        for defense in depth.
+        enforcement comes from the API key's configured <Mono>allowed_callers</Mono> list. The SDK's{" "}
+        <Mono>allowedCallers</Mono> option controls worker-side gRPC authentication (mTLS CN
+        checking). Set both the SDK option AND the API key's <Mono>allowed_callers</Mono> policy for
+        defense in depth.
       </P>
       <MultiCodeBlock
         code={{
@@ -257,9 +323,9 @@ async def charge(payload: dict) -> dict:
       {/* ── Protobuf schema ──────────────────────────────────────── */}
       <H2 id="protobuf-schema">Protobuf schema — binary encoding</H2>
       <P>
-        By default, RPC payloads are JSON. Pass a <Mono>schema</Mono> to switch to binary
-        Protobuf encoding for a specific function — no <Mono>.proto</Mono> files, no codegen,
-        no build step. Define the schema inline in code:
+        By default, RPC payloads are JSON. Pass a <Mono>schema</Mono> to switch to binary Protobuf
+        encoding for a specific function — no <Mono>.proto</Mono> files, no codegen, no build step.
+        Define the schema inline in code:
       </P>
 
       <Callout type="tip">
@@ -375,7 +441,9 @@ res = await sb.rpc(
       <H3 id="schema-how">How it works end-to-end</H3>
       <ol className="list-decimal pl-6 space-y-1 text-sm text-muted-foreground my-3">
         <li>Schema is registered in the runtime alongside the handler endpoint.</li>
-        <li>When a caller invokes <Mono>LookupFunction</Mono>, it receives the schema definition.</li>
+        <li>
+          When a caller invokes <Mono>LookupFunction</Mono>, it receives the schema definition.
+        </li>
         <li>Caller SDK detects schema → encodes payload as binary Protobuf automatically.</li>
         <li>Worker SDK receives binary → decodes → passes plain object to handler.</li>
         <li>Handler returns plain object → worker encodes as binary → caller decodes.</li>

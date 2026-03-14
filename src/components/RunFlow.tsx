@@ -2,9 +2,9 @@ import { AnimatePresence, motion, useInView } from "framer-motion";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
+import { Badge } from "../ui/Badge";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
-import { Badge } from "../ui/Badge";
 
 type RunType = "event" | "rpc" | "job" | "workflow";
 type RunStatus = "running" | "success" | "error" | "pending";
@@ -236,7 +236,9 @@ export function RunFlowSection() {
                   <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
                   <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
                 </div>
-                <span className="type-overline-mono text-muted-foreground">ServiceBridge — Runs</span>
+                <span className="type-overline-mono text-muted-foreground">
+                  ServiceBridge — Runs
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
@@ -274,13 +276,12 @@ export function RunFlowSection() {
                           <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
                             {run.name}
                           </span>
-                          <span className="text-3xs text-muted-foreground/60 mt-0.5">{run.service}</span>
+                          <span className="text-3xs text-muted-foreground/60 mt-0.5">
+                            {run.service}
+                          </span>
                         </div>
 
-                        <Badge
-                          tone={TYPE_COLORS[run.type]}
-                          className="w-fit"
-                        >
+                        <Badge tone={TYPE_COLORS[run.type]} className="w-fit">
                           {run.type}
                         </Badge>
 

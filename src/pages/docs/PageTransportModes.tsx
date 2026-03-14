@@ -11,9 +11,9 @@ export function PageTransportModes() {
 
       <H2 id="direct-mode">Direct Mode</H2>
       <P>
-        Callers connect directly to workers via mTLS gRPC. The runtime resolves the worker endpoint from
-        its in-memory registry and returns it to the caller SDK. Subsequent calls go peer-to-peer with zero
-        proxy hops and no runtime latency overhead.
+        Callers connect directly to workers via mTLS gRPC. The runtime resolves the worker endpoint
+        from its in-memory registry and returns it to the caller SDK. Subsequent calls go
+        peer-to-peer with zero proxy hops and no runtime latency overhead.
       </P>
       <Callout type="tip">
         Direct mode is the default. It offers the lowest possible latency and is recommended for
@@ -27,13 +27,17 @@ export function PageTransportModes() {
       </P>
 
       <H2 id="config-hierarchy">3-Level Config Hierarchy</H2>
-      <P>
-        Transport mode is resolved from the most-specific override to the global default:
-      </P>
+      <P>Transport mode is resolved from the most-specific override to the global default:</P>
       <ol className="list-decimal pl-6 space-y-1 text-sm text-muted-foreground my-3">
-        <li><Mono>function_overrides["service/fn"]</Mono> — per-function (highest priority)</li>
-        <li><Mono>service_overrides["service"]</Mono> — per-service</li>
-        <li><Mono>default_mode</Mono> — global fallback</li>
+        <li>
+          <Mono>function_overrides["service/fn"]</Mono> — per-function (highest priority)
+        </li>
+        <li>
+          <Mono>service_overrides["service"]</Mono> — per-service
+        </li>
+        <li>
+          <Mono>default_mode</Mono> — global fallback
+        </li>
       </ol>
       <DocCodeBlock
         lang="yaml"
@@ -50,8 +54,9 @@ export function PageTransportModes() {
 
       <H2 id="circuit-breakers">Circuit Breakers</H2>
       <P>
-        Each endpoint has its own circuit breaker with a Closed / Open / Half-Open FSM. When the failure
-        threshold is exceeded the breaker opens and calls fail-fast until the probe interval elapses.
+        Each endpoint has its own circuit breaker with a Closed / Open / Half-Open FSM. When the
+        failure threshold is exceeded the breaker opens and calls fail-fast until the probe interval
+        elapses.
       </P>
       <H3 id="cb-config">Configuration</H3>
       <DocCodeBlock
@@ -61,14 +66,14 @@ export function PageTransportModes() {
   probe_interval_ms: 10000  # time in Open before Half-Open probe`}
       />
       <Callout type="info">
-        Circuit breaker state is per runtime instance and is not shared across replicas. Each replica
-        makes independent open/close decisions.
+        Circuit breaker state is per runtime instance and is not shared across replicas. Each
+        replica makes independent open/close decisions.
       </Callout>
 
       <H2 id="zone-aware">Zone-Aware Load Balancing</H2>
       <P>
-        Workers in the same availability zone as the caller receive a configurable weight boost. Cross-zone
-        traffic falls back automatically when no local workers are available.
+        Workers in the same availability zone as the caller receive a configurable weight boost.
+        Cross-zone traffic falls back automatically when no local workers are available.
       </P>
       <DocCodeBlock
         lang="yaml"

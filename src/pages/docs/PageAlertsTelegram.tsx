@@ -46,9 +46,7 @@ export function PageAlertsTelegram() {
       </Callout>
 
       <H2 id="message-format">Alert message format</H2>
-      <P>
-        Telegram notifications are sent as Markdown-formatted messages. Example:
-      </P>
+      <P>Telegram notifications are sent as Markdown-formatted messages. Example:</P>
       <div className="rounded-xl border border-surface-border bg-surface p-4 my-4 text-sm text-muted-foreground font-mono leading-relaxed whitespace-pre-wrap">
         {`🚨 *DLQ spike* fired
 Condition: dlq_new

@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { Activity, Eye, Globe, Shield } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { fadeInUp } from "../components/animations";
 import { BrandMark } from "../components/BrandMark";
 import { cn } from "../lib/utils";
@@ -34,10 +34,26 @@ const RECENT_RUNS = [
 ];
 
 const HIGHLIGHTS = [
-  { icon: Activity, title: "Live stats", desc: "Active workers, in-flight runs, backlog, and error rates pushed via WebSocket in real-time." },
-  { icon: Globe, title: "Service map", desc: "Interactive topology of all registered services and their live RPC and event connections." },
-  { icon: Eye, title: "Run waterfall", desc: "Full execution trace across services — RPC spans, event fan-out, retries — in one waterfall view." },
-  { icon: Shield, title: "DLQ management", desc: "Browse failed events, inspect payloads, replay individually or in batch — without leaving the UI." },
+  {
+    icon: Activity,
+    title: "Live stats",
+    desc: "Active workers, in-flight runs, backlog, and error rates pushed via WebSocket in real-time.",
+  },
+  {
+    icon: Globe,
+    title: "Service map",
+    desc: "Interactive topology of all registered services and their live RPC and event connections.",
+  },
+  {
+    icon: Eye,
+    title: "Run waterfall",
+    desc: "Full execution trace across services — RPC spans, event fan-out, retries — in one waterfall view.",
+  },
+  {
+    icon: Shield,
+    title: "DLQ management",
+    desc: "Browse failed events, inspect payloads, replay individually or in batch — without leaving the UI.",
+  },
 ] as const;
 
 export function DashboardSection() {
@@ -108,13 +124,18 @@ export function DashboardSection() {
               <p className="type-overline-mono text-muted-foreground">Recent runs</p>
             </div>
             {RECENT_RUNS.map((r) => (
-              <div key={r.fn} className="flex items-center justify-between px-3 py-1.5 border-b border-surface-border last:border-0">
+              <div
+                key={r.fn}
+                className="flex items-center justify-between px-3 py-1.5 border-b border-surface-border last:border-0"
+              >
                 <div>
                   <p className="text-3xs font-mono text-muted-foreground">{r.fn}</p>
                   <p className="text-3xs text-muted-foreground/60">{r.svc}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {r.ms && <span className="text-3xs text-muted-foreground/70 font-mono">{r.ms}</span>}
+                  {r.ms && (
+                    <span className="text-3xs text-muted-foreground/70 font-mono">{r.ms}</span>
+                  )}
                   <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
                 </div>
               </div>

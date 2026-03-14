@@ -11,9 +11,9 @@ export function PageEndToEnd() {
       />
 
       <P>
-        This example connects three services: <Mono>payments</Mono> (worker),{" "}
-        <Mono>orders</Mono> (caller + event publisher), and{" "}
-        <Mono>notifications</Mono> (event consumer). Then wraps the whole flow in a workflow.
+        This example connects three services: <Mono>payments</Mono> (worker), <Mono>orders</Mono>{" "}
+        (caller + event publisher), and <Mono>notifications</Mono> (event consumer). Then wraps the
+        whole flow in a workflow.
       </P>
 
       <H2 id="payments-worker">Payments worker (RPC handler with streaming)</H2>

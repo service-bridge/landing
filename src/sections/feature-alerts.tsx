@@ -15,11 +15,41 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const FLOW_STEPS = [
-  { icon: AlertTriangle, color: "text-amber-400", bg: "bg-amber-400/10", label: "Condition triggered", sub: "error_rate > 10% in last 5 min" },
-  { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10", label: "Cooldown checked", sub: "300s since last fire — ok to proceed" },
-  { icon: Bell, color: "text-emerald-400", bg: "bg-emerald-400/10", label: "History recorded", sub: "alert_history INSERT" },
-  { icon: Send, color: "text-blue-400", bg: "bg-blue-400/10", label: "Channels notified", sub: "Telegram · Webhook · UI push" },
-  { icon: Clock, color: "text-violet-400", bg: "bg-violet-400/10", label: "Cooldown armed", sub: "Next fire allowed in 5 min" },
+  {
+    icon: AlertTriangle,
+    color: "text-amber-400",
+    bg: "bg-amber-400/10",
+    label: "Condition triggered",
+    sub: "error_rate > 10% in last 5 min",
+  },
+  {
+    icon: CheckCircle2,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    label: "Cooldown checked",
+    sub: "300s since last fire — ok to proceed",
+  },
+  {
+    icon: Bell,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    label: "History recorded",
+    sub: "alert_history INSERT",
+  },
+  {
+    icon: Send,
+    color: "text-blue-400",
+    bg: "bg-blue-400/10",
+    label: "Channels notified",
+    sub: "Telegram · Webhook · UI push",
+  },
+  {
+    icon: Clock,
+    color: "text-violet-400",
+    bg: "bg-violet-400/10",
+    label: "Cooldown armed",
+    sub: "Next fire allowed in 5 min",
+  },
 ];
 
 const ALERT_FEATURES = [
@@ -77,7 +107,9 @@ export function AlertsSection() {
           {FLOW_STEPS.map((step, i) => (
             <div key={step.label} className="flex items-start gap-3 relative">
               <div className="flex flex-col items-center shrink-0">
-                <div className={`w-8 h-8 rounded-xl ${step.bg} flex items-center justify-center shrink-0`}>
+                <div
+                  className={`w-8 h-8 rounded-xl ${step.bg} flex items-center justify-center shrink-0`}
+                >
                   <step.icon className={`w-4 h-4 ${step.color}`} />
                 </div>
                 {i < FLOW_STEPS.length - 1 && (
@@ -105,10 +137,34 @@ export function AlertsSection() {
       demo={demo}
       cards={
         <>
-          <FeatureCard variant="compact" icon={ShieldAlert} title="6 condition types" description="DLQ spikes, error rate, service offline, delivery failures, job errors, workflow errors — covers the most common failure modes." iconClassName="text-red-400" />
-          <FeatureCard variant="compact" icon={MessageCircle} title="Telegram one-click" description="Get binding link, open in Telegram, press Start. chat_id resolved automatically — no manual copy-paste." iconClassName="text-blue-400" />
-          <FeatureCard variant="compact" icon={Webhook} title="Webhooks + in-app" description="Send JSON to any endpoint with custom headers. In-app alerts push via WebSocket instantly — zero polling." iconClassName="text-purple-400" />
-          <FeatureCard variant="compact" icon={Clock} title="Cooldown protection" description="Configurable cooldown prevents alert storms. Each rule tracks last fire time and respects minimum interval." iconClassName="text-violet-400" />
+          <FeatureCard
+            variant="compact"
+            icon={ShieldAlert}
+            title="6 condition types"
+            description="DLQ spikes, error rate, service offline, delivery failures, job errors, workflow errors — covers the most common failure modes."
+            iconClassName="text-red-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={MessageCircle}
+            title="Telegram one-click"
+            description="Get binding link, open in Telegram, press Start. chat_id resolved automatically — no manual copy-paste."
+            iconClassName="text-blue-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Webhook}
+            title="Webhooks + in-app"
+            description="Send JSON to any endpoint with custom headers. In-app alerts push via WebSocket instantly — zero polling."
+            iconClassName="text-purple-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Clock}
+            title="Cooldown protection"
+            description="Configurable cooldown prevents alert storms. Each rule tracks last fire time and respects minimum interval."
+            iconClassName="text-violet-400"
+          />
         </>
       }
     />

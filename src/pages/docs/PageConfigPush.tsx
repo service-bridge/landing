@@ -11,9 +11,10 @@ export function PageConfigPush() {
 
       <H2 id="what-is-configpush">What is ConfigPush</H2>
       <P>
-        ConfigPush is a server-initiated message sent over the existing worker session stream. When the
-        runtime operator updates the transport config, the server pushes a <Mono>ConfigPush</Mono> frame
-        to all connected workers. Workers apply the new config immediately — no reconnect or restart needed.
+        ConfigPush is a server-initiated message sent over the existing worker session stream. When
+        the runtime operator updates the transport config, the server pushes a{" "}
+        <Mono>ConfigPush</Mono> frame to all connected workers. Workers apply the new config
+        immediately — no reconnect or restart needed.
       </P>
       <Callout type="tip">
         ConfigPush is ideal for runtime tuning in production: you can open circuit breakers, switch
@@ -48,8 +49,8 @@ export function PageConfigPush() {
 
       <H2 id="apply-order">Apply Order</H2>
       <P>
-        When a ConfigPush is received, workers apply the configuration atomically. In-flight RPC calls
-        are not interrupted — the new config takes effect for subsequent calls only.
+        When a ConfigPush is received, workers apply the configuration atomically. In-flight RPC
+        calls are not interrupted — the new config takes effect for subsequent calls only.
       </P>
       <Callout type="info">
         ConfigPush uses the same session stream as commands and heartbeats. It does not require a

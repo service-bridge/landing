@@ -21,14 +21,15 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   const titleClasses = "font-display font-bold tracking-tight text-3xl sm:text-4xl";
 
-  const containerClasses = cn(
-    "mb-10 md:mb-16",
-    align === "center" ? "text-center" : "text-left"
-  );
+  const containerClasses = cn("mb-10 md:mb-16", align === "center" ? "text-center" : "text-left");
 
   return (
     <motion.div variants={fadeInUp} className={containerClasses}>
-      {eyebrow && <Eyebrow variant="plain" tone={eyebrowTone}>{eyebrow}</Eyebrow>}
+      {eyebrow && (
+        <Eyebrow variant="plain" tone={eyebrowTone}>
+          {eyebrow}
+        </Eyebrow>
+      )}
       <h2 className={titleClasses}>{title}</h2>
       {subtitle && (
         <p

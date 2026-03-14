@@ -11,9 +11,9 @@ export function PageZoneAware() {
 
       <H2 id="how-it-works">How It Works</H2>
       <P>
-        Each worker registers its availability zone at connect time. The runtime tracks zone metadata
-        per worker replica and applies a configurable weight boost to local-zone workers during load
-        balancing selection.
+        Each worker registers its availability zone at connect time. The runtime tracks zone
+        metadata per worker replica and applies a configurable weight boost to local-zone workers
+        during load balancing selection.
       </P>
       <P>
         Workers in the same zone as the runtime instance receive a <Mono>zone_weight_boost</Mono>
@@ -45,7 +45,11 @@ export function PageZoneAware() {
             {[
               ["local_zone", '""', "This runtime instance's availability zone"],
               ["prefer_zone", "false", "Enable zone-aware weight boost"],
-              ["zone_weight_boost", "3", "Multiplier applied to same-zone workers during selection"],
+              [
+                "zone_weight_boost",
+                "3",
+                "Multiplier applied to same-zone workers during selection",
+              ],
             ].map(([field, def, desc]) => (
               <tr key={field} className="border-b border-border/50">
                 <td className="py-2 pr-6 font-mono text-foreground">{field}</td>
@@ -71,8 +75,8 @@ export function PageZoneAware() {
 
       <H2 id="multi-runtime">Multi-Runtime Deployments</H2>
       <P>
-        In a multi-region or multi-AZ setup, deploy one runtime instance per zone and configure
-        each with its own <Mono>local_zone</Mono>. Workers connect to the nearest runtime and
+        In a multi-region or multi-AZ setup, deploy one runtime instance per zone and configure each
+        with its own <Mono>local_zone</Mono>. Workers connect to the nearest runtime and
         automatically receive zone-aware routing.
       </P>
     </div>

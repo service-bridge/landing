@@ -2,12 +2,12 @@ import { motion } from "framer-motion";
 import { ArrowRight, Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { fadeInUp } from "../components/animations";
-import { highlightCode } from "../ui/CodeBlock";
+import type { SdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
+import { highlightCode } from "../ui/CodeBlock";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 import { TabStrip } from "../ui/Tabs";
-import type { SdkLang } from "../lib/language-context";
 
 // ─── Shared language tabs (steps 02 + 03 in sync) ─────────────────────────────
 
@@ -20,9 +20,9 @@ const SDK_TABS = [
 type TabId = (typeof SDK_TABS)[number]["id"];
 
 const INSTALL_CMDS: Record<TabId, string> = {
-  node:   "npm i service-bridge",
+  node: "npm i service-bridge",
   python: "pip install service-bridge",
-  go:     "go get github.com/service-bridge/go",
+  go: "go get github.com/service-bridge/go",
 };
 
 const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> = {
@@ -165,13 +165,16 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
       />
 
       <motion.div variants={fadeInUp} className="mt-16 grid gap-8 max-w-3xl mx-auto">
-
         {/* Step 01 */}
         <div className="flex gap-6">
           <StepNumber n="01" />
           <div className="pb-8 flex-1 min-w-0">
             <h3 className="type-subsection-title mb-1">Install the runtime</h3>
-            <p className="type-body-sm mb-4">One command sets up ServiceBridge + PostgreSQL via Docker Compose, prints the generated admin password, and exports the control-plane CA to <code>~/.servicebridge/ca.crt</code> for local SDKs.</p>
+            <p className="type-body-sm mb-4">
+              One command sets up ServiceBridge + PostgreSQL via Docker Compose, prints the
+              generated admin password, and exports the control-plane CA to{" "}
+              <code>~/.servicebridge/ca.crt</code> for local SDKs.
+            </p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5 flex items-center justify-between">
                 <span className="type-overline-mono text-muted-foreground">terminal</span>
@@ -182,9 +185,15 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                   className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
                 >
                   {copiedRuntime ? (
-                    <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
                   ) : (
-                    <><Copy className="w-3 h-3" /><span>Copy</span></>
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -211,9 +220,15 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                   className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
                 >
                   {copiedSdk ? (
-                    <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
                   ) : (
-                    <><Copy className="w-3 h-3" /><span>Copy</span></>
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -229,7 +244,11 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
           <StepNumber n="03" last />
           <div className="pb-8 flex-1 min-w-0">
             <h3 className="type-subsection-title mb-1">Connect your service</h3>
-            <p className="type-body-sm mb-4">Register RPC handlers, subscribe to events, and call other services. Use <code>SERVICEBRIDGE_SERVICE_KEY</code> in <code>sbv2.&lt;id&gt;.&lt;secret&gt;.&lt;ca&gt;</code> format.</p>
+            <p className="type-body-sm mb-4">
+              Register RPC handlers, subscribe to events, and call other services. Use{" "}
+              <code>SERVICEBRIDGE_SERVICE_KEY</code> in{" "}
+              <code>sbv2.&lt;id&gt;.&lt;secret&gt;.&lt;ca&gt;</code> format.
+            </p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-3 py-2 flex items-center justify-between">
                 <TabStrip size="sm" items={SDK_TABS} active={activeTab} onChange={setActiveTab} />
@@ -239,9 +258,15 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                   className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/70 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
                 >
                   {copiedCode ? (
-                    <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      <span className="text-emerald-400">Copied</span>
+                    </>
                   ) : (
-                    <><Copy className="w-3 h-3" /><span>Copy</span></>
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy</span>
+                    </>
                   )}
                 </button>
               </div>
@@ -253,11 +278,12 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
               </pre>
             </div>
             <p className="type-caption mt-3 text-muted-foreground/80">
-              Control plane trust is read from the embedded CA in the <code>sbv2</code> key by default. On <code>serve()</code>, SDK generates a local ECDSA P-256 key pair and sends only the public key for worker cert provisioning.
+              Control plane trust is read from the embedded CA in the <code>sbv2</code> key by
+              default. On <code>serve()</code>, SDK generates a local ECDSA P-256 key pair and sends
+              only the public key for worker cert provisioning.
             </p>
           </div>
         </div>
-
       </motion.div>
 
       <motion.div

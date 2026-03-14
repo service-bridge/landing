@@ -12,9 +12,9 @@ export function PageTlsMtls() {
 
       <H2 id="tls-auto">Server-side auto-generated certs</H2>
       <P>
-        On first start, the runtime generates a self-signed CA + server cert in{" "}
-        <Mono>./tls</Mono> (configurable via <Mono>SERVICEBRIDGE_TLS_DIR</Mono>) and reuses them
-        across restarts. Certs auto-renew 30 days before expiry.
+        On first start, the runtime generates a self-signed CA + server cert in <Mono>./tls</Mono>{" "}
+        (configurable via <Mono>SERVICEBRIDGE_TLS_DIR</Mono>) and reuses them across restarts. Certs
+        auto-renew 30 days before expiry.
       </P>
 
       <H2 id="tls-provision">SDK gRPC provisioning</H2>
@@ -23,12 +23,19 @@ export function PageTlsMtls() {
         certificates:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
-        <li>SDK generates an <strong className="text-foreground">ECDSA P-256</strong> key pair locally (all SDKs; server certs also use ECDSA P-256).</li>
         <li>
-          Sends <strong className="text-foreground">only the public key</strong> to{" "}
-          gRPC <Mono>ProvisionWorkerCertificate</Mono> (authenticated with the service key).
+          SDK generates an <strong className="text-foreground">ECDSA P-256</strong> key pair locally
+          (all SDKs; server certs also use ECDSA P-256).
         </li>
-        <li>Server signs the public key and returns a client cert + CA cert. Worker certificates are valid for <strong className="text-foreground">7 days</strong>; the SDK handles re-provisioning automatically on startup if the cert is missing or expired.</li>
+        <li>
+          Sends <strong className="text-foreground">only the public key</strong> to gRPC{" "}
+          <Mono>ProvisionWorkerCertificate</Mono> (authenticated with the service key).
+        </li>
+        <li>
+          Server signs the public key and returns a client cert + CA cert. Worker certificates are
+          valid for <strong className="text-foreground">7 days</strong>; the SDK handles
+          re-provisioning automatically on startup if the cert is missing or expired.
+        </li>
         <li>
           Worker gRPC server starts with full mTLS.{" "}
           <strong className="text-foreground">The private key never leaves your process.</strong>
@@ -66,11 +73,12 @@ await sb.serve()`,
           (server cert). Auth via <Mono>x-service-key</Mono> gRPC metadata.
         </li>
         <li>
-          <strong className="text-foreground">ServiceBridge runtime → worker session:</strong> gRPC reverse-stream <Mono>OpenWorkerSession</Mono> with worker-authenticated identity.
+          <strong className="text-foreground">ServiceBridge runtime → worker session:</strong> gRPC
+          reverse-stream <Mono>OpenWorkerSession</Mono> with worker-authenticated identity.
         </li>
         <li>
-          <strong className="text-foreground">Worker → worker (direct RPC):</strong> full mTLS.
-          Each side verifies the other's cert was signed by the same CA.
+          <strong className="text-foreground">Worker → worker (direct RPC):</strong> full mTLS. Each
+          side verifies the other's cert was signed by the same CA.
         </li>
         <li>
           If ServiceBridge goes down, direct RPC calls between services continue independently —
@@ -85,8 +93,8 @@ await sb.serve()`,
       </Callout>
 
       <Callout type="tip">
-        In Kubernetes or Docker Swarm, set <Mono>SERVICEBRIDGE_GRPC_HOST=0.0.0.0</Mono> and
-        expose port <Mono>14445</Mono> so workers in other pods can connect.
+        In Kubernetes or Docker Swarm, set <Mono>SERVICEBRIDGE_GRPC_HOST=0.0.0.0</Mono> and expose
+        port <Mono>14445</Mono> so workers in other pods can connect.
       </Callout>
 
       <Callout type="info">
@@ -95,7 +103,9 @@ await sb.serve()`,
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "service-keys" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "service-keys" }))
+          }
         >
           Service Keys & RBAC
         </button>{" "}

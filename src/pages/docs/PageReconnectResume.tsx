@@ -15,10 +15,16 @@ export function PageReconnectResume() {
         re-registering handlers or replaying already-completed commands.
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-sm text-muted-foreground my-3">
-        <li>Server issues <Mono>resume_token</Mono> + <Mono>epoch</Mono> in HelloAck</li>
+        <li>
+          Server issues <Mono>resume_token</Mono> + <Mono>epoch</Mono> in HelloAck
+        </li>
         <li>On reconnect, worker sends resume fields in Hello</li>
-        <li>Server replays missed commands (filtered by <Mono>completed_command_ids</Mono>)</li>
-        <li>Resumed session confirmed with <Mono>HelloAck(resumed=true)</Mono></li>
+        <li>
+          Server replays missed commands (filtered by <Mono>completed_command_ids</Mono>)
+        </li>
+        <li>
+          Resumed session confirmed with <Mono>HelloAck(resumed=true)</Mono>
+        </li>
       </ol>
       <Callout type="tip">
         The resume window is 120 seconds. If the worker reconnects within this window, commands are
@@ -26,9 +32,7 @@ export function PageReconnectResume() {
       </Callout>
 
       <H2 id="backoff">Backoff Strategy</H2>
-      <P>
-        The SDK uses exponential backoff with full jitter on reconnect attempts:
-      </P>
+      <P>The SDK uses exponential backoff with full jitter on reconnect attempts:</P>
       <DocCodeBlock
         lang="text"
         code={`base:     100ms
@@ -37,8 +41,8 @@ strategy: exponential with full jitter
 retries:  infinite`}
       />
       <P>
-        Full jitter spreads reconnect load across all workers during a mass-reconnect event (e.g. runtime
-        restart), preventing thundering-herd spikes.
+        Full jitter spreads reconnect load across all workers during a mass-reconnect event (e.g.
+        runtime restart), preventing thundering-herd spikes.
       </P>
 
       <H2 id="position-update">PositionUpdate</H2>
@@ -50,8 +54,8 @@ retries:  infinite`}
       </P>
       <H3 id="frequency">Frequency</H3>
       <P>
-        Workers send <Mono>PositionUpdate</Mono> every 5 seconds or every 100 received frames, whichever
-        comes first. This keeps the replay window tight and minimizes duplicate delivery.
+        Workers send <Mono>PositionUpdate</Mono> every 5 seconds or every 100 received frames,
+        whichever comes first. This keeps the replay window tight and minimizes duplicate delivery.
       </P>
       <Callout type="info">
         PositionUpdate is a control-plane message sent over the session stream — it does not affect

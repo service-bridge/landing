@@ -61,11 +61,46 @@ result = await orders.rpc("payments.charge", {"amount": 4990})`,
 };
 
 const REGISTRY_ROWS = [
-  { id: "r1", canonical: "orders/orders.create", endpoint: "10.0.1.5:50051", inst: 3, beat: "1s ago", alive: true },
-  { id: "r2", canonical: "payments/payments.charge", endpoint: "10.0.2.4:50051", inst: 2, beat: "3s ago", alive: true },
-  { id: "r3", canonical: "notify/notify.send", endpoint: "10.0.3.9:50051", inst: 1, beat: "9s ago", alive: true },
-  { id: "r4", canonical: "analytics/analytics.track", endpoint: "10.0.4.2:50051", inst: 2, beat: "21s ago", alive: true },
-  { id: "r5", canonical: "billing/billing.invoice", endpoint: "10.0.5.1:50051", inst: 0, beat: "34s ago", alive: false },
+  {
+    id: "r1",
+    canonical: "orders/orders.create",
+    endpoint: "10.0.1.5:50051",
+    inst: 3,
+    beat: "1s ago",
+    alive: true,
+  },
+  {
+    id: "r2",
+    canonical: "payments/payments.charge",
+    endpoint: "10.0.2.4:50051",
+    inst: 2,
+    beat: "3s ago",
+    alive: true,
+  },
+  {
+    id: "r3",
+    canonical: "notify/notify.send",
+    endpoint: "10.0.3.9:50051",
+    inst: 1,
+    beat: "9s ago",
+    alive: true,
+  },
+  {
+    id: "r4",
+    canonical: "analytics/analytics.track",
+    endpoint: "10.0.4.2:50051",
+    inst: 2,
+    beat: "21s ago",
+    alive: true,
+  },
+  {
+    id: "r5",
+    canonical: "billing/billing.invoice",
+    endpoint: "10.0.5.1:50051",
+    inst: 0,
+    beat: "34s ago",
+    alive: false,
+  },
 ] as const;
 
 export function DiscoveryMapSection() {
@@ -85,14 +120,22 @@ export function DiscoveryMapSection() {
             <h2 className="mt-2 type-subsection-title">Self-register once. Resolve from memory.</h2>
             <p className="mt-3 type-body-sm">
               Workers call{" "}
-              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">serve()</code>{" "}
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                serve()
+              </code>{" "}
               to advertise their endpoint. The control plane builds a debounced in-memory snapshot.
               Callers read that snapshot and open persistent gRPC channels — no SQL at call time.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">proxyless</Badge>
-              <Badge tone="border-violet-500/20 bg-violet-500/[0.08] text-violet-300">in-memory snapshot</Badge>
-              <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">heartbeat TTL 30s</Badge>
+              <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">
+                proxyless
+              </Badge>
+              <Badge tone="border-violet-500/20 bg-violet-500/[0.08] text-violet-300">
+                in-memory snapshot
+              </Badge>
+              <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">
+                heartbeat TTL 30s
+              </Badge>
             </div>
           </Card>
           <MultiCodeBlock
@@ -116,7 +159,9 @@ export function DiscoveryMapSection() {
                   style={{ gridTemplateColumns: "1.7fr 1.1fr 0.35fr 0.8fr 0.7fr" }}
                 >
                   {(["SERVICE", "ENDPOINT", "INST", "HEARTBEAT", "STATUS"] as const).map((h) => (
-                    <span key={h} className="type-overline-mono text-muted-foreground">{h}</span>
+                    <span key={h} className="type-overline-mono text-muted-foreground">
+                      {h}
+                    </span>
                   ))}
                 </div>
 
@@ -129,19 +174,44 @@ export function DiscoveryMapSection() {
                     className="grid gap-2 rounded-xl px-3 py-2.5 border border-surface-border bg-surface"
                     style={{ gridTemplateColumns: "1.7fr 1.1fr 0.35fr 0.8fr 0.7fr" }}
                   >
-                    <span className={cn("text-xs font-mono truncate", row.alive ? "text-zinc-200" : "text-muted-foreground/60")}>
+                    <span
+                      className={cn(
+                        "text-xs font-mono truncate",
+                        row.alive ? "text-zinc-200" : "text-muted-foreground/60"
+                      )}
+                    >
                       {row.canonical}
                     </span>
-                    <span className={cn("text-xs font-mono", row.alive ? "text-muted-foreground/70" : "text-zinc-700")}>
+                    <span
+                      className={cn(
+                        "text-xs font-mono",
+                        row.alive ? "text-muted-foreground/70" : "text-zinc-700"
+                      )}
+                    >
                       {row.endpoint}
                     </span>
-                    <span className={cn("text-xs font-mono text-center", row.alive ? "text-muted-foreground" : "text-muted-foreground/60")}>
+                    <span
+                      className={cn(
+                        "text-xs font-mono text-center",
+                        row.alive ? "text-muted-foreground" : "text-muted-foreground/60"
+                      )}
+                    >
                       {row.inst}
                     </span>
                     <span className="text-xs font-mono text-muted-foreground/60">{row.beat}</span>
                     <div className="flex items-center gap-1.5">
-                      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", row.alive ? "bg-emerald-400 animate-pulse" : "bg-zinc-700")} />
-                      <span className={cn("text-3xs font-mono", row.alive ? "text-emerald-400" : "text-muted-foreground/60")}>
+                      <span
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full shrink-0",
+                          row.alive ? "bg-emerald-400 animate-pulse" : "bg-zinc-700"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-3xs font-mono",
+                          row.alive ? "text-emerald-400" : "text-muted-foreground/60"
+                        )}
+                      >
                         {row.alive ? "alive" : "stale"}
                       </span>
                     </div>
@@ -153,12 +223,16 @@ export function DiscoveryMapSection() {
             <div className="border-t border-surface-border px-4 py-3 flex items-center gap-6">
               <div className="text-center">
                 <p className="type-overline-mono text-muted-foreground">lookup</p>
-                <p className="text-sm font-semibold font-display text-violet-300 mt-0.5">Snapshot()</p>
+                <p className="text-sm font-semibold font-display text-violet-300 mt-0.5">
+                  Snapshot()
+                </p>
               </div>
               <div className="w-px h-8 bg-surface-border" />
               <div className="text-center">
                 <p className="type-overline-mono text-muted-foreground">hot path</p>
-                <p className="text-sm font-semibold font-display text-emerald-400 mt-0.5">0 DB queries</p>
+                <p className="text-sm font-semibold font-display text-emerald-400 mt-0.5">
+                  0 DB queries
+                </p>
               </div>
               <div className="w-px h-8 bg-surface-border" />
               <div className="text-center">
@@ -171,10 +245,34 @@ export function DiscoveryMapSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={Zap} title="Lazy on-demand" description="First rpc() call for unknown target issues LookupFunction. Channel opens and is cached. All subsequent calls are direct." iconClassName="text-yellow-400" />
-          <FeatureCard variant="compact" icon={Activity} title="Live heartbeat" description="Workers heartbeat continuously. Endpoints missing the 30s TTL are evicted from the snapshot automatically." iconClassName="text-emerald-400" />
-          <FeatureCard variant="compact" icon={Network} title="gRPC round_robin" description="One channel per canonical function with gRPC round_robin across alive replicas. Load balancing scales with instance count." iconClassName="text-cyan-400" />
-          <FeatureCard variant="compact" icon={RefreshCcw} title="Full + delta streaming" description="WatchRegistry sends a FULL snapshot first, then DELTAs. Clients apply incremental updates until overflow forces a FULL resync." iconClassName="text-violet-400" />
+          <FeatureCard
+            variant="compact"
+            icon={Zap}
+            title="Lazy on-demand"
+            description="First rpc() call for unknown target issues LookupFunction. Channel opens and is cached. All subsequent calls are direct."
+            iconClassName="text-yellow-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Activity}
+            title="Live heartbeat"
+            description="Workers heartbeat continuously. Endpoints missing the 30s TTL are evicted from the snapshot automatically."
+            iconClassName="text-emerald-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Network}
+            title="gRPC round_robin"
+            description="One channel per canonical function with gRPC round_robin across alive replicas. Load balancing scales with instance count."
+            iconClassName="text-cyan-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={RefreshCcw}
+            title="Full + delta streaming"
+            description="WatchRegistry sends a FULL snapshot first, then DELTAs. Clients apply incremental updates until overflow forces a FULL resync."
+            iconClassName="text-violet-400"
+          />
         </>
       }
     />

@@ -93,26 +93,105 @@ await svc.event(
 };
 
 const PIPELINE = [
-  { icon: Radio, label: "Publish", desc: "sb.event()", color: "text-blue-300", bg: "bg-blue-500/[0.08]", border: "border-blue-500/25", dot: "bg-blue-400" },
-  { icon: Database, label: "Persist", desc: "PostgreSQL", color: "text-violet-300", bg: "bg-violet-500/[0.08]", border: "border-violet-500/25", dot: "bg-violet-400" },
-  { icon: GitBranch, label: "Fan-out", desc: "×4 groups", color: "text-emerald-300", bg: "bg-emerald-500/[0.08]", border: "border-emerald-500/25", dot: "bg-emerald-400" },
-  { icon: Send, label: "Deliver", desc: "per group", color: "text-amber-300", bg: "bg-amber-500/[0.08]", border: "border-amber-500/25", dot: "bg-amber-400" },
-  { icon: CheckCircle2, label: "Outcome", desc: "ack · retry · dlq", color: "text-emerald-400", bg: "bg-emerald-500/[0.08]", border: "border-emerald-500/25", dot: "bg-emerald-400" },
+  {
+    icon: Radio,
+    label: "Publish",
+    desc: "sb.event()",
+    color: "text-blue-300",
+    bg: "bg-blue-500/[0.08]",
+    border: "border-blue-500/25",
+    dot: "bg-blue-400",
+  },
+  {
+    icon: Database,
+    label: "Persist",
+    desc: "PostgreSQL",
+    color: "text-violet-300",
+    bg: "bg-violet-500/[0.08]",
+    border: "border-violet-500/25",
+    dot: "bg-violet-400",
+  },
+  {
+    icon: GitBranch,
+    label: "Fan-out",
+    desc: "×4 groups",
+    color: "text-emerald-300",
+    bg: "bg-emerald-500/[0.08]",
+    border: "border-emerald-500/25",
+    dot: "bg-emerald-400",
+  },
+  {
+    icon: Send,
+    label: "Deliver",
+    desc: "per group",
+    color: "text-amber-300",
+    bg: "bg-amber-500/[0.08]",
+    border: "border-amber-500/25",
+    dot: "bg-amber-400",
+  },
+  {
+    icon: CheckCircle2,
+    label: "Outcome",
+    desc: "ack · retry · dlq",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/[0.08]",
+    border: "border-emerald-500/25",
+    dot: "bg-emerald-400",
+  },
 ] as const;
 
 type Outcome = "ack" | "retry" | "dlq";
 
-const SUBSCRIBERS: { service: string; group: string; outcome: Outcome; attempts: number; note: string | null }[] = [
+const SUBSCRIBERS: {
+  service: string;
+  group: string;
+  outcome: Outcome;
+  attempts: number;
+  note: string | null;
+}[] = [
   { service: "payments", group: "payments:charge", outcome: "ack", attempts: 1, note: null },
-  { service: "notify", group: "notify:email", outcome: "ack", attempts: 3, note: "retry → delivered" },
+  {
+    service: "notify",
+    group: "notify:email",
+    outcome: "ack",
+    attempts: 3,
+    note: "retry → delivered",
+  },
   { service: "analytics", group: "analytics:track", outcome: "ack", attempts: 1, note: null },
-  { service: "billing", group: "billing:invoice", outcome: "dlq", attempts: 5, note: "max attempts → DLQ" },
+  {
+    service: "billing",
+    group: "billing:invoice",
+    outcome: "dlq",
+    attempts: 5,
+    note: "max attempts → DLQ",
+  },
 ];
 
-const OUTCOME_CFG: Record<Outcome, { icon: typeof CheckCircle2; color: string; bg: string; border: string; label: string }> = {
-  ack: { icon: CheckCircle2, color: "text-emerald-300", bg: "bg-emerald-500/[0.08]", border: "border-emerald-500/20", label: "ack" },
-  retry: { icon: RefreshCcw, color: "text-amber-300", bg: "bg-amber-500/[0.08]", border: "border-amber-500/20", label: "retry" },
-  dlq: { icon: Ban, color: "text-rose-300", bg: "bg-rose-500/[0.08]", border: "border-rose-500/20", label: "dlq" },
+const OUTCOME_CFG: Record<
+  Outcome,
+  { icon: typeof CheckCircle2; color: string; bg: string; border: string; label: string }
+> = {
+  ack: {
+    icon: CheckCircle2,
+    color: "text-emerald-300",
+    bg: "bg-emerald-500/[0.08]",
+    border: "border-emerald-500/20",
+    label: "ack",
+  },
+  retry: {
+    icon: RefreshCcw,
+    color: "text-amber-300",
+    bg: "bg-amber-500/[0.08]",
+    border: "border-amber-500/20",
+    label: "retry",
+  },
+  dlq: {
+    icon: Ban,
+    color: "text-rose-300",
+    bg: "bg-rose-500/[0.08]",
+    border: "border-rose-500/20",
+    label: "dlq",
+  },
 };
 
 const RETRY_LEDGER = [
@@ -144,17 +223,24 @@ export function DurableEventsSection() {
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
             <p className="type-overline-mono text-muted-foreground">delivery contract</p>
-            <h2 className="mt-2 type-subsection-title">At-least-once with server-side filtering.</h2>
+            <h2 className="mt-2 type-subsection-title">
+              At-least-once with server-side filtering.
+            </h2>
             <p className="mt-3 type-body-sm">
               Each consumer group gets its own independent delivery ledger.{" "}
-              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">filterExpr</code>{" "}
-              is evaluated before delivery rows are even created — unmatched events never
-              reach workers, and never count against retry budgets.
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                filterExpr
+              </code>{" "}
+              is evaluated before delivery rows are even created — unmatched events never reach
+              workers, and never count against retry budgets.
             </p>
             <div className="mt-4 space-y-1.5">
               <p className="type-overline-mono text-muted-foreground mb-2">filterExpr syntax</p>
               {FILTER_EXAMPLES.map(({ expr, desc }) => (
-                <div key={expr} className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-1.5">
+                <div
+                  key={expr}
+                  className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-1.5"
+                >
                   <code className="text-xs font-mono text-emerald-300">{expr}</code>
                   <span className="text-3xs text-muted-foreground/60 ml-auto">{desc}</span>
                 </div>
@@ -163,7 +249,11 @@ export function DurableEventsSection() {
           </Card>
           <MultiCodeBlock
             code={EVENT_CODE}
-            filename={{ ts: "notifications-service.ts", go: "notifications_service.go", py: "notifications_service.py" }}
+            filename={{
+              ts: "notifications-service.ts",
+              go: "notifications_service.go",
+              py: "notifications_service.py",
+            }}
           />
         </motion.div>
       }
@@ -171,7 +261,9 @@ export function DurableEventsSection() {
         <motion.div variants={fadeInUp}>
           <CodePanel title="delivery pipeline · order.created">
             <div className="absolute top-2.5 right-4">
-              <Badge tone="border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-400">at-least-once</Badge>
+              <Badge tone="border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-400">
+                at-least-once
+              </Badge>
             </div>
 
             <div ref={pipelineRef} className="p-5 space-y-5">
@@ -187,21 +279,40 @@ export function DurableEventsSection() {
                           initial={{ opacity: 0, scale: 0.9 }}
                           animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
                           transition={{ duration: 0.35, delay: i * 0.12 }}
-                          className={cn("rounded-xl border px-2.5 py-2 text-center shrink-0", stage.border, stage.bg)}
+                          className={cn(
+                            "rounded-xl border px-2.5 py-2 text-center shrink-0",
+                            stage.border,
+                            stage.bg
+                          )}
                           style={{ minWidth: 70 }}
                         >
                           <Icon className={cn("w-3.5 h-3.5 mx-auto mb-1", stage.color)} />
-                          <p className={cn("text-xs font-semibold font-display leading-tight", stage.color)}>{stage.label}</p>
+                          <p
+                            className={cn(
+                              "text-xs font-semibold font-display leading-tight",
+                              stage.color
+                            )}
+                          >
+                            {stage.label}
+                          </p>
                           <p className="text-3xs text-muted-foreground/60 mt-0.5">{stage.desc}</p>
                         </motion.div>
                         {i < PIPELINE.length - 1 && (
                           <div className="flex-1 relative h-px bg-white/[0.06] min-w-[8px]">
                             {inView && (
                               <motion.span
-                                className={cn("absolute top-1/2 h-1.5 w-1.5 rounded-full -translate-y-1/2", stage.dot)}
+                                className={cn(
+                                  "absolute top-1/2 h-1.5 w-1.5 rounded-full -translate-y-1/2",
+                                  stage.dot
+                                )}
                                 style={{ opacity: 0.8 }}
                                 animate={{ left: ["-3%", "103%"] }}
-                                transition={{ duration: 1.2, ease: "linear", repeat: Infinity, delay: i * 0.28 }}
+                                transition={{
+                                  duration: 1.2,
+                                  ease: "linear",
+                                  repeat: Infinity,
+                                  delay: i * 0.28,
+                                }}
                               />
                             )}
                           </div>
@@ -216,7 +327,9 @@ export function DurableEventsSection() {
 
               {/* Consumer groups */}
               <div>
-                <p className="type-overline-mono text-muted-foreground mb-3">consumer groups · independent delivery</p>
+                <p className="type-overline-mono text-muted-foreground mb-3">
+                  consumer groups · independent delivery
+                </p>
                 <div className="space-y-1.5">
                   {SUBSCRIBERS.map((sub, i) => {
                     const outCfg = OUTCOME_CFG[sub.outcome];
@@ -230,14 +343,26 @@ export function DurableEventsSection() {
                         transition={{ duration: 0.3, delay: 0.6 + i * 0.07 }}
                         className={cn(
                           "flex items-center gap-3 rounded-xl border px-3 py-2",
-                          isDlq ? "border-rose-500/20 bg-rose-500/[0.04]" : "border-surface-border bg-surface"
+                          isDlq
+                            ? "border-rose-500/20 bg-rose-500/[0.04]"
+                            : "border-surface-border bg-surface"
                         )}
                       >
-                        <p className={cn("text-xs font-semibold font-display shrink-0 w-20", isDlq ? "text-rose-200" : "text-zinc-200")}>{sub.service}</p>
-                        <p className="text-3xs font-mono text-muted-foreground/60 flex-1 truncate">{sub.group}</p>
+                        <p
+                          className={cn(
+                            "text-xs font-semibold font-display shrink-0 w-20",
+                            isDlq ? "text-rose-200" : "text-zinc-200"
+                          )}
+                        >
+                          {sub.service}
+                        </p>
+                        <p className="text-3xs font-mono text-muted-foreground/60 flex-1 truncate">
+                          {sub.group}
+                        </p>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <Badge tone={cn(outCfg.bg, outCfg.border, outCfg.color)}>
-                            <OutIcon className="w-2.5 h-2.5 inline mr-1" />{outCfg.label}
+                            <OutIcon className="w-2.5 h-2.5 inline mr-1" />
+                            {outCfg.label}
                           </Badge>
                           {sub.attempts > 1 && (
                             <span className="text-3xs font-mono text-muted-foreground/70">
@@ -245,7 +370,11 @@ export function DurableEventsSection() {
                             </span>
                           )}
                         </div>
-                        {sub.note && <p className="text-3xs font-mono text-muted-foreground/60 shrink-0">{sub.note}</p>}
+                        {sub.note && (
+                          <p className="text-3xs font-mono text-muted-foreground/60 shrink-0">
+                            {sub.note}
+                          </p>
+                        )}
                       </motion.div>
                     );
                   })}
@@ -258,7 +387,9 @@ export function DurableEventsSection() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <RefreshCcw className="w-3.5 h-3.5 text-amber-400" />
-                  <p className="type-overline-mono text-muted-foreground">retry ledger · billing:invoice</p>
+                  <p className="type-overline-mono text-muted-foreground">
+                    retry ledger · billing:invoice
+                  </p>
                 </div>
                 <div className="space-y-1">
                   {RETRY_LEDGER.map((row, i) => (
@@ -266,13 +397,17 @@ export function DurableEventsSection() {
                       key={i}
                       className={cn(
                         "flex items-center gap-2 rounded-xl border px-3 py-1.5 font-mono text-3xs",
-                        row.stage === "error" ? "border-red-500/15 bg-red-500/[0.04] text-red-400/80"
-                          : row.stage === "dlq" ? "border-rose-500/20 bg-rose-500/[0.05] text-rose-400"
+                        row.stage === "error"
+                          ? "border-red-500/15 bg-red-500/[0.04] text-red-400/80"
+                          : row.stage === "dlq"
+                            ? "border-rose-500/20 bg-rose-500/[0.05] text-rose-400"
                             : "border-surface-border bg-surface text-muted-foreground/70"
                       )}
                     >
                       <span>{row.text}</span>
-                      {row.stage === "dlq" && <ShieldAlert className="w-3 h-3 text-rose-400 ml-auto shrink-0" />}
+                      {row.stage === "dlq" && (
+                        <ShieldAlert className="w-3 h-3 text-rose-400 ml-auto shrink-0" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -283,10 +418,34 @@ export function DurableEventsSection() {
       }
       cards={
         <>
-          <FeatureCard variant="compact" icon={Radio} title="Wildcard topics" description="Subscribe with patterns like order.* and receive all matching events. Segment count must match exactly." iconClassName="text-blue-400" />
-          <FeatureCard variant="compact" icon={Filter} title="Server-side filtering" description="filterExpr evaluated before delivery rows are created. Unmatched events never reach workers and never burn retry budget." iconClassName="text-cyan-400" />
-          <FeatureCard variant="compact" icon={Fingerprint} title="Idempotency keys" description="Duplicate publishes with the same idempotencyKey return the existing message ID — no re-delivery, no double processing." iconClassName="text-violet-400" />
-          <FeatureCard variant="compact" icon={XCircle} title="ctx.reject() → DLQ" description="Handlers can reject immediately with a reason — bypasses retry policy, writes to DLQ instantly for inspection and replay." iconClassName="text-rose-400" />
+          <FeatureCard
+            variant="compact"
+            icon={Radio}
+            title="Wildcard topics"
+            description="Subscribe with patterns like order.* and receive all matching events. Segment count must match exactly."
+            iconClassName="text-blue-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Filter}
+            title="Server-side filtering"
+            description="filterExpr evaluated before delivery rows are created. Unmatched events never reach workers and never burn retry budget."
+            iconClassName="text-cyan-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={Fingerprint}
+            title="Idempotency keys"
+            description="Duplicate publishes with the same idempotencyKey return the existing message ID — no re-delivery, no double processing."
+            iconClassName="text-violet-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={XCircle}
+            title="ctx.reject() → DLQ"
+            description="Handlers can reject immediately with a reason — bypasses retry policy, writes to DLQ instantly for inspection and replay."
+            iconClassName="text-rose-400"
+          />
         </>
       }
     />

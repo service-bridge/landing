@@ -1,7 +1,15 @@
 // keywords: servicebridge service-bridge install installation Docker Kubernetes self-hosted runtime PostgreSQL mTLS TLS service-mesh microservices gRPC event-bus distributed-tracing workflow background-jobs cron observability npm i service-bridge pip install service-bridge go get Node.js Python Go SDK one-binary zero-sidecar proxyless devops production-ready
 
-import { Callout, DocCodeBlock, EnvTable, H2, H3, Mono, P, PageHeader } from "../../ui/DocComponents";
-
+import {
+  Callout,
+  DocCodeBlock,
+  EnvTable,
+  H2,
+  H3,
+  Mono,
+  P,
+  PageHeader,
+} from "../../ui/DocComponents";
 
 export function PageInstallation() {
   return (
@@ -19,8 +27,8 @@ export function PageInstallation() {
       </P>
       <DocCodeBlock lang="bash" code={`bash <(curl -fsSL https://servicebridge.dev/install.sh)`} />
       <P>
-        The script asks for install directory, public URL, and ports, then prints the generated admin
-        password at the end. After install, the dashboard is at{" "}
+        The script asks for install directory, public URL, and ports, then prints the generated
+        admin password at the end. After install, the dashboard is at{" "}
         <Mono>http://localhost:14444</Mono> and the gRPC control plane at{" "}
         <Mono>localhost:14445</Mono>.
       </P>
@@ -155,8 +163,7 @@ docker compose up -d`}
 
       <H2 id="system-endpoints">System Endpoints</H2>
       <P>
-        All endpoints are on the HTTP port (default <Mono>14444</Mono>), no authentication
-        required.
+        All endpoints are on the HTTP port (default <Mono>14444</Mono>), no authentication required.
       </P>
       <EnvTable
         rows={[
@@ -174,7 +181,9 @@ docker compose up -d`}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer font-medium"
-          onClick={() => document.dispatchEvent(new CustomEvent("sb-nav", { detail: "quick-start" }))}
+          onClick={() =>
+            document.dispatchEvent(new CustomEvent("sb-nav", { detail: "quick-start" }))
+          }
         >
           Next: Quick Start →
         </button>{" "}

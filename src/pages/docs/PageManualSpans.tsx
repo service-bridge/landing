@@ -56,7 +56,9 @@ except Exception as e:
         }}
       />
 
-      <H2 id="register-endpoint">registerHttpEndpoint() / RegisterHttpEndpoint() / register_http_endpoint()</H2>
+      <H2 id="register-endpoint">
+        registerHttpEndpoint() / RegisterHttpEndpoint() / register_http_endpoint()
+      </H2>
       <P>
         Registers an HTTP route pattern in the ServiceBridge service catalog. This makes routes
         visible in the service map and allows other services to discover them. Normally the
@@ -89,9 +91,7 @@ if err != nil {
       />
 
       <H2 id="trace-context">Trace context utilities</H2>
-      <P>
-        Propagate trace context across async boundaries manually:
-      </P>
+      <P>Propagate trace context across async boundaries manually:</P>
       <MultiCodeBlock
         code={{
           ts: `import { getTraceContext, runWithTraceContext } from "service-bridge";
