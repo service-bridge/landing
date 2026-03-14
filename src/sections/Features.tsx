@@ -6,14 +6,18 @@ import {
   Cpu,
   Database,
   Eye,
+  GitBranch,
   GitMerge,
   Globe,
   KeySquare,
   Lock,
   Network,
   Radio,
+  RefreshCw,
+  Settings2,
   Shield,
   SlidersHorizontal,
+  TrendingUp,
   Waves,
   Workflow,
   Zap,
@@ -181,6 +185,48 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
+    label: "Transport & Resilience",
+    wide: true,
+    features: [
+      {
+        title: "Full Mesh Routing",
+        desc: "Per-endpoint circuit breakers prevent cascade failures across the mesh. Zone-aware load balancing keeps traffic local with configurable zone weight — intelligent routing without ServiceMesh overhead. Three-level config hierarchy (global → service → function) for surgical per-call overrides.",
+        icon: GitBranch,
+        iconBg: "bg-sky-500/10",
+        iconColor: "text-sky-400",
+        badge: "per-endpoint CBs, zone-aware LB",
+        badgeTone: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+      },
+      {
+        title: "Session Resilience",
+        desc: "Enterprise 8-state FSM with epoch fencing (Kafka KIP-848–style split-brain protection) and Suspended recovery modeled after ZooKeeper. On reconnect, the server surgically replays only missed commands from a 120-second ring buffer — zero command loss even across hard failures. Full audit log on every state transition.",
+        icon: RefreshCw,
+        iconBg: "bg-lime-500/10",
+        iconColor: "text-lime-400",
+        badge: "8-state FSM · 120s replay · audit log",
+        badgeTone: "text-lime-400 bg-lime-400/10 border-lime-400/20",
+      },
+      {
+        title: "Adaptive Performance",
+        desc: "Self-tuning runtime: EWMA-based heartbeat adapts to real network RTT, dynamic flow-control window scales with throughput, credit-based backpressure prevents buffer overflow under load. Maintains optimal throughput and low latency even across degraded or high-latency links.",
+        icon: TrendingUp,
+        iconBg: "bg-amber-500/10",
+        iconColor: "text-amber-400",
+        badge: "EWMA RTT · dynamic window",
+        badgeTone: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+      },
+      {
+        title: "Hot-Reload Config",
+        desc: "ConfigPush delivers transport configuration changes through the live session stream — no worker restart, no downtime. Update circuit breaker thresholds, zone weights, and retry policies at runtime. Operational changes take effect in milliseconds, not deployment cycles.",
+        icon: Settings2,
+        iconBg: "bg-purple-500/10",
+        iconColor: "text-purple-400",
+        badge: "zero-downtime config push",
+        badgeTone: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+      },
+    ],
+  },
+  {
     label: "Dashboard & Tools",
     wide: true,
     features: [
@@ -207,8 +253,8 @@ const PROD_FEATURES = [
     icon: Shield,
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
-    title: "Offline Resilience",
-    desc: "SDK queues operations during control-plane outages. Flushes after reconnect.",
+    title: "Bidirectional Replay",
+    desc: "Server-side ring buffer replays missed commands on reconnect. Zero message loss guaranteed.",
   },
   {
     icon: Cpu,
@@ -247,8 +293,8 @@ export function FeaturesSection() {
     <Section id="features">
       <SectionHeader
         eyebrow="Features"
-        title="Everything you need — production-ready out of the box"
-        subtitle="One Go binary + PostgreSQL. mTLS, tracing, retries, DLQ, failover — built in, not bolted on."
+        title="Everything you need — enterprise-ready out of the box"
+        subtitle="One Go binary + PostgreSQL. 8-state session FSM, zero-loss replay, Full Mesh routing, mTLS, tracing, retries, DLQ — built in, not bolted on."
       />
 
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-6">

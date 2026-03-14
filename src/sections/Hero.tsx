@@ -8,8 +8,8 @@ import { TabStrip } from "../ui/Tabs";
 const HERO_STATS = [
   { icon: Zap, title: "0 ms proxy overhead", desc: "direct service-to-service" },
   { icon: Container, title: "No sidecar containers", desc: "one binary per cluster" },
-  { icon: ShieldCheck, title: "Auto mTLS + tracing", desc: "100% calls instrumented" },
-  { icon: Activity, title: "Built-in event bus", desc: "durable delivery & DLQ" },
+  { icon: ShieldCheck, title: "8-state session FSM", desc: "zero-loss reconnect & replay" },
+  { icon: Activity, title: "120s replay window", desc: "missed commands recovered" },
 ] as const;
 
 const INSTALL_TABS = [
@@ -49,7 +49,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
         >
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="type-caption text-emerald-400 font-medium tracking-wide uppercase text-xs">
-            10 tools → 1 binary
+            Enterprise-grade · Zero infrastructure tax
           </span>
         </motion.div>
 
@@ -59,7 +59,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="type-display-xl mx-auto max-w-5xl font-display sm:text-6xl lg:text-7xl"
         >
-          The Unified Bridge for Microservices Interaction
+          Production-Grade Distributed Workers Without the Complexity
         </motion.h1>
 
         <motion.p
@@ -68,8 +68,9 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="type-body-lg mx-auto mt-8 max-w-2xl leading-relaxed text-muted-foreground sm:text-xl"
         >
-          One SDK, <span className="text-foreground font-medium">one Go binary</span>, one PostgreSQL.
-          No sidecars, no proxy hop, no extra infrastructure.
+          <span className="text-foreground font-medium">One Go binary, one PostgreSQL</span> — with enterprise session resilience,
+          zero-loss bidirectional replay, Full Mesh routing with circuit breakers,
+          and hot-reload config. Three SDKs, identical API.
         </motion.p>
 
         <motion.div

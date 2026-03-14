@@ -12,9 +12,9 @@ const PRIMITIVES = ["RPC", "Events", "Jobs", "Workflows", "Traces", "RBAC"];
 
 const LEGEND = [
   { label: "RPC path", value: "0 hops", color: "text-yellow-400" },
-  { label: "Event delivery", value: "at-least-once", color: "text-amber-400" },
-  { label: "Persistence", value: "PostgreSQL only", color: "text-violet-400" },
-  { label: "Discovery load", value: "0 DB queries", color: "text-cyan-400" },
+  { label: "Session FSM states", value: "8-state", color: "text-lime-400" },
+  { label: "Replay window", value: "120s buffer", color: "text-sky-400" },
+  { label: "SDK languages", value: "Go · Node · Py", color: "text-cyan-400" },
   { label: "Scale", value: "1000+ services", color: "text-emerald-400" },
 ];
 
@@ -42,7 +42,7 @@ export function ArchitectureSection() {
       <SectionHeader
         eyebrow="Architecture"
         title="How ServiceBridge works"
-        subtitle="RPC data flows directly between services. Events, jobs, workflows, and traces go through the control plane."
+        subtitle="RPC data flows directly between services with circuit-breaker protection. Events, jobs, workflows, and traces go through the control plane with 8-state session FSM and zero-loss bidirectional replay."
       />
 
       <motion.div variants={fadeInUp} className="max-w-4xl mx-auto">
