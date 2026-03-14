@@ -40,6 +40,9 @@
   * {
     @apply border-border;
   }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
   body {
     @apply bg-background text-foreground antialiased text-sm leading-6;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -70,6 +73,12 @@
   .type-display-xl {
     @apply text-5xl font-bold tracking-tight font-display;
     line-height: 1.08;
+  }
+  @media (max-width: 479px) {
+    .type-display-xl {
+      font-size: 2.25rem;
+      line-height: 1.1;
+    }
   }
   .type-display-lg {
     @apply text-4xl font-bold tracking-tight font-display;

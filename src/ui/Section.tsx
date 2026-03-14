@@ -28,7 +28,7 @@ export function Section({
     <AnimatedSection
       id={id}
       className={cn(
-        "border-t py-24 border-border",
+        "border-t py-16 md:py-20 lg:py-24 border-border",
         className
       )}
     >

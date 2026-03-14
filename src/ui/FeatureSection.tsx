@@ -29,7 +29,7 @@ export function FeatureSection({
   return (
     <Section id={id}>
       <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
-      <div className="mt-12 grid items-start gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-8 md:mt-12 grid items-start gap-6 md:gap-8 lg:grid-cols-[1.1fr_0.9fr]">
         <div className={`min-w-0${stickyColumn === "content" ? " lg:sticky lg:top-24" : ""}`}>
           {content}
         </div>

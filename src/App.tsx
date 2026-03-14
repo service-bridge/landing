@@ -1,32 +1,33 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Activity, AlertTriangle, BarChart2, BookOpen, ChevronDown, Clock, Github, Globe, Menu, Network, Radio, Waves, Workflow, X, Zap } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
 import { BrandMark } from "./components/BrandMark";
-import { RunFlowSection } from "./components/RunFlow";
 import { LanguageProvider } from "./lib/language-context";
 import { cn } from "./lib/utils";
 import DocsPage from "./pages/DocsPage";
 import HashPasswordPage from "./pages/HashPasswordPage";
-import { ArchitectureSection } from "./sections/Architecture";
-import { CodeSection } from "./sections/Code";
 import { FeaturesSection } from "./sections/Features";
 import { FooterSection } from "./sections/Footer";
-import { AlertsSection } from "./sections/feature-alerts";
-import { DirectRpcSection } from "./sections/feature-direct-rpc";
-import { DiscoveryMapSection } from "./sections/feature-discovery-map";
-import { DurableEventsSection } from "./sections/feature-durable-events";
-import { HttpSection } from "./sections/feature-http";
-import { JobsSection } from "./sections/feature-jobs";
 import { FEATURE_MENU_ITEMS } from "./sections/feature-menu-items";
-import { ObservabilitySection } from "./sections/feature-observability";
-import { StreamsSection } from "./sections/feature-streams";
-import { TracingSection } from "./sections/feature-tracing";
-import { WorkflowsSection } from "./sections/feature-workflows";
-import { GetStartedSection } from "./sections/GetStarted";
 import { HeroSection } from "./sections/Hero";
 import { ReplacesSection } from "./sections/Replaces";
-import { UseCasesSection } from "./sections/UseCases";
 import { Button } from "./ui/button";
+
+const UseCasesSection = lazy(() => import("./sections/UseCases").then((m) => ({ default: m.UseCasesSection })));
+const RunFlowSection = lazy(() => import("./components/RunFlow").then((m) => ({ default: m.RunFlowSection })));
+const CodeSection = lazy(() => import("./sections/Code").then((m) => ({ default: m.CodeSection })));
+const ArchitectureSection = lazy(() => import("./sections/Architecture").then((m) => ({ default: m.ArchitectureSection })));
+const DirectRpcSection = lazy(() => import("./sections/feature-direct-rpc").then((m) => ({ default: m.DirectRpcSection })));
+const HttpSection = lazy(() => import("./sections/feature-http").then((m) => ({ default: m.HttpSection })));
+const DurableEventsSection = lazy(() => import("./sections/feature-durable-events").then((m) => ({ default: m.DurableEventsSection })));
+const StreamsSection = lazy(() => import("./sections/feature-streams").then((m) => ({ default: m.StreamsSection })));
+const WorkflowsSection = lazy(() => import("./sections/feature-workflows").then((m) => ({ default: m.WorkflowsSection })));
+const JobsSection = lazy(() => import("./sections/feature-jobs").then((m) => ({ default: m.JobsSection })));
+const DiscoveryMapSection = lazy(() => import("./sections/feature-discovery-map").then((m) => ({ default: m.DiscoveryMapSection })));
+const TracingSection = lazy(() => import("./sections/feature-tracing").then((m) => ({ default: m.TracingSection })));
+const ObservabilitySection = lazy(() => import("./sections/feature-observability").then((m) => ({ default: m.ObservabilitySection })));
+const AlertsSection = lazy(() => import("./sections/feature-alerts").then((m) => ({ default: m.AlertsSection })));
+const GetStartedSection = lazy(() => import("./sections/GetStarted").then((m) => ({ default: m.GetStartedSection })));
 
 const NAV_LINKS = [
   { label: "Why", href: "#replaces" },
@@ -61,6 +62,8 @@ function FeaturesDropdown({ onClose }: { onClose: () => void }) {
     <div ref={ref} className="relative" onMouseEnter={openMenu} onMouseLeave={closeMenu}>
       <button
         type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "flex items-center gap-1 type-label transition-colors",
@@ -174,7 +177,13 @@ export default function App() {
 
   return (
     <LanguageProvider>
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-emerald-500/20">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+      >
+        Skip to main content
+      </a>
+    <div className="min-h-dvh bg-background text-foreground font-sans selection:bg-emerald-500/20">
       <header
         className={cn(
           "fixed left-0 right-0 top-0 z-50 transition-all duration-300",
@@ -227,7 +236,7 @@ export default function App() {
           {/* Mobile hamburger */}
           <button
             type="button"
-            className="p-2 md:hidden"
+            className="flex items-center justify-center w-11 h-11 md:hidden"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -249,6 +258,8 @@ export default function App() {
                 <div className="rounded-xl border border-surface-border bg-surface overflow-hidden">
                   <button
                     type="button"
+                    aria-expanded={mobileFeatureMenuOpen}
+                    aria-haspopup="true"
                     onClick={() => setMobileFeatureMenuOpen(!mobileFeatureMenuOpen)}
                     className="flex w-full items-center justify-between px-4 py-3 type-label text-foreground"
                   >
@@ -326,25 +337,27 @@ export default function App() {
         </AnimatePresence>
       </header>
 
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <HeroSection onDocs={() => navigateTo("docs")} />
         <ReplacesSection />
         <FeaturesSection />
-        <UseCasesSection />
-        <RunFlowSection />
-        <CodeSection />
-        <ArchitectureSection />
-        <DirectRpcSection />
-        <HttpSection />
-        <DurableEventsSection />
-        <StreamsSection />
-        <WorkflowsSection />
-        <JobsSection />
-        <DiscoveryMapSection />
-        <TracingSection />
-        <ObservabilitySection />
-        <AlertsSection />
-        <GetStartedSection onDocs={() => navigateTo("docs")} />
+        <Suspense fallback={null}>
+          <UseCasesSection />
+          <RunFlowSection />
+          <CodeSection />
+          <ArchitectureSection />
+          <DirectRpcSection />
+          <HttpSection />
+          <DurableEventsSection />
+          <StreamsSection />
+          <WorkflowsSection />
+          <JobsSection />
+          <DiscoveryMapSection />
+          <TracingSection />
+          <ObservabilitySection />
+          <AlertsSection />
+          <GetStartedSection onDocs={() => navigateTo("docs")} />
+        </Suspense>
       </main>
 
       <FooterSection />

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Check, Copy, Zap, Container, ShieldCheck, Activity } from "lucide-react";
+import { ArrowRight, Check, Copy, Zap, Container, ShieldCheck, Activity, Layers, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Section } from "../ui/Section";
@@ -8,8 +8,10 @@ import { TabStrip } from "../ui/Tabs";
 const HERO_STATS = [
   { icon: Zap, title: "0 ms proxy overhead", desc: "direct service-to-service" },
   { icon: Container, title: "No sidecar containers", desc: "one binary per cluster" },
-  { icon: ShieldCheck, title: "8-state session FSM", desc: "zero-loss reconnect & replay" },
-  { icon: Activity, title: "120s replay window", desc: "missed commands recovered" },
+  { icon: ShieldCheck, title: "Auto mTLS + tracing", desc: "100% calls instrumented" },
+  { icon: Activity, title: "Built-in event bus", desc: "durable delivery & DLQ" },
+  { icon: Layers, title: "8-state session FSM", desc: "zero-loss reconnect & replay" },
+  { icon: RefreshCw, title: "120s replay window", desc: "missed commands recovered" },
 ] as const;
 
 const INSTALL_TABS = [
@@ -97,6 +99,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
         >
           <button
             type="button"
+            aria-label="Copy runtime install command"
             onClick={() => copyCmd("bash <(curl -fsSL https://servicebridge.dev/install.sh)", 0)}
             className="group flex w-full max-w-3xl cursor-pointer items-center gap-3 rounded-lg border border-surface-border bg-surface px-5 py-3 font-mono text-sm transition-all hover:border-white/[0.12] hover:bg-surface"
           >
@@ -124,6 +127,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
             </div>
             <button
               type="button"
+              aria-label="Copy SDK install command"
               onClick={() => copyCmd(INSTALL_CMDS[installTab], 1)}
               className="group flex w-full cursor-pointer items-center gap-3 px-5 py-3 font-mono text-sm transition-colors hover:bg-white/[0.02]"
             >
@@ -166,7 +170,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4"
+          className="mx-auto mt-14 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-3"
         >
           {HERO_STATS.map(({ icon: Icon, title, desc }) => (
             <div

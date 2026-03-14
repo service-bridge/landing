@@ -203,7 +203,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         icon: RefreshCw,
         iconBg: "bg-lime-500/10",
         iconColor: "text-lime-400",
-        badge: "8-state FSM · 120s replay · audit log",
+        badge: "8-state FSM, 120s replay, audit log",
         badgeTone: "text-lime-400 bg-lime-400/10 border-lime-400/20",
       },
       {
@@ -212,7 +212,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
         icon: TrendingUp,
         iconBg: "bg-amber-500/10",
         iconColor: "text-amber-400",
-        badge: "EWMA RTT · dynamic window",
+        badge: "EWMA RTT, dynamic window",
         badgeTone: "text-amber-400 bg-amber-400/10 border-amber-400/20",
       },
       {
