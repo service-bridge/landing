@@ -33,6 +33,11 @@ import { PageAlertsOverview } from "./docs/PageAlertsOverview";
 import { PageAlertsRules } from "./docs/PageAlertsRules";
 import { PageAlertsChannels } from "./docs/PageAlertsChannels";
 import { PageAlertsTelegram } from "./docs/PageAlertsTelegram";
+import { PageSessionLifecycle } from "./docs/PageSessionLifecycle";
+import { PageTransportModes } from "./docs/PageTransportModes";
+import { PageReconnectResume } from "./docs/PageReconnectResume";
+import { PageConfigPush } from "./docs/PageConfigPush";
+import { PageZoneAware } from "./docs/PageZoneAware";
 
 // ── Pages registry ────────────────────────────────────────────────────────────
 
@@ -62,6 +67,11 @@ const PAGES: Record<string, () => React.ReactNode> = {
   "alerts-rules": PageAlertsRules,
   "alerts-channels": PageAlertsChannels,
   "alerts-telegram": PageAlertsTelegram,
+  "session-lifecycle": PageSessionLifecycle,
+  "transport-modes": PageTransportModes,
+  "reconnect-resume": PageReconnectResume,
+  "config-push": PageConfigPush,
+  "zone-aware": PageZoneAware,
 };
 
 const ALL_PAGES: NavItem[] = NAV.flatMap((g) => g.items);

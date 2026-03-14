@@ -269,6 +269,61 @@ export const NAV: NavGroup[] = [
     ],
   },
   {
+    group: "Transport & Resilience",
+    items: [
+      {
+        id: "session-lifecycle",
+        label: "Session Lifecycle",
+        toc: [
+          { id: "states", label: "States" },
+          { id: "epoch-fencing", label: "Epoch Fencing" },
+          { id: "suspended-recovery", label: "Suspended Recovery" },
+          { id: "drain-path", label: "Drain Path" },
+        ],
+      },
+      {
+        id: "transport-modes",
+        label: "Transport Modes",
+        toc: [
+          { id: "direct-mode", label: "Direct Mode" },
+          { id: "proxy-mode", label: "Proxy Mode" },
+          { id: "config-hierarchy", label: "Config Hierarchy" },
+          { id: "circuit-breakers", label: "Circuit Breakers" },
+          { id: "zone-aware", label: "Zone-Aware LB" },
+        ],
+      },
+      {
+        id: "reconnect-resume",
+        label: "Reconnect & Resume",
+        toc: [
+          { id: "resume-protocol", label: "Resume Protocol" },
+          { id: "backoff", label: "Backoff Strategy" },
+          { id: "position-update", label: "PositionUpdate" },
+        ],
+      },
+      {
+        id: "config-push",
+        label: "ConfigPush",
+        toc: [
+          { id: "what-is-configpush", label: "What is ConfigPush" },
+          { id: "what-can-be-pushed", label: "What Can Be Pushed" },
+          { id: "config-example", label: "Example" },
+          { id: "apply-order", label: "Apply Order" },
+        ],
+      },
+      {
+        id: "zone-aware",
+        label: "Zone-Aware Routing",
+        toc: [
+          { id: "how-it-works", label: "How It Works" },
+          { id: "configuration", label: "Configuration" },
+          { id: "fallback", label: "Fallback" },
+          { id: "multi-runtime", label: "Multi-Runtime" },
+        ],
+      },
+    ],
+  },
+  {
     group: "Alerts",
     items: [
       {
