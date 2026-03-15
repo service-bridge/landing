@@ -19,7 +19,7 @@ const HERO_STATS = [
   { icon: Zap, title: "0 ms proxy overhead", desc: "direct service-to-service" },
   { icon: Container, title: "No sidecar containers", desc: "one binary per cluster" },
   { icon: ShieldCheck, title: "Auto mTLS + tracing", desc: "100% calls instrumented" },
-  { icon: Activity, title: "Built-in event bus", desc: "durable delivery & DLQ" },
+  { icon: Activity, title: "Built-in event bus", desc: "guaranteed delivery, offline wait & DLQ" },
   { icon: Layers, title: "8-state session FSM", desc: "zero-loss reconnect & replay" },
   { icon: RefreshCw, title: "120s replay window", desc: "missed commands recovered" },
 ] as const;

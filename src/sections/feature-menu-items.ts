@@ -18,7 +18,7 @@ export const FEATURE_MENU_ITEMS = [
   {
     label: "Durable Events",
     href: "#durable-events",
-    desc: "fan-out, retries, DLQ, replay",
+    desc: "guaranteed delivery, offline wait, DLQ, replay",
     iconName: "Radio",
     iconColor: "text-emerald-400",
     iconBg: "bg-emerald-500/10",

@@ -62,7 +62,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       },
       {
         title: "Durable Events",
-        desc: "At-least-once delivery with automatic retries, Dead Letter Queue, and per-message replay. Wildcard topic matching, filter expressions (DSL), idempotency keys. Stored in PostgreSQL; batch replay from DLQ via UI or gRPC.",
+        desc: "Guaranteed delivery like RabbitMQ — offline consumers wait with status waiting_for_consumer, retry budget untouched. The moment they reconnect, pg_notify delivers immediately. At-least-once fan-out, DLQ, batch replay, filter expressions, idempotency keys. Stored in PostgreSQL; zero extra broker.",
         icon: Radio,
         iconBg: "bg-emerald-500/10",
         iconColor: "text-emerald-400",

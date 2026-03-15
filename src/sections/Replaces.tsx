@@ -140,7 +140,7 @@ const MESH_COMPARE: MeshRow[] = [
     category: "Missing Primitives",
     capability: "Durable events / message broker",
     mesh: "Not included — add Kafka or RabbitMQ",
-    sb: "Built-in at-least-once events with DLQ and batch replay",
+    sb: "Guaranteed delivery like RabbitMQ — offline consumers wait, not fail. DLQ, batch replay, zero broker.",
     pain: "critical",
   },
   {

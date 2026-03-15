@@ -6,6 +6,7 @@ import {
   Filter,
   Fingerprint,
   GitBranch,
+  PauseCircle,
   Radio,
   RefreshCcw,
   Send,
@@ -132,7 +133,7 @@ const PIPELINE = [
   {
     icon: CheckCircle2,
     label: "Outcome",
-    desc: "ack · retry · dlq",
+    desc: "ack · wait · retry · dlq",
     color: "text-emerald-400",
     bg: "bg-emerald-500/[0.08]",
     border: "border-emerald-500/25",
@@ -140,7 +141,7 @@ const PIPELINE = [
   },
 ] as const;
 
-type Outcome = "ack" | "retry" | "dlq";
+type Outcome = "ack" | "retry" | "dlq" | "waiting";
 
 const SUBSCRIBERS: {
   service: string;
@@ -164,6 +165,13 @@ const SUBSCRIBERS: {
     outcome: "dlq",
     attempts: 5,
     note: "max attempts → DLQ",
+  },
+  {
+    service: "reports",
+    group: "reports:daily",
+    outcome: "waiting",
+    attempts: 0,
+    note: "consumer offline → waiting",
   },
 ];
 
@@ -192,6 +200,13 @@ const OUTCOME_CFG: Record<
     border: "border-rose-500/20",
     label: "dlq",
   },
+  waiting: {
+    icon: PauseCircle,
+    color: "text-sky-300",
+    bg: "bg-sky-500/[0.08]",
+    border: "border-sky-500/20",
+    label: "waiting",
+  },
 };
 
 const RETRY_LEDGER = [
@@ -217,22 +232,31 @@ export function DurableEventsSection() {
     <FeatureSection
       id="durable-events"
       eyebrow="Durable Events"
-      title="Publish once. Fan-out to all groups. Retry safely."
-      subtitle="At-least-once delivery with independent fan-out per consumer group, per-group retry ledger, server-side filtering before delivery, and DLQ with batch replay — zero extra broker."
+      title="Publish once. Fan-out to all groups. Delivered even offline."
+      subtitle="Guaranteed delivery — like RabbitMQ queues, without a broker. Offline consumers get their messages the moment they reconnect. Retries only count when processing actually fails."
       content={
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
             <p className="type-overline-mono text-muted-foreground">delivery contract</p>
             <h2 className="mt-2 type-subsection-title">
-              At-least-once with server-side filtering.
+              Guaranteed delivery. Offline consumers wait, not fail.
             </h2>
             <p className="mt-3 type-body-sm">
-              Each consumer group gets its own independent delivery ledger.{" "}
+              Each consumer group gets its own independent delivery ledger. If a consumer is offline,
+              its deliveries hold status{" "}
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                waiting_for_consumer
+              </code>{" "}
+              — retry budget is never burned. The moment the consumer reconnects,{" "}
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                pg_notify
+              </code>{" "}
+              wakes the runtime and delivers immediately. Retries only start when the consumer
+              actually processes and fails.{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 filterExpr
               </code>{" "}
-              is evaluated before delivery rows are even created — unmatched events never reach
-              workers, and never count against retry budgets.
+              is evaluated before delivery rows are created — unmatched events never reach workers.
             </p>
             <div className="mt-4 space-y-1.5">
               <p className="type-overline-mono text-muted-foreground mb-2">filterExpr syntax</p>
@@ -445,6 +469,13 @@ export function DurableEventsSection() {
             title="ctx.reject() → DLQ"
             description="Handlers can reject immediately with a reason — bypasses retry policy, writes to DLQ instantly for inspection and replay."
             iconClassName="text-rose-400"
+          />
+          <FeatureCard
+            variant="compact"
+            icon={PauseCircle}
+            title="Offline? Messages wait."
+            description="If a consumer is offline, its deliveries queue up with status waiting_for_consumer — no retries burned. The moment it reconnects, the runtime wakes up and delivers immediately."
+            iconClassName="text-sky-400"
           />
         </>
       }
