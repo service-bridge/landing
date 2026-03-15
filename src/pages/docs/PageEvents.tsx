@@ -304,6 +304,45 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
         }}
       />
 
+      {/* ── Delivery lifecycle ───────────────────────────────────── */}
+      <H2 id="delivery-lifecycle">Delivery lifecycle</H2>
+      <P>
+        ServiceBridge provides <strong>guaranteed, durable delivery</strong> — similar to RabbitMQ
+        queues. Messages are stored in PostgreSQL and delivered independently to each matching
+        consumer group.
+      </P>
+      <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
+        <li>
+          <strong>Consumer online</strong> — message is dispatched immediately (within the next
+          300 ms polling tick or the instant the consumer registers).
+        </li>
+        <li>
+          <strong>Consumer offline</strong> — message waits in the queue indefinitely. No retry
+          attempts are burned. The delivery status shows as{" "}
+          <Mono>waiting_for_consumer</Mono> (sky-blue icon in the trace waterfall). The moment the
+          service reconnects, the runtime wakes up and dispatches the message automatically — no
+          manual action needed.
+        </li>
+        <li>
+          <strong>Consumer processes message, throws error</strong> — counted as a real attempt,
+          retry backoff applies. After <Mono>maxAttempts</Mono>, the delivery moves to DLQ.
+        </li>
+        <li>
+          <strong>Consumer calls <Mono>ctx.reject(reason)</Mono></strong> — moved to DLQ
+          immediately, no further retries.
+        </li>
+        <li>
+          <strong>TTL exceeded</strong> — if the consumer never connects within{" "}
+          <Mono>SERVICEBRIDGE_DELIVERY_TTL_DAYS</Mono> (default 7 days), the message is moved to
+          DLQ with reason <Mono>delivery_ttl_exceeded</Mono>. Set to <Mono>0</Mono> to wait
+          indefinitely.
+        </li>
+      </ul>
+      <Callout type="tip">
+        Retries only count when the consumer <em>actually tried</em> to process the message and
+        failed. Time spent waiting for an offline consumer does not consume the retry budget.
+      </Callout>
+
       {/* ── Retry policy ─────────────────────────────────────────── */}
       <H2 id="retry-policy">Retry policy</H2>
       <P>

@@ -58,6 +58,11 @@ export function PageServerConfig() {
             default: "3",
             desc: "Delete logs older than N days.",
           },
+          {
+            name: "SERVICEBRIDGE_DELIVERY_TTL_DAYS",
+            default: "7",
+            desc: "Max days a message waits for an offline consumer. After this, the delivery moves to DLQ with reason delivery_ttl_exceeded. Set 0 to wait indefinitely.",
+          },
         ]}
       />
 
