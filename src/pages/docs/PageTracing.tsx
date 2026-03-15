@@ -31,7 +31,7 @@ export function PageTracing() {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-2 pr-6 font-medium text-muted-foreground">Span prefix</th>
+              <th className="text-left py-2 pr-6 font-medium text-muted-foreground">span_type</th>
               <th className="text-left py-2 pr-6 font-medium text-muted-foreground">Created by</th>
               <th className="text-left py-2 font-medium text-muted-foreground">Notes</th>
             </tr>
@@ -39,32 +39,28 @@ export function PageTracing() {
           <tbody className="text-muted-foreground">
             {[
               [
-                "rpc:<service>/<fn>",
+                "rpc",
                 "Caller on rpc()",
-                "One span per call; retry attempts get child spans",
+                "name = function name; target service stored as a separate attribute",
               ],
+              ["event-publish", "Publisher on event()", "name = topic; linked to all consumer delivery spans"],
+              ["event-delivery", "Runtime on dispatch", "name = topic; one span per consumer group delivery"],
+              ["job", "Scheduler on each execution", "name = job ref; full execution trace per tick"],
+              ["workflow", "workflow() call", "name = workflow name; each step gets a child span"],
+              ["sleep", "sleep step", "name = step id; durable wait span in the workflow DAG"],
               [
-                "attempt:<service>/<fn>",
-                "Caller on each retry",
-                "Groups in the trace waterfall; shows timing per attempt",
-              ],
-              ["event:<topic>", "Publisher on event()", "Linked to all consumer delivery spans"],
-              ["job:<ref>", "Scheduler on each execution", "Full execution trace per job tick"],
-              ["workflow:<name>", "workflow() call", "Root span; each step gets a child span"],
-              ["sleep:<ms>", "sleep step", "Shown as a durable wait span in the workflow DAG"],
-              [
-                "event_wait:<pattern>",
+                "wait",
                 "event_wait step",
-                "Shows suspension duration; linked to waking event",
+                "name = event pattern; shows suspension duration; linked to waking event",
               ],
               [
-                "http:<METHOD>:<path>",
+                "http",
                 "HTTP middleware",
-                "One span per request when middleware is installed",
+                "name = METHOD /path; one span per request when middleware is installed",
               ],
-            ].map(([prefix, by, note]) => (
-              <tr key={prefix} className="border-b border-border/50">
-                <td className="py-2 pr-6 font-mono text-foreground text-xs">{prefix}</td>
+            ].map(([type, by, note]) => (
+              <tr key={type} className="border-b border-border/50">
+                <td className="py-2 pr-6 font-mono text-foreground text-xs">{type}</td>
                 <td className="py-2 pr-6">{by}</td>
                 <td className="py-2">{note}</td>
               </tr>

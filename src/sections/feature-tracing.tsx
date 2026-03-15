@@ -95,7 +95,7 @@ const TYPE_CFG: Record<
 const HTTP_SPANS: Span[] = [
   {
     id: "h1",
-    name: "http:POST /checkout",
+    name: "POST /checkout",
     service: "gateway",
     type: "http",
     status: "success",
@@ -106,7 +106,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h2",
-    name: "rpc:orders.create",
+    name: "orders.create",
     service: "orders",
     type: "rpc",
     status: "success",
@@ -117,7 +117,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h2a",
-    name: "rpc:db.insertOrder",
+    name: "db.insertOrder",
     service: "orders",
     type: "rpc",
     status: "success",
@@ -128,7 +128,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h2b",
-    name: "rpc:inventory.reserve",
+    name: "inventory.reserve",
     service: "inventory",
     type: "rpc",
     status: "success",
@@ -139,7 +139,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h3",
-    name: "event:order.created",
+    name: "order.created",
     service: "orders",
     type: "event",
     status: "success",
@@ -150,7 +150,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h4",
-    name: "event.deliver:payments",
+    name: "order.created → payments",
     service: "payments",
     type: "delivery",
     status: "success",
@@ -162,7 +162,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h5",
-    name: "event.deliver:notify",
+    name: "order.created → notify",
     service: "notify",
     type: "delivery",
     status: "success",
@@ -175,7 +175,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h6",
-    name: "event.deliver:analytics",
+    name: "order.created → analytics",
     service: "analytics",
     type: "delivery",
     status: "success",
@@ -190,7 +190,7 @@ const HTTP_SPANS: Span[] = [
 const RPC_SPANS: Span[] = [
   {
     id: "r1",
-    name: "rpc:payments.charge",
+    name: "payments.charge",
     service: "payments",
     type: "rpc",
     status: "success",
@@ -202,7 +202,7 @@ const RPC_SPANS: Span[] = [
   },
   {
     id: "r2",
-    name: "attempt:payments.charge",
+    name: "payments.charge",
     service: "payments",
     type: "attempt",
     status: "error",
@@ -214,7 +214,7 @@ const RPC_SPANS: Span[] = [
   },
   {
     id: "r3",
-    name: "attempt:payments.charge",
+    name: "payments.charge",
     service: "payments",
     type: "attempt",
     status: "error",
@@ -226,7 +226,7 @@ const RPC_SPANS: Span[] = [
   },
   {
     id: "r3a",
-    name: "rpc:stripe.charge",
+    name: "stripe.charge",
     service: "stripe-adapter",
     type: "rpc",
     status: "error",
@@ -237,7 +237,7 @@ const RPC_SPANS: Span[] = [
   },
   {
     id: "r4",
-    name: "attempt:payments.charge",
+    name: "payments.charge",
     service: "payments",
     type: "attempt",
     status: "success",
@@ -249,7 +249,7 @@ const RPC_SPANS: Span[] = [
   },
   {
     id: "r4a",
-    name: "rpc:stripe.charge",
+    name: "stripe.charge",
     service: "stripe-adapter",
     type: "rpc",
     status: "success",
@@ -263,7 +263,7 @@ const RPC_SPANS: Span[] = [
 const EVENT_SPANS: Span[] = [
   {
     id: "e1",
-    name: "event:order.created",
+    name: "order.created",
     service: "orders",
     type: "event",
     status: "success",
@@ -274,7 +274,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e2",
-    name: "event.deliver:analytics",
+    name: "order.created → analytics",
     service: "analytics",
     type: "delivery",
     status: "success",
@@ -286,7 +286,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e3",
-    name: "event.deliver:notify.email",
+    name: "order.created → notify.email",
     service: "notify",
     type: "delivery",
     status: "success",
@@ -299,7 +299,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e3a",
-    name: "attempt:notify.email #1",
+    name: "notify.email",
     service: "notify",
     type: "attempt",
     status: "error",
@@ -311,7 +311,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e3b",
-    name: "attempt:notify.email #2",
+    name: "notify.email",
     service: "notify",
     type: "attempt",
     status: "success",
@@ -323,7 +323,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e4",
-    name: "event.deliver:billing.invoice",
+    name: "order.created → billing.invoice",
     service: "billing",
     type: "delivery",
     status: "error",
@@ -335,7 +335,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e4a",
-    name: "attempt:billing.invoice #1",
+    name: "billing.invoice",
     service: "billing",
     type: "attempt",
     status: "error",
@@ -347,7 +347,7 @@ const EVENT_SPANS: Span[] = [
   },
   {
     id: "e4b",
-    name: "attempt:billing.invoice #2",
+    name: "billing.invoice",
     service: "billing",
     type: "attempt",
     status: "error",
@@ -362,7 +362,7 @@ const EVENT_SPANS: Span[] = [
 const WORKFLOW_SPANS: Span[] = [
   {
     id: "w1",
-    name: "workflow:merchant.onboarding",
+    name: "merchant.onboarding",
     service: "platform",
     type: "workflow",
     status: "running",
@@ -373,7 +373,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w2",
-    name: "rpc:merchant.validate",
+    name: "merchant.validate",
     service: "merchants",
     type: "rpc",
     status: "success",
@@ -384,7 +384,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w3",
-    name: "rpc:kyc.check",
+    name: "kyc.check",
     service: "kyc",
     type: "rpc",
     status: "success",
@@ -395,7 +395,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w4",
-    name: "rpc:billing.setup",
+    name: "billing.setup",
     service: "billing",
     type: "rpc",
     status: "success",
@@ -406,7 +406,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w5",
-    name: "rpc:merchant.create",
+    name: "merchant.create",
     service: "merchants",
     type: "rpc",
     status: "success",
@@ -417,7 +417,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w6",
-    name: "event:email.welcome",
+    name: "email.welcome",
     service: "notify",
     type: "event",
     status: "success",
@@ -428,7 +428,7 @@ const WORKFLOW_SPANS: Span[] = [
   },
   {
     id: "w7",
-    name: "sleep:wait 24h",
+    name: "wait 24h",
     service: "platform",
     type: "sleep",
     status: "running",
