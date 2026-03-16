@@ -94,13 +94,13 @@ if err != nil {
       <P>Propagate trace context across async boundaries manually:</P>
       <MultiCodeBlock
         code={{
-          ts: `import { getTraceContext, runWithTraceContext } from "service-bridge";
+          ts: `import { getTraceContext, withTraceContext } from "service-bridge";
 
 // Get the current trace context (inside an RPC or event handler)
 const ctx = getTraceContext(); // { traceId, spanId }
 
 // Run a function inside an explicit trace context
-runWithTraceContext({ traceId: "trace-1", spanId: "span-1" }, async () => {
+withTraceContext({ traceId: "trace-1", spanId: "span-1" }, async () => {
   await sb.event("audit.log", { action: "user.login" });
 });`,
           go: `// Add trace context to a Go context.Context
