@@ -39,7 +39,7 @@ export function PageWorkflows() {
       </ul>
 
       <Callout type="info">
-        Use <Mono>runWorkflow(name, input)</Mono> to start a workflow on demand, or{" "}
+        Use <Mono>executeWorkflow(name, input)</Mono> to start a workflow on demand, or{" "}
         <Mono>job(name, {'{ via: "workflow" }'})</Mono> to trigger on a cron schedule.
       </Callout>
 
@@ -168,7 +168,7 @@ async def on_fulfilled(payload: dict, ctx) -> None:
             name: "stateLimitBytes / StateLimitBytes / state_limit_bytes",
             type: "number",
             default: "262144 (256 KB)",
-            desc: "Maximum size in bytes of accumulated step state stored in PostgreSQL for this workflow run.",
+            desc: "Maximum size in bytes of accumulated step state stored in PostgreSQL for this workflow execution.",
           },
           {
             name: "stepTimeoutMs / StepTimeoutMs / step_timeout_ms",
@@ -193,7 +193,7 @@ await sb.workflow("order.fulfillment", steps, WorkflowOpts(step_timeout_ms=60000
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>
           <strong className="text-foreground">0 deps</strong> — step receives the original workflow
-          run input
+          execution input
         </li>
         <li>
           <strong className="text-foreground">1 dep</strong> — step receives that dep's output
@@ -409,21 +409,21 @@ workflow_id = await sb.workflow("order.fulfillment", [
         }}
       />
 
-      {/* ── runWorkflow() ─────────────────────────────────────────── */}
-      <H2 id="run-workflow">runWorkflow() — start a run</H2>
+      {/* ── executeWorkflow() ────────────────────────────────────── */}
+      <H2 id="run-workflow">executeWorkflow() — start a trace</H2>
       <P>
-        Starts a workflow run by name with an optional input payload. The workflow must be
-        registered first via <Mono>workflow()</Mono>. Returns an object with <Mono>runId</Mono> and{" "}
-        <Mono>traceId</Mono> that you can use with <Mono>watchRun()</Mono> or{" "}
-        <Mono>cancelWorkflowRun()</Mono>.
+        Starts a workflow execution by name with an optional input payload. The workflow must be
+        registered first via <Mono>workflow()</Mono>. Returns an object with <Mono>traceId</Mono> and{" "}
+        <Mono>groupTraceId</Mono> that you can use with <Mono>watchTrace()</Mono> or{" "}
+        <Mono>cancelWorkflow()</Mono>.
       </P>
 
       <H3 id="run-workflow-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `runWorkflow(name: string, input?: unknown): Promise<{ runId: string; traceId: string }>`,
-          go: `func (c *Client) RunWorkflow(ctx context.Context, name string, input any) (*RunWorkflowResult, error)`,
-          py: `async def run_workflow(name: str, input: Any = None) -> dict[str, str]`,
+          ts: `executeWorkflow(name: string, input?: unknown): Promise<{ traceId: string; groupTraceId: string }>`,
+          go: `func (c *Client) ExecuteWorkflow(ctx context.Context, name string, input any) (*ExecuteWorkflowResult, error)`,
+          py: `async def execute_workflow(name: str, input: Any = None) -> dict[str, str]`,
         }}
       />
       <ParamTable
@@ -445,46 +445,46 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <H3 id="run-workflow-example">Example</H3>
       <MultiCodeBlock
         code={{
-          ts: `const { runId, traceId } = await sb.runWorkflow("user.onboarding", {
+          ts: `const { traceId, groupTraceId } = await sb.executeWorkflow("user.onboarding", {
   userId: "u_123",
   email: "alice@example.com",
 });
-console.log("started run", runId, "trace", traceId);
+console.log("started trace", traceId, "group", groupTraceId);
 
 // watch progress
-const stream = sb.watchRun(runId, { key: "default" });
+const stream = sb.watchTrace(traceId, { key: "default" });
 for await (const chunk of stream) {
   console.log(chunk.data);
   if (chunk.done) break;
 }`,
-          go: `result, err := svc.RunWorkflow(ctx, "user.onboarding", map[string]any{
+          go: `result, err := svc.ExecuteWorkflow(ctx, "user.onboarding", map[string]any{
   "userId": "u_123",
   "email":  "alice@example.com",
 })
 if err != nil {
   log.Fatal(err)
 }
-fmt.Printf("started run %s, trace %s\\n", result.RunID, result.TraceID)`,
-          py: `result = await sb.run_workflow("user.onboarding", {
+fmt.Printf("started trace %s, group %s\\n", result.TraceID, result.GroupTraceID)`,
+          py: `result = await sb.execute_workflow("user.onboarding", {
     "userId": "u_123",
     "email": "alice@example.com",
 })
-print(f"started run {result['runId']}, trace {result['traceId']}")`,
+print(f"started trace {result['traceId']}, group {result['groupTraceId']}")`,
         }}
       />
 
       {/* ── Cancel ───────────────────────────────────────────────── */}
-      <H2 id="cancel">Cancel a run</H2>
+      <H2 id="cancel">Cancel a trace</H2>
       <P>
-        Cancelling a run marks it as <Mono>cancelled</Mono>, clears any pending leases and event
+        Cancelling a workflow marks it as <Mono>cancelled</Mono>, clears any pending leases and event
         waiters, and closes the root span with an error status. In-flight steps that are already
         executing are not interrupted. Child workflows are <strong>not</strong> auto-cancelled.
       </P>
       <MultiCodeBlock
         code={{
-          ts: `await sb.cancelWorkflowRun("run_01HQ...XYZ");`,
-          go: `err := svc.CancelWorkflowRun(ctx, "run_01HQ...XYZ")`,
-          py: `await sb.cancel_workflow_run("run_01HQ...XYZ")`,
+          ts: `await sb.cancelWorkflow("trace_01HQ...XYZ");`,
+          go: `err := svc.CancelWorkflow(ctx, "trace_01HQ...XYZ")`,
+          py: `await sb.cancel_workflow("trace_01HQ...XYZ")`,
         }}
       />
 

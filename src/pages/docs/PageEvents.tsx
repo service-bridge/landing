@@ -232,7 +232,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
           {
             name: "ctx.traceId (Node/Go) / ctx.trace_id (Python)",
             type: "string",
-            desc: "Distributed trace ID for this event delivery — use with watchRun() for run correlation.",
+            desc: "Distributed trace ID for this event delivery — use with watchTrace() for trace correlation.",
           },
           {
             name: "ctx.spanId (Node/Go) / ctx.span_id (Python)",
@@ -242,7 +242,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
           {
             name: "ctx.stream.write(data, key)",
             type: "method",
-            desc: "Append a real-time chunk to the run stream (visible in dashboard, consumable via watchRun).",
+            desc: "Append a real-time chunk to the trace stream (visible in dashboard, consumable via watchTrace).",
           },
         ]}
       />

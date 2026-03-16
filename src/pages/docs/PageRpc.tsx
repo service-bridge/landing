@@ -77,7 +77,7 @@ export function PageRpc() {
             name: "traceId",
             type: "string",
             default: "auto",
-            desc: "Pass your own trace ID to correlate the call with watchRun() or an HTTP request.",
+            desc: "Pass your own trace ID to correlate the call with watchTrace() or an HTTP request.",
           },
           {
             name: "parentSpanId (Node)",
@@ -101,7 +101,7 @@ const result = await sb.rpc<{ ok: boolean; txId: string }>("payments/charge", {
 }, {
   timeout: 5000,
   retries: 2,
-  traceId: "trace-ord-42",  // use this ID in watchRun() for streaming
+  traceId: "trace-ord-42",  // use this ID in watchTrace() for streaming
 });`,
           go: `// Basic call
 result, err := svc.Rpc(ctx, "users/get", map[string]any{"id": "u_1"}, nil)
@@ -264,7 +264,7 @@ async def greet(payload: dict) -> dict:
       <P>
         The <Mono>ctx</Mono> argument exposes a <Mono>stream.write(data, key)</Mono> method. Push
         real-time chunks to the caller before returning the final result. Chunks are stored and
-        replayable via <Mono>watchRun()</Mono>. See the{" "}
+        replayable via <Mono>watchTrace()</Mono>. See the{" "}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"
@@ -458,7 +458,7 @@ res = await sb.rpc(
       <DocCodeBlock
         lang="ts"
         code={`interface RpcContext {
-  traceId: string;       // current trace ID — use with watchRun()
+  traceId: string;       // current trace ID — use with watchTrace()
   spanId: string;        // current span ID
   stream: {
     write(data: unknown, key?: string): Promise<void>;  // push a real-time chunk
