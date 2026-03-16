@@ -214,7 +214,7 @@ export function RunFlowSection() {
   return (
     <Section id="runs">
       <SectionHeader
-        eyebrow="Runs"
+        eyebrow="Traces"
         title="Every execution, tracked in real time"
         subtitle="Events, RPC calls, jobs and workflows — all runs are visible, filterable and inspectable with full trace details."
       />
@@ -237,7 +237,7 @@ export function RunFlowSection() {
                   <div className="h-2.5 w-2.5 rounded-full bg-white/[0.07]" />
                 </div>
                 <span className="type-overline-mono text-muted-foreground">
-                  ServiceBridge — Runs
+                  ServiceBridge — Traces
                 </span>
               </div>
               <div className="flex items-center gap-2">

@@ -300,7 +300,7 @@ await sb.job("billing/collect", ScheduleOpts(
         </li>
         <li>
           <strong className="text-foreground">Execution history</strong> — Each execution creates a
-          trace visible in the Runs dashboard, linked to the job via the <Mono>job:</Mono> span
+          trace visible in the Traces dashboard, linked to the job via the <Mono>job:</Mono> span
           prefix.
         </li>
       </ul>

@@ -73,7 +73,7 @@ export function PageTracing() {
       <H2 id="inline-logs">Inline logs</H2>
       <P>
         Any log statement made inside a handler is automatically captured and associated with the
-        handler's span. In the Run Detail view, expand any span to see its correlated logs inline —
+        handler's span. In the Trace Detail view, expand any span to see its correlated logs inline —
         no Kibana, no log query, no tab switching.
       </P>
       <MultiCodeBlock
@@ -119,7 +119,7 @@ async def charge(payload: dict) -> dict:
         containing the current trace ID. Use it to:
       </P>
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
-        <li>Look up the exact trace in the dashboard Runs view</li>
+        <li>Look up the exact trace in the dashboard Traces view</li>
         <li>
           Pass to <Mono>watchRun()</Mono> to subscribe to real-time stream chunks
         </li>
@@ -199,7 +199,7 @@ datasources:
       <H2 id="otlp">OTLP trace ingest</H2>
       <P>
         Drop external traces into ServiceBridge via the OTLP JSON endpoint. External spans appear in
-        the same Runs view alongside native spans — useful for mixing traces from non-SDK services:
+        the same Traces view alongside native spans — useful for mixing traces from non-SDK services:
       </P>
       <DocCodeBlock
         lang="bash"
