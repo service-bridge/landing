@@ -37,7 +37,7 @@ export function PageHttpMiddleware() {
         </li>
         <li>
           Set the <Mono>x-trace-id</Mono> response header — useful for frontend correlation and{" "}
-          <Mono>watchRun()</Mono>
+          <Mono>watchTrace()</Mono>
         </li>
         <li>
           Register route patterns in the ServiceBridge HTTP catalog (visible in the dashboard

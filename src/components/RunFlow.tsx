@@ -6,20 +6,20 @@ import { Badge } from "../ui/Badge";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
-type RunType = "event" | "rpc" | "job" | "workflow";
-type RunStatus = "running" | "success" | "error" | "pending";
+type TraceType = "event" | "rpc" | "job" | "workflow";
+type TraceStatus = "running" | "success" | "error" | "pending";
 
-interface Run {
+interface Trace {
   id: string;
   name: string;
   service: string;
-  type: RunType;
-  status: RunStatus;
+  type: TraceType;
+  status: TraceStatus;
   startedAt: Date;
   durationMs: number | null;
 }
 
-const RUN_TEMPLATES: { name: string; service: string; type: RunType }[] = [
+const TRACE_TEMPLATES: { name: string; service: string; type: TraceType }[] = [
   { name: "order.created", service: "orders", type: "event" },
   { name: "payments.charge", service: "payments", type: "rpc" },
   { name: "notifications.send", service: "notifications", type: "event" },
@@ -32,7 +32,7 @@ const RUN_TEMPLATES: { name: string; service: string; type: RunType }[] = [
   { name: "mailer.send", service: "mailer", type: "event" },
 ];
 
-const TYPE_COLORS: Record<RunType, string> = {
+const TYPE_COLORS: Record<TraceType, string> = {
   event: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   rpc: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   job: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -43,7 +43,7 @@ function genId(): string {
   return Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
 }
 
-function StatusCell({ status }: { status: RunStatus }) {
+function StatusCell({ status }: { status: TraceStatus }) {
   const configs = {
     success: {
       icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />,
@@ -75,7 +75,7 @@ function StatusCell({ status }: { status: RunStatus }) {
   );
 }
 
-function makeInitialRuns(): Run[] {
+function makeInitialTraces(): Trace[] {
   const now = Date.now();
   return [
     {
@@ -135,8 +135,8 @@ function makeInitialRuns(): Run[] {
   ];
 }
 
-export function RunFlowSection() {
-  const [runs, setRuns] = useState<Run[]>(makeInitialRuns);
+export function TraceFlowSection() {
+  const [traces, setTraces] = useState<Trace[]>(makeInitialTraces);
   const idxRef = useRef(0);
   const contentRef = useRef(null);
   const isInView = useInView(contentRef, { once: false, margin: "-100px" });
@@ -155,13 +155,13 @@ export function RunFlowSection() {
 
     if (prefersReducedMotion) {
       const now = new Date();
-      setRuns(
-        RUN_TEMPLATES.slice(0, 7).map((t, i) => ({
+      setTraces(
+        TRACE_TEMPLATES.slice(0, 7).map((t, i) => ({
           id: genId(),
           name: t.name,
           service: t.service,
           type: t.type,
-          status: (i < 4 ? "success" : i === 4 ? "running" : "error") as RunStatus,
+          status: (i < 4 ? "success" : i === 4 ? "running" : "error") as TraceStatus,
           startedAt: new Date(now.getTime() - (7 - i) * 9000),
           durationMs: i < 6 ? 12 + i * 14 : null,
         }))
@@ -169,14 +169,14 @@ export function RunFlowSection() {
       return;
     }
 
-    const addRun = () => {
-      const template = RUN_TEMPLATES[idxRef.current % RUN_TEMPLATES.length];
+    const addTrace = () => {
+      const template = TRACE_TEMPLATES[idxRef.current % TRACE_TEMPLATES.length];
       idxRef.current++;
       const id = genId();
       const willError = Math.random() < 0.15;
       const duration = 8 + Math.floor(Math.random() * 120);
 
-      setRuns((prev) =>
+      setTraces((prev) =>
         [
           {
             id,
@@ -193,18 +193,18 @@ export function RunFlowSection() {
 
       const completeAfter = 600 + Math.random() * 1400;
       setTimeout(() => {
-        setRuns((prev) =>
-          prev.map((r) =>
-            r.id === id
-              ? { ...r, status: willError ? "error" : "success", durationMs: duration }
-              : r
+        setTraces((prev) =>
+          prev.map((t) =>
+            t.id === id
+              ? { ...t, status: willError ? "error" : "success", durationMs: duration }
+              : t
           )
         );
       }, completeAfter);
     };
 
-    addRun();
-    intervalRef.current = setInterval(addRun, 2200);
+    addTrace();
+    intervalRef.current = setInterval(addTrace, 2200);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -212,11 +212,11 @@ export function RunFlowSection() {
   }, [isInView]);
 
   return (
-    <Section id="runs">
+    <Section id="traces">
       <SectionHeader
         eyebrow="Traces"
         title="Every execution, tracked in real time"
-        subtitle="Events, RPC calls, jobs and workflows — all runs are visible, filterable and inspectable with full trace details."
+        subtitle="Events, RPC calls, jobs and workflows — all traces are visible, filterable and inspectable with full trace details."
       />
 
       <div ref={contentRef}>
@@ -262,9 +262,9 @@ export function RunFlowSection() {
 
                 <div className="min-h-[320px]">
                   <AnimatePresence mode="popLayout">
-                    {runs.map((run) => (
+                    {traces.map((trace) => (
                       <motion.div
-                        key={run.id}
+                        key={trace.id}
                         layout
                         initial={{ opacity: 0, y: -10, backgroundColor: "rgba(52,211,153,0.07)" }}
                         animate={{ opacity: 1, y: 0, backgroundColor: "rgba(52,211,153,0)" }}
@@ -274,21 +274,21 @@ export function RunFlowSection() {
                       >
                         <div className="flex flex-col min-w-0 pr-3">
                           <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
-                            {run.name}
+                            {trace.name}
                           </span>
                           <span className="text-3xs text-muted-foreground/60 mt-0.5">
-                            {run.service}
+                            {trace.service}
                           </span>
                         </div>
 
-                        <Badge tone={TYPE_COLORS[run.type]} className="w-fit">
-                          {run.type}
+                        <Badge tone={TYPE_COLORS[trace.type]} className="w-fit">
+                          {trace.type}
                         </Badge>
 
-                        <StatusCell status={run.status} />
+                        <StatusCell status={trace.status} />
 
                         <span className="text-3xs text-muted-foreground/70 font-mono tabular-nums">
-                          {run.startedAt.toLocaleTimeString("en-US", {
+                          {trace.startedAt.toLocaleTimeString("en-US", {
                             hour: "2-digit",
                             minute: "2-digit",
                             second: "2-digit",
@@ -297,7 +297,7 @@ export function RunFlowSection() {
                         </span>
 
                         <span className="text-right font-mono text-3xs text-muted-foreground tabular-nums">
-                          {run.durationMs !== null ? `${run.durationMs}ms` : "—"}
+                          {trace.durationMs !== null ? `${trace.durationMs}ms` : "—"}
                         </span>
                       </motion.div>
                     ))}

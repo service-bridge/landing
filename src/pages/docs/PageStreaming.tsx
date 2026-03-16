@@ -7,37 +7,37 @@ export function PageStreaming() {
       <PageHeader
         badge="SDK Reference"
         title="Streaming"
-        description="Push real-time chunks from any handler — RPC or event — and consume them live with watchRun(). Chunks are stored and replayable. Built for LLM tokens, progress bars, log tailing, and AI agent output."
+        description="Push real-time chunks from any handler — RPC or event — and consume them live with watchTrace(). Chunks are stored and replayable. Built for LLM tokens, progress bars, log tailing, and AI agent output."
       />
 
       {/* ── How it works ─────────────────────────────────────────── */}
       <H2 id="how-it-works">How it works</H2>
       <P>
-        Every handler execution writes into a <strong>run stream</strong> identified by{" "}
-        <Mono>runId</Mono> (typically a trace ID). From inside the handler, call{" "}
-        <Mono>ctx.stream.write(data, key)</Mono> to push chunks into that run's stream. Any process
-        with the <Mono>runId</Mono> can subscribe via <Mono>watchRun()</Mono> — live or from the
+        Every handler execution writes into a <strong>trace stream</strong> identified by{" "}
+        <Mono>traceId</Mono>. From inside the handler, call{" "}
+        <Mono>ctx.stream.write(data, key)</Mono> to push chunks into that trace's stream. Any process
+        with the <Mono>traceId</Mono> can subscribe via <Mono>watchTrace()</Mono> — live or from the
         beginning. Chunks are persisted in PostgreSQL for the full retention period.
       </P>
       <P>
-        Stream keys act as named lanes within a run. A handler can write to <Mono>"output"</Mono>,
+        Stream keys act as named lanes within a trace. A handler can write to <Mono>"output"</Mono>,
         <Mono>"progress"</Mono>, and <Mono>"log"</Mono> simultaneously — consumers filter by key.
-        Multiple handlers in the same run can write to the same key; chunks remain ordered by stream
+        Multiple handlers in the same trace can write to the same key; chunks remain ordered by stream
         sequence.
       </P>
 
-      {/* ── Getting runId ────────────────────────────────────────── */}
-      <H2 id="get-run-id">Getting a runId</H2>
+      {/* ── Getting traceId ──────────────────────────────────────── */}
+      <H2 id="get-trace-id">Getting a traceId</H2>
       <P>
-        There are three patterns for obtaining the <Mono>runId</Mono> before calling{" "}
-        <Mono>watchRun()</Mono>:
+        There are three patterns for obtaining the <Mono>traceId</Mono> before calling{" "}
+        <Mono>watchTrace()</Mono>:
       </P>
 
-      <H3 id="runid-trace">Pattern 1 — pass your own traceId</H3>
+      <H3 id="traceid-own">Pattern 1 — pass your own traceId</H3>
       <P>
         The most reliable pattern: generate a trace ID on the caller side, pass it to{" "}
-        <Mono>rpc()</Mono> or <Mono>event()</Mono>, then use that same ID as the <Mono>runId</Mono>
-        for <Mono>watchRun()</Mono>. The handler's run is always stored under the caller's trace ID.
+        <Mono>rpc()</Mono> or <Mono>event()</Mono>, then use that same ID as the <Mono>traceId</Mono>
+        for <Mono>watchTrace()</Mono>. The handler's trace is always stored under the caller's trace ID.
       </P>
       <MultiCodeBlock
         code={{
@@ -49,9 +49,9 @@ const traceId = randomUUID();
 const rpcPromise = sb.rpc("ai/generate", { prompt: "Hello" }, { traceId });
 
 // Use the same ID to watch the stream immediately
-for await (const evt of sb.watchRun(traceId, { key: "output", fromSequence: 0 })) {
+for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
   if (evt.type === "chunk") process.stdout.write((evt.data as { token: string }).token);
-  if (evt.type === "run_complete") break;
+  if (evt.type === "trace_complete") break;
 }
 
 await rpcPromise; // wait for the final return value`,
@@ -63,7 +63,7 @@ go func() {
 }()
 
 // Watch the stream using the same trace ID
-ch, _ := svc.WatchRun(ctx, traceID, &servicebridge.WatchRunOpts{Key: "output"})
+ch, _ := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{Key: "output"})
 for event := range ch {
   var data map[string]any
   json.Unmarshal(event.Data, &data)
@@ -71,7 +71,7 @@ for event := range ch {
   if event.Done { break }
 }`,
           py: `import asyncio, uuid
-from service_bridge import WatchRunOpts
+from service_bridge import WatchTraceOpts
 
 trace_id = str(uuid.uuid4())
 
@@ -79,7 +79,7 @@ trace_id = str(uuid.uuid4())
 asyncio.create_task(sb.rpc("ai/generate", {"prompt": "Hello"}, trace_id=trace_id))
 
 # Watch immediately using the same trace ID
-async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequence=0)):
+async for event in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
     if token := event.data.get("token"):
         print(token, end="", flush=True)
     if event.done:
@@ -87,7 +87,7 @@ async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequen
         }}
       />
 
-      <H3 id="runid-header">Pattern 2 — x-trace-id response header</H3>
+      <H3 id="traceid-header">Pattern 2 — x-trace-id response header</H3>
       <P>
         When HTTP middleware is installed, the <Mono>x-trace-id</Mono> header is added to every
         response. The frontend can read it and pass it to a streaming endpoint:
@@ -95,7 +95,7 @@ async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequen
       <Callout type="warning">
         ServiceBridge streaming is <strong>gRPC-based</strong> — there is no native SSE endpoint. To
         expose an SSE endpoint to browser clients, create your own endpoint in your service that
-        calls <Mono>sb.watchRun(runId)</Mono> / <Mono>svc.WatchRun(ctx, runId, opts)</Mono>{" "}
+        calls <Mono>sb.watchTrace(traceId)</Mono> / <Mono>svc.WatchTrace(ctx, traceID, opts)</Mono>{" "}
         internally and proxies the chunks to the client. The Express and Go examples in the{" "}
         <strong>SSE endpoint</strong> section below show the correct proxy pattern.
       </Callout>
@@ -106,36 +106,36 @@ const res = await fetch("/api/generate", {
   method: "POST",
   body: JSON.stringify({ prompt: "Hello" }),
 });
-const runId = res.headers.get("x-trace-id")!;
+const traceId = res.headers.get("x-trace-id")!;
 
-// Then subscribe to SSE / WebSocket using runId
-const es = new EventSource(\`/api/stream/\${runId}\`);`,
+// Then subscribe to SSE / WebSocket using traceId
+const es = new EventSource(\`/api/stream/\${traceId}\`);`,
           go: `// Client (Go)
 resp, _ := http.Post("http://api/api/generate", "application/json", body)
-runID := resp.Header.Get("X-Trace-Id")
+traceID := resp.Header.Get("X-Trace-Id")
 
-// Then subscribe to SSE using runID
-req, _ := http.NewRequestWithContext(ctx, "GET", "http://api/stream/"+runID, nil)
+// Then subscribe to SSE using traceID
+req, _ := http.NewRequestWithContext(ctx, "GET", "http://api/stream/"+traceID, nil)
 streamResp, _ := client.Do(req)
 // read SSE stream from streamResp.Body`,
           py: `# Client (Python)
 import httpx
 resp = httpx.post("http://api/api/generate", json={"prompt": "Hello"})
-run_id = resp.headers["x-trace-id"]
+trace_id = resp.headers["x-trace-id"]
 
-# Then subscribe to SSE using run_id
+# Then subscribe to SSE using trace_id
 async with httpx.AsyncClient() as client:
-    async with client.stream("GET", f"http://api/stream/{run_id}") as sse:
+    async with client.stream("GET", f"http://api/stream/{trace_id}") as sse:
         async for line in sse.aiter_lines():
             if line.startswith("data:"):
                 print(line)`,
         }}
       />
 
-      <H3 id="runid-workflow">Pattern 3 — from a workflow step</H3>
+      <H3 id="traceid-workflow">Pattern 3 — from a workflow step</H3>
       <P>
-        Inside a workflow, the <Mono>runId</Mono> of a step is its trace ID, which is visible in the
-        dashboard Run Detail. Use it after the workflow completes to replay logged chunks.
+        Inside a workflow, the <Mono>traceId</Mono> of a step is visible in the
+        dashboard Trace Detail. Use it after the workflow completes to replay logged chunks.
       </P>
 
       {/* ── Writing chunks ───────────────────────────────────────── */}
@@ -194,20 +194,20 @@ async def on_order(payload: dict, ctx) -> None:
         }}
       />
 
-      {/* ── watchRun() ───────────────────────────────────────────── */}
-      <H2 id="watch-run">watchRun() — consume the stream</H2>
+      {/* ── watchTrace() ─────────────────────────────────────────── */}
+      <H2 id="watch-trace">watchTrace() — consume the stream</H2>
       <Callout type="info">
-        <Mono>watchRun()</Mono> requires the <Mono>events.publish</Mono> capability on the service
-        key. Services that only have <Mono>events.handle</Mono> cannot call <Mono>watchRun()</Mono>{" "}
+        <Mono>watchTrace()</Mono> requires the <Mono>events.publish</Mono> capability on the service
+        key. Services that only have <Mono>events.handle</Mono> cannot call <Mono>watchTrace()</Mono>{" "}
         directly.
       </Callout>
 
       <H3 id="watch-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `watchRun(runId: string, opts?: WatchRunOpts): AsyncIterable<RunStreamEvent>`,
-          go: `func (c *Client) WatchRun(ctx context.Context, runID string, opts *WatchRunOpts) (<-chan RunStreamEvent, error)`,
-          py: `async def watch_run(run_id: str, opts: WatchRunOpts | None = None) -> AsyncIterator[RunStreamEvent]`,
+          ts: `watchTrace(traceId: string, opts?: WatchTraceOpts): AsyncIterable<TraceStreamEvent>`,
+          go: `func (c *Client) WatchTrace(ctx context.Context, traceID string, opts *WatchTraceOpts) (<-chan TraceStreamEvent, error)`,
+          py: `async def watch_trace(trace_id: str, opts: WatchTraceOpts | None = None) -> AsyncIterator[TraceStreamEvent]`,
         }}
       />
 
@@ -229,7 +229,7 @@ async def on_order(payload: dict, ctx) -> None:
         ]}
       />
       <Callout type="info">
-        Pass <Mono>key</Mono> explicitly in <Mono>watchRun/watch_run</Mono> (for example,{" "}
+        Pass <Mono>key</Mono> explicitly in <Mono>watchTrace/watch_trace</Mono> (for example,{" "}
         <Mono>"output"</Mono>) when you only need one stream lane.
       </Callout>
 
@@ -242,16 +242,16 @@ async def on_order(payload: dict, ctx) -> None:
 // Fire and forget the RPC — it streams tokens while running
 sb.rpc("ai/generate", { prompt: "Write a poem" }, { traceId });
 
-for await (const evt of sb.watchRun(traceId, { key: "output", fromSequence: 0 })) {
+for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
   if (evt.type === "chunk") {
     process.stdout.write((evt.data as { token: string }).token ?? "");
   }
-  if (evt.type === "run_complete") break;
+  if (evt.type === "trace_complete") break;
 }`,
           go: `traceID := uuid.New().String()
 go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "ai/generate", payload, nil)
 
-ch, err := svc.WatchRun(ctx, traceID, &servicebridge.WatchRunOpts{
+ch, err := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{
   Key:          "output",
   FromSequence: 0,
 })
@@ -262,12 +262,12 @@ for event := range ch {
   if event.Done { break }
 }`,
           py: `import asyncio, uuid
-from service_bridge import WatchRunOpts
+from service_bridge import WatchTraceOpts
 
 trace_id = str(uuid.uuid4())
 asyncio.create_task(sb.rpc("ai/generate", {"prompt": "Write a poem"}, trace_id=trace_id))
 
-async for event in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequence=0)):
+async for event in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
     if isinstance(event.data, dict) and (token := event.data.get("token")):
         print(token, end="", flush=True)
     if event.done:
@@ -299,11 +299,11 @@ app.post("/api/generate", async (req, res) => {
   sb.rpc("ai/generate", { prompt }, { traceId }).catch(() => {});
 
   // Stream chunks to client as SSE events
-  for await (const evt of sb.watchRun(traceId, { key: "output", fromSequence: 0 })) {
+  for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
     if (evt.type === "chunk") {
       res.write(\`data: \${JSON.stringify(evt.data)}\\n\\n\`);
     }
-    if (evt.type === "run_complete") break;
+    if (evt.type === "trace_complete") break;
   }
 
   res.end();
@@ -321,7 +321,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
   go svc.Rpc(servicebridge.WithTraceContext(r.Context(), traceID, ""),
     "ai/generate", map[string]any{"prompt": body.Prompt}, nil)
 
-  ch, _ := svc.WatchRun(r.Context(), traceID, &servicebridge.WatchRunOpts{Key: "output"})
+  ch, _ := svc.WatchTrace(r.Context(), traceID, &servicebridge.WatchTraceOpts{Key: "output"})
   for evt := range ch {
     fmt.Fprintf(w, "data: %s\n\n", evt.Data)
     flusher.Flush()
@@ -331,7 +331,7 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
           py: `# FastAPI
 import asyncio, json, uuid
 from fastapi.responses import StreamingResponse
-from service_bridge import WatchRunOpts
+from service_bridge import WatchTraceOpts
 
 @app.post("/api/generate")
 async def generate(request: Request):
@@ -340,7 +340,7 @@ async def generate(request: Request):
 
     async def stream():
         asyncio.create_task(sb.rpc("ai/generate", body, trace_id=trace_id))
-        async for evt in sb.watch_run(trace_id, WatchRunOpts(key="output", from_sequence=0)):
+        async for evt in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
             yield f"data: {json.dumps(evt.data)}\n\n"
             if evt.done:
                 break
@@ -354,9 +354,9 @@ async def generate(request: Request):
       />
 
       <Callout type="warning">
-        The run stream has a server-side per-subscriber ring buffer of <strong>256 chunks</strong>.
+        The trace stream has a server-side per-subscriber ring buffer of <strong>256 chunks</strong>.
         If your consumer falls behind and the buffer overflows, it receives a{" "}
-        <Mono>RunStreamDisconnectError</Mono> (retryable). Reconnect using the last received{" "}
+        <Mono>TraceStreamDisconnectError</Mono> (retryable). Reconnect using the last received{" "}
         <Mono>sequence</Mono> in <Mono>fromSequence</Mono> to resume without missing chunks.
       </Callout>
 
@@ -381,9 +381,9 @@ import { randomUUID } from "crypto";
 const payload = { reportId: "rpt_42" };
 const traceId = randomUUID();
 void sb.rpc("reports/generate", payload, { traceId });
-for await (const evt of sb.watchRun(traceId, { key: "progress" })) {
+for await (const evt of sb.watchTrace(traceId, { key: "progress" })) {
   updateProgressBar((evt.data as { pct: number }).pct);
-  if (evt.type === "run_complete") break;
+  if (evt.type === "trace_complete") break;
 }`,
           go: `// Handler
 svc.HandleRpcWithOpts("reports/generate",
@@ -403,7 +403,7 @@ svc.HandleRpcWithOpts("reports/generate",
 traceID := uuid.New().String()
 payload := map[string]any{"report_id": "rpt_42"}
 go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "reports/generate", payload, nil)
-ch, _ := svc.WatchRun(ctx, traceID, &servicebridge.WatchRunOpts{Key: "progress"})
+ch, _ := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{Key: "progress"})
 for evt := range ch {
   var data map[string]any
   json.Unmarshal(evt.Data, &data)
@@ -424,43 +424,43 @@ async def generate(payload: dict, ctx) -> dict:
 
 # Caller — watch progress key
 import asyncio, uuid
-from service_bridge import WatchRunOpts
+from service_bridge import WatchTraceOpts
 payload = {"report_id": "rpt_42"}
 trace_id = str(uuid.uuid4())
 asyncio.create_task(sb.rpc("reports/generate", payload, trace_id=trace_id))
-async for evt in sb.watch_run(trace_id, WatchRunOpts(key="progress")):
+async for evt in sb.watch_trace(trace_id, WatchTraceOpts(key="progress")):
     update_progress_bar(evt.data["pct"])
     if evt.done:
         break`,
         }}
       />
 
-      {/* ── RunStreamEvent shape ─────────────────────────────────── */}
-      <H2 id="event-shape">RunStreamEvent shape</H2>
+      {/* ── TraceStreamEvent shape ────────────────────────────────── */}
+      <H2 id="event-shape">TraceStreamEvent shape</H2>
       <MultiCodeBlock
         code={{
-          ts: `interface RunStreamEvent {
-  type: "chunk" | "run_complete"; // "run_complete" on the final event
-  runId: string;                  // watched run identifier
-  key: string;                    // stream key ("output", "progress", ...)
-  sequence: number;               // monotonic sequence — use in fromSequence to resume
-  data: unknown;                  // JSON payload from stream.write()
-  runStatus?: string;             // set on run_complete: "success" | "error" | "cancelled"
+          ts: `interface TraceStreamEvent {
+  type: "chunk" | "trace_complete"; // "trace_complete" on the final event
+  traceId: string;                  // watched trace identifier
+  key: string;                      // stream key ("output", "progress", ...)
+  sequence: number;                 // monotonic sequence — use in fromSequence to resume
+  data: unknown;                    // JSON payload from stream.write()
+  traceStatus?: string;             // set on trace_complete: "success" | "error" | "cancelled"
 }`,
-          go: `type RunStreamEvent struct {
-  Sequence  int64
-  Key       string
-  Data      json.RawMessage
-  Done      bool
-  RunStatus string
+          go: `type TraceStreamEvent struct {
+  Sequence    int64
+  Key         string
+  Data        json.RawMessage
+  Done        bool
+  TraceStatus string
 }`,
           py: `@dataclass
-class RunStreamEvent:
+class TraceStreamEvent:
     sequence: int
     key: str
     data: Any
     done: bool
-    run_status: str = ""`,
+    trace_status: str = ""`,
         }}
       />
 
@@ -478,7 +478,7 @@ class RunStreamEvent:
       </P>
 
       <Callout type="tip">
-        Run streams are visible in the dashboard — including stored chunk history. Useful for
+        Trace streams are visible in the dashboard — including stored chunk history. Useful for
         debugging AI agent outputs, reviewing LLM responses, and auditing long-running job progress
         after the fact.
       </Callout>

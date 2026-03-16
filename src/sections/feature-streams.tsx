@@ -50,20 +50,20 @@ const READER_CODE: CodeLangs = {
 
 const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-const runId = await sb.event("ai.generate", { prompt });
+const traceId = await sb.event("ai.generate", { prompt });
 
-for await (const chunk of sb.watchRun(runId, { key: "output" })) {
-  if (chunk.type === "run_complete") break;
+for await (const chunk of sb.watchTrace(traceId, { key: "output" })) {
+  if (chunk.type === "trace_complete") break;
   process.stdout.write(chunk.data.token);
 }`,
 
   go: `svc := servicebridge.New(
     "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "", nil)
 
-runID, _ := svc.Event(ctx, "ai.generate",
+traceID, _ := svc.Event(ctx, "ai.generate",
     map[string]any{"prompt": prompt}, nil)
 
-ch, _ := svc.WatchRun(ctx, runID, &servicebridge.WatchRunOpts{Key: "output"})
+ch, _ := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{Key: "output"})
 for ev := range ch {
     var data map[string]any
     json.Unmarshal(ev.Data, &data)
@@ -71,13 +71,13 @@ for ev := range ch {
     if ev.Done { break }
 }`,
 
-  py: `from service_bridge import ServiceBridge, WatchRunOpts
+  py: `from service_bridge import ServiceBridge, WatchTraceOpts
 
 svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-run_id, _ = await svc.event("ai.generate", {"prompt": prompt})
+trace_id, _ = await svc.event("ai.generate", {"prompt": prompt})
 
-async for chunk in svc.watch_run(run_id, WatchRunOpts(key="output")):
+async for chunk in svc.watch_trace(trace_id, WatchTraceOpts(key="output")):
     if chunk.done:
         break
     print(chunk.data.get("token", ""), end="", flush=True)`,
@@ -98,7 +98,7 @@ const STREAM_LINES = [
   { seq: 12, text: " from the beginning." },
   { seq: 13, text: " Dead-letter queues catch failures." },
   { seq: 14, text: " Retry policies apply exponential backoff." },
-  { seq: 15, text: " ✓ run_complete" },
+  { seq: 15, text: " ✓ trace_complete" },
 ];
 
 const INTERVAL_MS = 240;
@@ -264,7 +264,7 @@ export function StreamsSection() {
           <LiveTerminal />
           <p className="type-body-sm">
             Both the UI dashboard and SDK{" "}
-            <code className="font-mono text-emerald-400">sb.watchRun()</code> receive chunks through
+            <code className="font-mono text-emerald-400">sb.watchTrace()</code> receive chunks through
             the same pipeline.
           </p>
         </div>

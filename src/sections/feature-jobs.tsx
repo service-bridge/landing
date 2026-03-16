@@ -24,7 +24,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
 type Via = "rpc" | "event" | "workflow";
-type RunStatus = "success" | "running" | "pending" | "error";
+type TraceStatus = "success" | "running" | "pending" | "error";
 
 const VIA_ICON: Record<Via, typeof Zap> = { rpc: Zap, event: Radio, workflow: Workflow };
 const VIA_TONE: Record<Via, string> = {
@@ -32,7 +32,7 @@ const VIA_TONE: Record<Via, string> = {
   event: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
   workflow: "border-fuchsia-500/20 bg-fuchsia-500/[0.08] text-fuchsia-300",
 };
-const STATUS_TONE: Record<RunStatus, string> = {
+const STATUS_TONE: Record<TraceStatus, string> = {
   success: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
   running: "border-blue-500/20 bg-blue-500/[0.08] text-blue-300",
   pending: "border-surface-border bg-surface text-muted-foreground/70",
@@ -223,7 +223,7 @@ interface JobRun {
   name: string;
   schedule: string;
   via: Via;
-  status: RunStatus;
+  status: TraceStatus;
   nextRun: string;
 }
 

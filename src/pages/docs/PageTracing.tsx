@@ -121,7 +121,7 @@ async def charge(payload: dict) -> dict:
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>Look up the exact trace in the dashboard Traces view</li>
         <li>
-          Pass to <Mono>watchRun()</Mono> to subscribe to real-time stream chunks
+          Pass to <Mono>watchTrace()</Mono> to subscribe to real-time stream chunks
         </li>
         <li>Include in error responses for support/debugging</li>
       </ul>
@@ -130,8 +130,8 @@ async def charge(payload: dict) -> dict:
           ts: `// Browser
 const res = await fetch("/api/charge", { method: "POST", body: JSON.stringify(payload) });
 const traceId = res.headers.get("x-trace-id");
-// → open dashboard: /runs?traceId=<traceId>
-// → or subscribe: sb.watchRun(traceId, { key: "output" })`,
+// → open dashboard: /traces?traceId=<traceId>
+// → or subscribe: sb.watchTrace(traceId, { key: "output" })`,
           go: `// In an HTTP handler (with middleware installed)
 traceID := r.Header.Get("X-Trace-Id")  // incoming from upstream
 // or from response:
@@ -158,7 +158,7 @@ trace_id = g.trace_id`,
         >
           Manual Spans
         </button>{" "}
-        for <Mono>getTraceContext()</Mono>, <Mono>runWithTraceContext()</Mono>, and Go's{" "}
+        for         <Mono>getTraceContext()</Mono>, <Mono>withTraceContext()</Mono>, and Go's{" "}
         <Mono>WithTraceContext()</Mono>.
       </P>
 
@@ -191,7 +191,7 @@ datasources:
 // Supported labels: service, level, trace_id, span_id`,
           py: `# Same LogQL queries work
 # {service="payments"} returns all Python service logs
-# trace_id label correlates logs to a specific run`,
+# trace_id label correlates logs to a specific trace`,
         }}
       />
 

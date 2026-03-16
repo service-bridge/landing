@@ -111,7 +111,7 @@ await sb.serve()`,
   cron: "0 * * * *",   // every hour
   timezone: "UTC",
   via: "rpc",
-  misfire: "fire_now", // run immediately if a tick was missed
+  misfire: "fire_now", // execute immediately if a tick was missed
 });`,
           go: `jobID, err := svc.Job(ctx, "billing/collect", servicebridge.ScheduleOpts{
   Cron:     "0 * * * *",
@@ -219,9 +219,9 @@ job_id = await sb.job("billing/collect", ScheduleOpts(
       <H2 id="job-workflow">Trigger a workflow</H2>
       <P>
         Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. You can also
-        trigger workflows on demand using <Mono>sb.runWorkflow(name, input)</Mono> /{" "}
-        <Mono>svc.RunWorkflow(ctx, name, input)</Mono> /{" "}
-        <Mono>await sb.run_workflow(name, input)</Mono>. See the Workflows page for full details.
+        trigger workflows on demand using <Mono>sb.executeWorkflow(name, input)</Mono> /{" "}
+        <Mono>svc.ExecuteWorkflow(ctx, name, input)</Mono> /{" "}
+        <Mono>await sb.execute_workflow(name, input)</Mono>. See the Workflows page for full details.
       </P>
       <MultiCodeBlock
         code={{
@@ -291,8 +291,8 @@ await sb.job("billing/collect", ScheduleOpts(
       <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>
           <strong className="text-foreground">Manual trigger</strong> —{" "}
-          <Mono>POST /api/jobs/{"<jobId>"}/run-now</Mono> fires the job immediately and returns a
-          new <Mono>runId</Mono>.
+          <Mono>POST /api/jobs/{"<jobId>"}/execute-now</Mono> fires the job immediately and returns a
+          new <Mono>traceId</Mono>.
         </li>
         <li>
           <strong className="text-foreground">Cancel</strong> — Delete the job from the Jobs

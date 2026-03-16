@@ -32,8 +32,8 @@ import { Button } from "./ui/button";
 const UseCasesSection = lazy(() =>
   import("./sections/UseCases").then((m) => ({ default: m.UseCasesSection }))
 );
-const RunFlowSection = lazy(() =>
-  import("./components/RunFlow").then((m) => ({ default: m.RunFlowSection }))
+const TraceFlowSection = lazy(() =>
+  import("./components/RunFlow").then((m) => ({ default: m.TraceFlowSection }))
 );
 const CodeSection = lazy(() => import("./sections/Code").then((m) => ({ default: m.CodeSection })));
 const ArchitectureSection = lazy(() =>
@@ -444,7 +444,7 @@ export default function App() {
           <FeaturesSection />
           <Suspense fallback={null}>
             <UseCasesSection />
-            <RunFlowSection />
+            <TraceFlowSection />
             <CodeSection />
             <ArchitectureSection />
             <DirectRpcSection />

@@ -388,7 +388,7 @@ function StreamDiagram() {
           <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
           <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
           <span className="ml-2 text-3xs font-mono text-muted-foreground/70">
-            sb.watchRun(runId, "output")
+            sb.watchTrace(traceId, "output")
           </span>
           <span className="ml-auto flex items-center gap-1 text-3xs font-mono text-sky-400">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
