@@ -80,6 +80,12 @@ export function PageEvents() {
         ]}
       />
 
+      <Callout type="info">
+        Node.js only: <Mono>publishEvent()</Mono> publishes via the worker session stream (requires{" "}
+        <Mono>serve()</Mono>). Use it from within a worker for lower-latency publishing. Use{" "}
+        <Mono>event()</Mono> when not serving (e.g. caller-only services).
+      </Callout>
+
       <H3 id="event-example">Examples</H3>
       <MultiCodeBlock
         code={{

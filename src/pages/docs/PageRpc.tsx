@@ -85,6 +85,12 @@ export function PageRpc() {
             default: "auto",
             desc: "Override the parent span ID.",
           },
+          {
+            name: "mode (Node)",
+            type: '"direct" | "proxy"',
+            default: '"direct"',
+            desc: "Transport mode. direct — connect to worker; proxy — route via control plane when direct unavailable.",
+          },
         ]}
       />
 

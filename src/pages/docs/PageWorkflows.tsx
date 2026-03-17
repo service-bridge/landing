@@ -421,7 +421,7 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <H3 id="run-workflow-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `executeWorkflow(name: string, input?: unknown): Promise<{ traceId: string; groupTraceId: string }>`,
+          ts: `executeWorkflow(name: string, input?: unknown, opts?: ExecuteWorkflowOpts): Promise<{ traceId: string; groupTraceId: string }>`,
           go: `func (c *Client) ExecuteWorkflow(ctx context.Context, name string, input any) (*ExecuteWorkflowResult, error)`,
           py: `async def execute_workflow(name: str, input: Any = None) -> dict[str, str]`,
         }}
@@ -438,6 +438,11 @@ workflow_id = await sb.workflow("order.fulfillment", [
             type: "object",
             default: "{}",
             desc: "JSON-serializable input passed to root steps (steps with no deps).",
+          },
+          {
+            name: "opts.traceId",
+            type: "string",
+            desc: "Override trace ID for this workflow execution.",
           },
         ]}
       />
