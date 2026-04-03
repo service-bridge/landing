@@ -107,13 +107,13 @@ await sb.serve()`,
       <H3 id="job-cron">Recurring cron job</H3>
       <MultiCodeBlock
         code={{
-          ts: `const jobId = await sb.job("billing/billing.collect", {
+          ts: `const jobId = await sb.job("billing.collect", {
   cron: "0 * * * *",   // every hour
   timezone: "UTC",
   via: "rpc",
   misfire: "fire_now", // execute immediately if a tick was missed
 });`,
-          go: `jobID, err := svc.Job(ctx, "billing/billing.collect", servicebridge.ScheduleOpts{
+          go: `jobID, err := svc.Job(ctx, "billing.collect", servicebridge.ScheduleOpts{
   Cron:     "0 * * * *",
   Timezone: "UTC",
   Via:      "rpc",
@@ -121,7 +121,7 @@ await sb.serve()`,
 })`,
           py: `from service_bridge import ScheduleOpts
 
-job_id = await sb.job("billing/billing.collect", ScheduleOpts(
+job_id = await sb.job("billing.collect", ScheduleOpts(
     cron="0 * * * *",
     timezone="UTC",
     via="rpc",
@@ -138,19 +138,19 @@ job_id = await sb.job("billing/billing.collect", ScheduleOpts(
       </P>
       <MultiCodeBlock
         code={{
-          ts: `await sb.job("emails/emails.weekly_digest", {
+          ts: `await sb.job("emails.weekly_digest", {
   cron: "0 9 * * MON",   // every Monday 9am
   timezone: "Europe/Moscow",
   via: "rpc",
   misfire: "skip",       // don't send stale digest if runtime was down
 });`,
-          go: `svc.Job(ctx, "emails/emails.weekly_digest", servicebridge.ScheduleOpts{
+          go: `svc.Job(ctx, "emails.weekly_digest", servicebridge.ScheduleOpts{
   Cron:     "0 9 * * MON",
   Timezone: "Europe/Moscow",
   Via:      "rpc",
   Misfire:  "skip",
 })`,
-          py: `await sb.job("emails/emails.weekly_digest", ScheduleOpts(
+          py: `await sb.job("emails.weekly_digest", ScheduleOpts(
     cron="0 9 * * MON",
     timezone="Europe/Moscow",
     via="rpc",
@@ -169,15 +169,15 @@ job_id = await sb.job("billing/billing.collect", ScheduleOpts(
       <P>Fire once after a delay — useful for welcome emails, trial expirations, follow-ups:</P>
       <MultiCodeBlock
         code={{
-          ts: `await sb.job("emails/emails.send_welcome", {
+          ts: `await sb.job("emails.send_welcome", {
   delay: 30_000,  // fire in 30 seconds
   via: "rpc",
 });`,
-          go: `svc.Job(ctx, "emails/emails.send_welcome", servicebridge.ScheduleOpts{
+          go: `svc.Job(ctx, "emails.send_welcome", servicebridge.ScheduleOpts{
   DelayMs: 30_000,
   Via:     "rpc",
 })`,
-          py: `await sb.job("emails/emails.send_welcome", ScheduleOpts(
+          py: `await sb.job("emails.send_welcome", ScheduleOpts(
     delay_ms=30_000,
     via="rpc",
 ))`,
@@ -259,7 +259,7 @@ job_id = await sb.job("billing/billing.collect", ScheduleOpts(
       />
       <MultiCodeBlock
         code={{
-          ts: `await sb.job("billing/billing.collect", {
+          ts: `await sb.job("billing.collect", {
   cron: "0 * * * *",
   via: "rpc",
   retryPolicyJson: JSON.stringify({
@@ -268,13 +268,13 @@ job_id = await sb.job("billing/billing.collect", ScheduleOpts(
     factor: 2,
   }),
 });`,
-          go: `svc.Job(ctx, "billing/billing.collect", servicebridge.ScheduleOpts{
+          go: `svc.Job(ctx, "billing.collect", servicebridge.ScheduleOpts{
   Cron:            "0 * * * *",
   Via:             "rpc",
   RetryPolicyJSON: \`{"maxAttempts":3,"baseDelayMs":10000,"factor":2}\`,
 })`,
           py: `import json
-await sb.job("billing/billing.collect", ScheduleOpts(
+await sb.job("billing.collect", ScheduleOpts(
     cron="0 * * * *",
     via="rpc",
     retry_policy_json=json.dumps({"maxAttempts": 3, "baseDelayMs": 10000, "factor": 2}),

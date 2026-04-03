@@ -30,7 +30,7 @@ export function PageTransportModes() {
       <P>Transport mode is resolved from the most-specific override to the global default:</P>
       <ol className="list-decimal pl-6 space-y-1 text-sm text-muted-foreground my-3">
         <li>
-          <Mono>function_overrides["service/fn"]</Mono> (wire key, fn uses dot notation) — per-function (highest priority)
+          <Mono>function_overrides["fn.name"]</Mono> — per-function override, key is the function name in dot notation (e.g. <Mono>"payment.charge"</Mono>), highest priority
         </li>
         <li>
           <Mono>service_overrides["service"]</Mono> — per-service
@@ -47,7 +47,7 @@ export function PageTransportModes() {
     payments:
       mode: proxy
   function_overrides:
-    "payments/payment.charge":
+    "payment.charge":
       mode: proxy
       timeout_ms: 10000`}
       />

@@ -135,7 +135,7 @@ async def on_fulfilled(payload: dict, ctx) -> None:
           {
             name: "ref",
             type: "string",
-            desc: 'Required for all step types except "sleep". RPC: "service/fn" where fn uses dot notation (e.g. "payments/payment.charge"). Event/event_wait: topic pattern. Workflow: child workflow name.',
+            desc: 'Required for all step types except "sleep". For rpc — function name in dot notation (e.g. "payment.charge"); the runtime resolves the target service from its registry. For event/event_wait — topic or pattern. For workflow — child workflow name. Always use dots, never slashes.',
           },
           {
             name: "deps",

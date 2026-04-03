@@ -42,7 +42,7 @@ export function PageConfigPush() {
       circuit_breaker:
         failure_threshold: 3
   function_overrides:
-    "payments/payment.charge":
+    "payment.charge":
       mode: proxy
       timeout_ms: 10000`}
       />
