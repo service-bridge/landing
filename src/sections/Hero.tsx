@@ -71,7 +71,8 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="type-display-xl mx-auto max-w-5xl font-display sm:text-6xl lg:text-7xl"
         >
-          Production-Grade Distributed Workers Without the Complexity
+          One Self-Hosted Runtime for Microservices: RPC, Events, Workflows, and Jobs — No Service
+          Mesh, No Sidecars
         </motion.h1>
 
         <motion.p
@@ -80,9 +81,9 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="type-body-lg mx-auto mt-8 max-w-2xl leading-relaxed text-muted-foreground sm:text-xl"
         >
-          <span className="text-foreground font-medium">One Go binary, one PostgreSQL</span> — with
-          enterprise session resilience, zero-loss bidirectional replay, Full Mesh routing with
-          circuit breakers, and hot-reload config. Three SDKs, identical API.
+          Direct gRPC between workers with zero proxy hops. Durable events and background jobs,
+          long-running workflows, distributed tracing and auto mTLS, full mesh with circuit
+          breakers, and hot-reload transport config. Node, Python, and Go — one identical API.
         </motion.p>
 
         <motion.div
