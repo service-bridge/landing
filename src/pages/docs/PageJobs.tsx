@@ -219,9 +219,9 @@ job_id = await sb.job("billing.collect", ScheduleOpts(
       <H2 id="job-workflow">Trigger a workflow</H2>
       <P>
         Use <Mono>via: "workflow"</Mono> to start a named workflow on a schedule. You can also
-        trigger workflows on demand using <Mono>sb.executeWorkflow(name, input)</Mono> /{" "}
-        <Mono>svc.ExecuteWorkflow(ctx, name, input)</Mono> /{" "}
-        <Mono>await sb.execute_workflow(name, input)</Mono>. See the Workflows page for full details.
+        trigger workflows on demand using <Mono>sb.executeWorkflow(service, name, input)</Mono> /{" "}
+        <Mono>svc.ExecuteWorkflow(ctx, service, name, input)</Mono> /{" "}
+        <Mono>await sb.execute_workflow(service, name, input)</Mono>. See the Workflows page for full details.
       </P>
       <MultiCodeBlock
         code={{
