@@ -135,12 +135,12 @@ async def on_fulfilled(payload: dict, ctx) -> None:
           {
             name: "service",
             type: "string",
-            desc: 'Optional. For "rpc" and "workflow" — target logical service (same as the first argument to rpc(service, fn)). Required when the same function or workflow name exists on multiple services. The runtime builds the canonical target as service + "/" + ref — it does not strip a prefix from ref.',
+            desc: '**Required** for "rpc" and "workflow" steps. Target logical service name (e.g. "inventory", "payments").',
           },
           {
             name: "ref",
             type: "string",
-            desc: 'Required for all step types except "sleep". For rpc — the registered function name (fn_name), same as in handleRpc / rpc; must match exactly (e.g. send.trial_reminder or emails.send_trial_reminder — whatever you registered). It does not have to repeat the service name. For event/event_wait — topic or pattern. For workflow — child workflow name. Always use dots, never slashes.',
+            desc: 'Required for all step types except "sleep". For rpc — the registered function name (e.g. "stock.reserve", "charge"). For event/event_wait — topic or pattern. For workflow — child workflow name. Always use dots, never slashes.',
           },
           {
             name: "deps",

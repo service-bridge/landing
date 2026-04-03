@@ -42,13 +42,13 @@ sb.handleEvent("payment.failed", async (payload, ctx) => {
   if (!notified) ctx.retry(30_000);    // reschedule 30s later
 });
 
-// Scheduled job — cron or one-shot
-await sb.job("reports.daily", { cron: "0 9 * * *", via: "rpc" });
+// Scheduled job — RPC job with explicit service and function
+await sb.job("reports", "daily", { cron: "0 9 * * *", via: "rpc" });
 
 // Multi-step workflow with parallel steps
 await sb.workflow("checkout.flow", [
-  { id: "charge",   type: "rpc",   ref: "payment.charge",   deps: [] },
-  { id: "reserve",  type: "rpc",   ref: "stock.reserve", deps: [] },
+  { id: "charge",   type: "rpc",   service: "payments", ref: "charge",   deps: [] },
+  { id: "reserve",  type: "rpc",   service: "inventory", ref: "stock.reserve", deps: [] },
   { id: "confirm",  type: "event", ref: "order.confirmed",   deps: ["charge", "reserve"] },
 ]);
 
@@ -97,15 +97,15 @@ func main() {
     return nil
   }, &servicebridge.HandleEventOpts{GroupName: "payments:process"})
 
-  // Scheduled job — cron or one-shot
-  svc.Job("reports.daily", servicebridge.ScheduleOpts{Cron: "0 9 * * *", Via: "rpc"})
+  // Scheduled job — RPC job with explicit service and function
+  svc.JobRPC(ctx, "reports", "daily", servicebridge.ScheduleOpts{Cron: "0 9 * * *"})
 
   // Multi-step workflow with parallel steps
-  svc.Workflow("checkout.flow", []servicebridge.WorkflowStep{
-    {ID: "charge",  Type: "rpc",   Ref: "payment.charge",   Deps: []string{}},
-    {ID: "reserve", Type: "rpc",   Ref: "stock.reserve", Deps: []string{}},
+  svc.Workflow(ctx, "checkout.flow", []servicebridge.WorkflowStep{
+    {ID: "charge",  Type: "rpc",   Service: "payments", Ref: "charge",   Deps: []string{}},
+    {ID: "reserve", Type: "rpc",   Service: "inventory", Ref: "stock.reserve", Deps: []string{}},
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
-  })
+  }, nil)
 
   log.Fatal(svc.Serve(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
 }`,
@@ -138,15 +138,15 @@ async def on_order_created(payload: dict, ctx) -> None:
     if not success:
         ctx.retry(30_000)    # retry in 30s
 
-# Scheduled job — cron or one-shot
+# Scheduled job — RPC job with explicit service and function
 async def bootstrap():
-    await sb.job("reports.daily", cron="0 9 * * *", via="rpc")
+    await sb.job_rpc("reports", "daily", ScheduleOpts(cron="0 9 * * *"))
 
     # Multi-step workflow with parallel steps
     await sb.workflow("checkout.flow", [
-        {"id": "charge",  "type": "rpc",   "ref": "payment.charge",   "deps": []},
-        {"id": "reserve", "type": "rpc",   "ref": "stock.reserve", "deps": []},
-        {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
+        WorkflowStep(id="charge",  type="rpc",   service="payments", ref="charge",   deps=[]),
+        WorkflowStep(id="reserve", type="rpc",   service="inventory", ref="stock.reserve", deps=[]),
+        WorkflowStep(id="confirm", type="event", ref="order.confirmed",   deps=["charge", "reserve"]),
     ])
 
     await sb.serve()  # auto-provisions worker mTLS via ProvisionWorkerCertificate
