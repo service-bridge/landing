@@ -135,12 +135,12 @@ async def on_fulfilled(payload: dict, ctx) -> None:
           {
             name: "service",
             type: "string",
-            desc: 'Optional. For "rpc" and "workflow" — target logical service (same as the first argument to rpc(service, fn)). Required when the same function or workflow name exists on multiple services.',
+            desc: 'Optional. For "rpc" and "workflow" — target logical service (same as the first argument to rpc(service, fn)). Required when the same function or workflow name exists on multiple services. The runtime builds the canonical target as service + "/" + ref — it does not strip a prefix from ref.',
           },
           {
             name: "ref",
             type: "string",
-            desc: 'Required for all step types except "sleep". For rpc — function name in dot notation. For event/event_wait — topic or pattern. For workflow — child workflow name. Always use dots, never slashes.',
+            desc: 'Required for all step types except "sleep". For rpc — the registered function name (fn_name), same as in handleRpc / rpc; must match exactly (e.g. send.trial_reminder or emails.send_trial_reminder — whatever you registered). It does not have to repeat the service name. For event/event_wait — topic or pattern. For workflow — child workflow name. Always use dots, never slashes.',
           },
           {
             name: "deps",
@@ -397,17 +397,17 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("trial.expiry", [
-  { id: "send_reminder", type: "rpc",   service: "emails", ref: "emails.send_trial_reminder" },
+  { id: "send_reminder", type: "rpc",   service: "emails", ref: "send.trial_reminder" },
   { id: "wait_7d",       type: "sleep", durationMs: 604_800_000,             deps: ["send_reminder"] },
   { id: "expire",        type: "rpc",   service: "billing", ref: "billing.expire_trial",         deps: ["wait_7d"] },
 ]);`,
           go: `svc.Workflow(ctx, "trial.expiry", []servicebridge.WorkflowStep{
-  {ID: "send_reminder", Type: "rpc",   Service: "emails", Ref: "emails.send_trial_reminder"},
+  {ID: "send_reminder", Type: "rpc",   Service: "emails", Ref: "send.trial_reminder"},
   {ID: "wait_7d",       Type: "sleep", DurationMs: 604_800_000,            Deps: []string{"send_reminder"}},
   {ID: "expire",        Type: "rpc",   Service: "billing", Ref: "billing.expire_trial",        Deps: []string{"wait_7d"}},
 })`,
           py: `await sb.workflow("trial.expiry", [
-    WorkflowStep(id="send_reminder", type="rpc",   service="emails", ref="emails.send_trial_reminder"),
+    WorkflowStep(id="send_reminder", type="rpc",   service="emails", ref="send.trial_reminder"),
     WorkflowStep(id="wait_7d",       type="sleep", duration_ms=604_800_000,           deps=["send_reminder"]),
     WorkflowStep(id="expire",        type="rpc",   service="billing", ref="billing.expire_trial",        deps=["wait_7d"]),
 ])`,
