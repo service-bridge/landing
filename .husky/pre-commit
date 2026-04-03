@@ -1,7 +1,4 @@
-#!/bin/sh
-set -eu
-
-# Set SKIP_HOOK=1 to bypass the entire pre-commit check.
+# Set SKIP_HOOK=1 to bypass all checks.
 if [ "${SKIP_HOOK:-}" = "1" ]; then
   exit 0
 fi
