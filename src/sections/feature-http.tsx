@@ -32,7 +32,7 @@ app.use(servicebridgeMiddleware(sb, {
 }));
 
 app.post("/api/orders", async (req, res) => {
-  const order = await sb.rpc("orders.create", req.body);
+  const order = await sb.rpc("orders", "orders.create", req.body);
   res.json(order);
 });`,
   },
@@ -52,7 +52,7 @@ await app.register(servicebridgePlugin, { client: sb });
 
 app.post("/checkout", {
   handler: async (req, reply) => {
-    const result = await sb.rpc("checkout.process", req.body);
+    const result = await sb.rpc("checkout", "checkout.process", req.body);
     return result;
   },
 });`,
@@ -77,7 +77,9 @@ func main() {
   r.Use(sbhttp.GinMiddleware(client))
 
   r.POST("/orders", func(c *gin.Context) {
-    result, _ := client.Rpc(c.Request.Context(), "orders.create", body)
+    var body map[string]any
+    _ = c.ShouldBindJSON(&body)
+    result, _ := client.Rpc(c.Request.Context(), "orders", "orders.create", body, nil)
     c.JSON(200, result)
   })
 
@@ -100,7 +102,7 @@ app.add_middleware(ServiceBridgeMiddleware, client=sb)
 
 @app.post("/orders")
 async def create_order(body: dict):
-    result = await sb.rpc("orders.create", body)
+    result = await sb.rpc("orders", "orders.create", body)
     return result`,
   },
 ] as const;
@@ -143,7 +145,7 @@ const REQUEST_PATH = [
   },
   {
     label: "handler",
-    sub: "sb.rpc('orders.create', …)",
+    sub: "sb.rpc('orders', 'orders.create', …)",
     color: "bg-blue-400",
     tone: "text-blue-300 bg-blue-500/[0.06] border-blue-500/20",
   },

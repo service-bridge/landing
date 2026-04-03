@@ -48,8 +48,8 @@ await sb.job("reports.daily", { cron: "0 9 * * *", via: "rpc" });
 
 // Multi-step workflow with parallel steps
 await sb.workflow("checkout.flow", [
-  { id: "charge",   type: "rpc",   ref: "payments.charge",   deps: [] },
-  { id: "reserve",  type: "rpc",   ref: "inventory.reserve", deps: [] },
+  { id: "charge",   type: "rpc",   ref: "payments/payment.charge",   deps: [] },
+  { id: "reserve",  type: "rpc",   ref: "inventory/inventory.reserve", deps: [] },
   { id: "confirm",  type: "event", ref: "order.confirmed",   deps: ["charge", "reserve"] },
 ]);
 
@@ -82,7 +82,7 @@ func main() {
   svc := servicebridge.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
   // RPC handler — direct gRPC, context carries trace
-  svc.HandleRpc("payments.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
+  svc.HandleRpc("payment.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
     txId, err := stripe.Charge(ctx, payload)
     if err != nil {
       return nil, err
@@ -103,8 +103,8 @@ func main() {
 
   // Multi-step workflow with parallel steps
   svc.Workflow("checkout.flow", []servicebridge.WorkflowStep{
-    {ID: "charge",  Type: "rpc",   Ref: "payments.charge",   Deps: []string{}},
-    {ID: "reserve", Type: "rpc",   Ref: "inventory.reserve", Deps: []string{}},
+    {ID: "charge",  Type: "rpc",   Ref: "payments/payment.charge",   Deps: []string{}},
+    {ID: "reserve", Type: "rpc",   Ref: "inventory/inventory.reserve", Deps: []string{}},
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   })
 
@@ -145,8 +145,8 @@ async def bootstrap():
 
     # Multi-step workflow with parallel steps
     await sb.workflow("checkout.flow", [
-        {"id": "charge",  "type": "rpc",   "ref": "payments.charge",   "deps": []},
-        {"id": "reserve", "type": "rpc",   "ref": "inventory.reserve", "deps": []},
+        {"id": "charge",  "type": "rpc",   "ref": "payments/payment.charge",   "deps": []},
+        {"id": "reserve", "type": "rpc",   "ref": "inventory/inventory.reserve", "deps": []},
         {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
     ])
 

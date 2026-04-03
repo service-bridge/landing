@@ -119,7 +119,7 @@ const sb = servicebridge(
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
 
-const result = await sb.rpc<{ ok: boolean; txId: string }>("payments/charge", {
+const result = await sb.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 });
@@ -140,7 +140,7 @@ import (
 func main() {
   svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-  result, err := svc.Rpc(context.Background(), "payments/charge", map[string]any{
+  result, err := svc.Rpc(context.Background(), "payments", "payment.charge", map[string]any{
     "order_id": "ord_42",
     "amount":   4990,
   }, nil)
@@ -161,7 +161,7 @@ from service_bridge import ServiceBridge
 sb = ServiceBridge("localhost:14445", "your-service-key")
 
 async def main():
-    result = await sb.rpc("payments/charge", {
+    result = await sb.rpc("payments", "payment.charge", {
         "order_id": "ord_42",
         "amount": 4990,
     })

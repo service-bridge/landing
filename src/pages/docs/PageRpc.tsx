@@ -35,9 +35,9 @@ export function PageRpc() {
       <H3 id="rpc-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `rpc<T = unknown>(fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
-          go: `func (c *Client) Rpc(ctx context.Context, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
-          py: `async def rpc(fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "") -> Any`,
+          ts: `rpc<T = unknown>(service: string, fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
+          go: `func (c *Client) Rpc(ctx context.Context, service string, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
+          py: `async def rpc(target_service: str, fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "") -> Any`,
         }}
       />
 
@@ -45,9 +45,14 @@ export function PageRpc() {
       <ParamTable
         rows={[
           {
+            name: "service / target_service",
+            type: "string",
+            desc: "Callee logical service name (e.g. payments).",
+          },
+          {
             name: "fn",
             type: "string",
-            desc: 'Target in "service/method" format, e.g. "payments/charge". Use canonical form to avoid ambiguity.',
+            desc: 'Function name as registered with handleRpc (e.g. "payment.charge"). Use dot notation to group methods; do not use "/" in fn.',
           },
           {
             name: "payload",
@@ -98,10 +103,10 @@ export function PageRpc() {
       <MultiCodeBlock
         code={{
           ts: `// Basic call
-const user = await sb.rpc<{ id: string; name: string }>("users/get", { id: "u_1" });
+const user = await sb.rpc<{ id: string; name: string }>("users", "user.get", { id: "u_1" });
 
 // With options — 2 retries, 5 s timeout, explicit trace ID
-const result = await sb.rpc<{ ok: boolean; txId: string }>("payments/charge", {
+const result = await sb.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 }, {
@@ -110,10 +115,10 @@ const result = await sb.rpc<{ ok: boolean; txId: string }>("payments/charge", {
   traceId: "trace-ord-42",  // use this ID in watchTrace() for streaming
 });`,
           go: `// Basic call
-result, err := svc.Rpc(ctx, "users/get", map[string]any{"id": "u_1"}, nil)
+result, err := svc.Rpc(ctx, "users", "user.get", map[string]any{"id": "u_1"}, nil)
 
 // With options
-result, err = svc.Rpc(ctx, "payments/charge", map[string]any{
+result, err = svc.Rpc(ctx, "payments", "payment.charge", map[string]any{
   "order_id": "ord_42",
   "amount":   4990,
 }, &servicebridge.RpcOpts{
@@ -121,11 +126,12 @@ result, err = svc.Rpc(ctx, "payments/charge", map[string]any{
   TimeoutMs: 5000,
 })`,
           py: `# Basic call
-user = await sb.rpc("users/get", {"id": "u_1"})
+user = await sb.rpc("users", "user.get", {"id": "u_1"})
 
 # With options
 result = await sb.rpc(
-    "payments/charge",
+    "payments",
+    "payment.charge",
     {"order_id": "ord_42", "amount": 4990},
     retries=2,
     timeout_ms=5000,
@@ -160,14 +166,14 @@ result = await sb.rpc(
           ts: `import { ServiceBridgeError } from "service-bridge";
 
 try {
-  await sb.rpc("payments/charge", { orderId: "ord_1" });
+  await sb.rpc("payments", "payment.charge", { orderId: "ord_1" });
 } catch (e) {
   if (e instanceof ServiceBridgeError) {
     console.error(e.component, e.operation, e.severity, e.code, e.retryable);
   }
   throw e;
 }`,
-          go: `result, err := svc.Rpc(ctx, "payments/charge", payload, nil)
+          go: `result, err := svc.Rpc(ctx, "payments", "payment.charge", payload, nil)
 if err != nil {
   var sbErr *servicebridge.ServiceBridgeError
   if errors.As(err, &sbErr) {
@@ -178,7 +184,7 @@ if err != nil {
           py: `from service_bridge import ServiceBridgeError
 
 try:
-    await sb.rpc("payments/charge", {"order_id": "ord_1"})
+    await sb.rpc("payments", "payment.charge", {"order_id": "ord_1"})
 except ServiceBridgeError as e:
     print(e.component, e.operation, e.severity, e.code, e.retryable)
     raise`,
@@ -214,7 +220,11 @@ async def handler(payload: dict, ctx = None) -> dict: ...`,
       <H3 id="handle-opts">Handler options</H3>
       <ParamTable
         rows={[
-          { name: "fn", type: "string", desc: "Handler name. Callers reference it as service/fn." },
+          {
+            name: "fn",
+            type: "string",
+            desc: 'Handler name (e.g. "payment.charge"). Callers pass the service separately in rpc(service, fn, ...).',
+          },
           {
             name: "allowedCallers / allowed_callers",
             type: "string[]",
@@ -282,21 +292,21 @@ async def greet(payload: dict) -> dict:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("ai/generate", async (payload: { prompt: string }, ctx) => {
+          ts: `sb.handleRpc("ai.generate", async (payload: { prompt: string }, ctx) => {
   const tokens = await callLLM(payload.prompt);
   for (const token of tokens) {
     await ctx?.stream.write({ token }, "output");
   }
   return { done: true };
 });`,
-          go: `svc.HandleRpcWithOpts("ai/generate",
+          go: `svc.HandleRpcWithOpts("ai.generate",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
     for _, token := range callLLM(ctx) {
       rpcCtx.Stream.Write(map[string]any{"token": token}, "output")
     }
     return map[string]any{"done": true}, nil
   }, nil)`,
-          py: `@sb.handle_rpc("ai/generate")
+          py: `@sb.handle_rpc("ai.generate")
 async def generate(payload: dict, ctx) -> dict:
     async for token in call_llm(payload["prompt"]):
         await ctx.stream.write({"token": token}, "output")
@@ -344,7 +354,7 @@ async def charge(payload: dict) -> dict:
       <H3 id="schema-handler">Handler</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("payments/charge", chargeHandler, {
+          ts: `sb.handleRpc("payment.charge", chargeHandler, {
   schema: {
     input: {
       userId:   { type: "string", id: 1 },
@@ -357,7 +367,7 @@ async def charge(payload: dict) -> dict:
     },
   },
 });`,
-          go: `svc.HandleRpcWithOpts("payments/charge", chargeHandler,
+          go: `svc.HandleRpcWithOpts("payment.charge", chargeHandler,
   &servicebridge.HandleRpcOpts{
     Schema: &servicebridge.RpcSchemaOpts{
       Input: servicebridge.RpcSchema{
@@ -374,7 +384,7 @@ async def charge(payload: dict) -> dict:
 )`,
           py: `from service_bridge import RpcSchemaOpts, RpcFieldDef
 
-@sb.handle_rpc("payments/charge", schema=RpcSchemaOpts(
+@sb.handle_rpc("payment.charge", schema=RpcSchemaOpts(
     input={
         "user_id":  RpcFieldDef(type="string", id=1),
         "amount":   RpcFieldDef(type="int64",  id=2),
@@ -395,18 +405,20 @@ async def charge(payload: dict) -> dict:
         code={{
           ts: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
 const res = await sb.rpc<{ txId: string; ok: boolean }>(
-  "payments/charge",
+  "payments",
+  "payment.charge",
   { userId: "u_42", amount: 9900, currency: "USD" }
 );`,
           go: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
-res, err := svc.Rpc(ctx, "payments/charge", map[string]any{
+res, err := svc.Rpc(ctx, "payments", "payment.charge", map[string]any{
   "user_id":  "u_42",
   "amount":   9900,
   "currency": "USD",
 }, nil)`,
           py: `# No changes needed — SDK auto-detects schema via registry and switches to Protobuf
 res = await sb.rpc(
-    "payments/charge",
+    "payments",
+    "payment.charge",
     {"user_id": "u_42", "amount": 9900, "currency": "USD"}
 )`,
         }}

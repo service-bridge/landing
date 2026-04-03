@@ -192,7 +192,7 @@ sb = ServiceBridge(
 
 // These return immediately even when the control plane is down
 await sb.event("order.created", payload); // queued
-await sb.job("billing/collect", opts);    // queued`,
+await sb.job("billing/billing.collect", opts);    // queued`,
           go: `svc := servicebridge.New(url, key, &servicebridge.Options{
   QueueMaxSize:  2000,
   QueueOverflow: "drop-oldest",

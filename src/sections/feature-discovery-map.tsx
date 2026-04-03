@@ -16,7 +16,7 @@ const DISCOVERY_CODE: CodeLangs = {
 
 // Worker: endpoint is advertised on serve()
 const payments = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
-payments.handleRpc("payments.charge", handler);
+payments.handleRpc("payment.charge", handler);
 await payments.serve();  // → RegisterFunction + Heartbeat loop
 
 // Caller: lazy resolution on first rpc() call
@@ -24,7 +24,7 @@ const orders = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVIC
 
 // First call  → LookupFunction → opens persistent gRPC channel
 // All after   → direct wire, zero lookup overhead
-const result = await orders.rpc("payments.charge", { amount: 4990 });`,
+const result = await orders.rpc("payments", "payment.charge", { amount: 4990 });`,
 
   go: `// Worker: endpoint is advertised on Serve()
 payments := servicebridge.New(
@@ -41,7 +41,7 @@ go payments.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})
 orders := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-result, _ := orders.Rpc(ctx, "payments.charge",
+result, _ := orders.Rpc(ctx, "payments", "payment.charge",
     map[string]any{"amount": 4990}, nil)`,
 
   py: `from service_bridge import ServiceBridge
@@ -49,7 +49,7 @@ result, _ := orders.Rpc(ctx, "payments.charge",
 # Worker: endpoint is advertised on serve()
 payments = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-@payments.handle_rpc("payments.charge")
+@payments.handle_rpc("payment.charge")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "txId": "tx_001"}
 
@@ -57,7 +57,7 @@ asyncio.create_task(payments.serve(host="localhost"))
 
 # Caller: first rpc() → LookupFunction → opens gRPC channel
 orders = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
-result = await orders.rpc("payments.charge", {"amount": 4990})`,
+result = await orders.rpc("payments", "payment.charge", {"amount": 4990})`,
 };
 
 const REGISTRY_ROWS = [
@@ -71,7 +71,7 @@ const REGISTRY_ROWS = [
   },
   {
     id: "r2",
-    canonical: "payments/payments.charge",
+    canonical: "payments/payment.charge",
     endpoint: "10.0.2.4:50051",
     inst: 2,
     beat: "3s ago",

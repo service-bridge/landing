@@ -78,7 +78,7 @@ export function PageTracing() {
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("payments/charge", async (payload, ctx) => {
+          ts: `sb.handleRpc("payment.charge", async (payload, ctx) => {
   // These console calls are captured automatically:
   console.info("charge.start", { orderId: payload.orderId });
   const tx = await stripe.charge(payload);
@@ -97,7 +97,7 @@ log.Printf("charge.start order_id=%s", orderID)`,
 import logging
 logger = logging.getLogger(__name__)
 
-@sb.handle_rpc("payments/charge")
+@sb.handle_rpc("payment.charge")
 async def charge(payload: dict) -> dict:
     logger.info("charge.start", extra={"order_id": payload["order_id"]})
     tx = await stripe.charge(payload)
