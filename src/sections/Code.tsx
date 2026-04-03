@@ -118,11 +118,10 @@ func main() {
 import os
 from service_bridge import ServiceBridge
 
-# Connect: control plane address + sbv2 service key + service name
+# Connect: control plane address + sbv2 service key (service name extracted from key)
 sb = ServiceBridge(
     os.environ.get("SERVICEBRIDGE_URL", "localhost:14445"),
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],  # sbv2.<id>.<secret>.<ca>
-    "notify",
 )
 
 # RPC handler — direct gRPC, zero proxy hops

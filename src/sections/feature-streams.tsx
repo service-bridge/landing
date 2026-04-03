@@ -58,7 +58,7 @@ for await (const chunk of sb.watchTrace(traceId, { key: "output" })) {
 }`,
 
   go: `svc := servicebridge.New(
-    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), "", nil)
+    "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
 traceID, _ := svc.Event(ctx, "ai.generate",
     map[string]any{"prompt": prompt}, nil)

@@ -56,7 +56,6 @@ from service_bridge import ServiceBridge
 sb = ServiceBridge(
     os.environ.get("SERVICEBRIDGE_URL", "localhost:14445"),
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],
-    "my-service"
 )
 
 @sb.handle_rpc("hello")
