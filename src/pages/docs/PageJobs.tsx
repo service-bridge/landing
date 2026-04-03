@@ -64,9 +64,27 @@ await sb.serve()`,
       <H3 id="job-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `job(target: string, opts: ScheduleOpts): Promise<string>`,
-          go: `func (c *Client) Job(ctx context.Context, target string, opts ScheduleOpts) (string, error)`,
-          py: `async def job(target: str, opts: ScheduleOpts | None = None) -> str`,
+          ts: `// For RPC jobs:
+job(service: string, fn: string, opts: ScheduleOpts & { via: "rpc" }): Promise<string>
+
+// For event/workflow jobs:
+job(target: string, opts: ScheduleOpts & { via: "event" | "workflow" }): Promise<string>`,
+          go: `// For RPC jobs:
+func (c *Client) JobRPC(ctx context.Context, service, fn string, opts ScheduleOpts) (string, error)
+
+// For event jobs:
+func (c *Client) JobEvent(ctx context.Context, topic string, opts ScheduleOpts) (string, error)
+
+// For workflow jobs:
+func (c *Client) JobWorkflow(ctx context.Context, workflowName string, opts ScheduleOpts) (string, error)`,
+          py: `# For RPC jobs:
+async def job_rpc(service: str, fn: str, opts: ScheduleOpts | None = None) -> str
+
+# For event jobs:
+async def job_event(topic: str, opts: ScheduleOpts | None = None) -> str
+
+# For workflow jobs:
+async def job_workflow(workflow_name: str, opts: ScheduleOpts | None = None) -> str`,
         }}
       />
 

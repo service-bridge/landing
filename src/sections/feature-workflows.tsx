@@ -28,14 +28,14 @@ const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KE
 
 // DAG: parallel fan-out → fan-in → conditional → sleep → followup
 await sb.workflow("merchant.onboarding", [
-  { id: "validate",  type: "rpc",   ref: "merchant.validate",  deps: [] },
+  { id: "validate",  type: "rpc",   service: "merchants", ref: "validate",  deps: [] },
 
   // parallel — both start concurrently after validate
-  { id: "kyc",       type: "rpc",   ref: "kyc.check",     deps: ["validate"] },
-  { id: "billing",   type: "rpc",   ref: "billing.setup",  deps: ["validate"] },
+  { id: "kyc",       type: "rpc",   service: "kyc", ref: "check",     deps: ["validate"] },
+  { id: "billing",   type: "rpc",   service: "billing", ref: "setup",  deps: ["validate"] },
 
   // fan-in — waits for both kyc + billing
-  { id: "provision", type: "rpc",   ref: "merchant.create", deps: ["kyc", "billing"] },
+  { id: "provision", type: "rpc",   service: "merchants", ref: "create", deps: ["kyc", "billing"] },
 
   // conditional — skipped if provision.status !== "active"
   { id: "welcome", type: "event", ref: "email.welcome",
@@ -43,37 +43,37 @@ await sb.workflow("merchant.onboarding", [
 
   // sleep 24h — no thread held during wait
   { id: "wait",     type: "sleep", durationMs: 86_400_000, deps: ["welcome"] },
-  { id: "followup", type: "rpc",   ref: "email.followup",  deps: ["wait"] },
+  { id: "followup", type: "rpc",   service: "emails", ref: "followup",  deps: ["wait"] },
 ]);`,
 
   go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
 svc.Workflow(ctx, "merchant.onboarding", []servicebridge.WorkflowStep{
-    {ID: "validate",  Type: "rpc",   Ref: "merchant.validate", Deps: []string{}},
-    {ID: "kyc",       Type: "rpc",   Ref: "kyc.check",         Deps: []string{"validate"}},
-    {ID: "billing",   Type: "rpc",   Ref: "billing.setup",     Deps: []string{"validate"}},
-    {ID: "provision", Type: "rpc",   Ref: "merchant.create",
+    {ID: "validate",  Type: "rpc",   Service: "merchants", Ref: "validate", Deps: []string{}},
+    {ID: "kyc",       Type: "rpc",   Service: "kyc", Ref: "check",         Deps: []string{"validate"}},
+    {ID: "billing",   Type: "rpc",   Service: "billing", Ref: "setup",     Deps: []string{"validate"}},
+    {ID: "provision", Type: "rpc",   Service: "merchants", Ref: "create",
         Deps: []string{"kyc", "billing"}},
     {ID: "welcome",   Type: "event", Ref: "email.welcome",     Deps: []string{"provision"}},
-    {ID: "followup",  Type: "rpc",   Ref: "email.followup",    Deps: []string{"welcome"}},
-})`,
+    {ID: "followup",  Type: "rpc",   Service: "emails", Ref: "followup",    Deps: []string{"welcome"}},
+}, nil)`,
 
   py: `from service_bridge import ServiceBridge, WorkflowStep
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 await svc.workflow("merchant.onboarding", [
-    WorkflowStep(id="validate",  type="rpc",   ref="merchant.validate",  deps=[]),
-    WorkflowStep(id="kyc",       type="rpc",   ref="kyc.check",
+    WorkflowStep(id="validate",  type="rpc",   service="merchants", ref="validate",  deps=[]),
+    WorkflowStep(id="kyc",       type="rpc",   service="kyc", ref="check",
         deps=["validate"]),
-    WorkflowStep(id="billing",   type="rpc",   ref="billing.setup",
+    WorkflowStep(id="billing",   type="rpc",   service="billing", ref="setup",
         deps=["validate"]),
-    WorkflowStep(id="provision", type="rpc",   ref="merchant.create",
+    WorkflowStep(id="provision", type="rpc",   service="merchants", ref="create",
         deps=["kyc", "billing"]),
     WorkflowStep(id="welcome",   type="event", ref="email.welcome",
         deps=["provision"]),
-    WorkflowStep(id="followup",  type="rpc",   ref="email.followup",
+    WorkflowStep(id="followup",  type="rpc",   service="emails", ref="followup",
         deps=["welcome"]),
 ])`,
 };

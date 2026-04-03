@@ -50,7 +50,7 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
 const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Runs every hour — fires immediately if the node was down
-await sb.job("billing.reconcile", {
+await sb.job("billing", "reconcile", {
   cron: "0 * * * *",
   timezone: "UTC",
   misfire: "fire_now",
@@ -58,7 +58,7 @@ await sb.job("billing.reconcile", {
   retryPolicyJson: JSON.stringify({ maxAttempts: 3, factor: 2 }),
 });
 
-sb.handleRpc("billing.reconcile", async () => {
+sb.handleRpc("reconcile", async () => {
   await reconcileAll();
   return { ok: true };
 });
@@ -67,14 +67,13 @@ await sb.serve();`,
       go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-jobID, _ := svc.Job(ctx, "billing.reconcile",
+_, _ := svc.JobRPC(ctx, "billing", "reconcile",
     servicebridge.ScheduleOpts{
         Cron:    "0 * * * *",
-        Via:     "rpc",
         Misfire: "fire_now",
     })
 
-svc.HandleRpc("billing.reconcile",
+svc.HandleRpc("reconcile",
     func(ctx context.Context, p json.RawMessage) (any, error) {
         reconcileAll(ctx)
         return map[string]any{"ok": true}, nil
@@ -85,12 +84,12 @@ _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})`,
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-job_id = await svc.job(
-    "billing.reconcile",
-    ScheduleOpts(cron="0 * * * *", via="rpc", misfire="fire_now"),
+job_id = await svc.job_rpc(
+    "billing", "reconcile",
+    ScheduleOpts(cron="0 * * * *", misfire="fire_now"),
 )
 
-@svc.handle_rpc("billing.reconcile")
+@svc.handle_rpc("reconcile")
 async def billing_reconcile(payload: dict) -> dict:
     await reconcile_all()
     return {"ok": True}
@@ -176,8 +175,8 @@ await sb.job("billing.daily", {
 });
 
 await sb.workflow("billing.daily", [
-  { id: "fetch",   type: "rpc",   ref: "billing.fetchDue",   deps: [] },
-  { id: "process", type: "rpc",   ref: "billing.processAll", deps: ["fetch"] },
+  { id: "fetch",   type: "rpc",   service: "billing", ref: "fetchDue",   deps: [] },
+  { id: "process", type: "rpc",   service: "billing", ref: "processAll", deps: ["fetch"] },
   { id: "notify",  type: "event", ref: "billing.reconciled", deps: ["process"] },
 ]);
 
@@ -185,31 +184,30 @@ await sb.serve();`,
       go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-svc.Job(ctx, "billing.daily", servicebridge.ScheduleOpts{
+svc.JobWorkflow(ctx, "billing.daily", servicebridge.ScheduleOpts{
     Cron:    "0 2 * * *",
-    Via:     "workflow",
     Misfire: "skip",
 })
 
 svc.Workflow(ctx, "billing.daily", []servicebridge.WorkflowStep{
-    {ID: "fetch",   Type: "rpc",   Ref: "billing.fetchDue",   Deps: []string{}},
-    {ID: "process", Type: "rpc",   Ref: "billing.processAll", Deps: []string{"fetch"}},
+    {ID: "fetch",   Type: "rpc",   Service: "billing", Ref: "fetchDue",   Deps: []string{}},
+    {ID: "process", Type: "rpc",   Service: "billing", Ref: "processAll", Deps: []string{"fetch"}},
     {ID: "notify",  Type: "event", Ref: "billing.reconciled", Deps: []string{"process"}},
-})
+}, nil)
 
 _ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})`,
       py: `from service_bridge import ServiceBridge, ScheduleOpts, WorkflowStep
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-await svc.job(
+await svc.job_workflow(
     "billing.daily",
-    ScheduleOpts(cron="0 2 * * *", via="workflow", misfire="skip"),
+    ScheduleOpts(cron="0 2 * * *", misfire="skip"),
 )
 
 await svc.workflow("billing.daily", [
-    WorkflowStep(id="fetch",   type="rpc",   ref="billing.fetchDue",   deps=[]),
-    WorkflowStep(id="process", type="rpc",   ref="billing.processAll", deps=["fetch"]),
+    WorkflowStep(id="fetch",   type="rpc",   service="billing", ref="fetchDue",   deps=[]),
+    WorkflowStep(id="process", type="rpc",   service="billing", ref="processAll", deps=["fetch"]),
     WorkflowStep(id="notify",  type="event", ref="billing.reconciled", deps=["process"]),
 ])
 
