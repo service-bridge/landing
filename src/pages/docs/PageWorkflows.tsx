@@ -223,22 +223,22 @@ await sb.workflow("order.fulfillment", steps, WorkflowOpts(step_timeout_ms=60000
       <MultiCodeBlock
         code={{
           ts: `const workflowDefinitionId = await sb.workflow("order.fulfillment", [
-  { id: "reserve",  type: "rpc",        ref: "inventory/inventory.reserve" },
-  { id: "charge",   type: "rpc",        ref: "payments/payment.charge",    deps: ["reserve"] },
+  { id: "reserve",  type: "rpc",        ref: "inventory.reserve" },
+  { id: "charge",   type: "rpc",        ref: "payment.charge",    deps: ["reserve"] },
   { id: "wait_dlv", type: "event_wait", ref: "shipping.delivered", deps: ["charge"], timeoutMs: 86_400_000 },
   { id: "notify",   type: "event",      ref: "orders.fulfilled",   deps: ["wait_dlv"] },
 ]);`,
           go: `workflowDefinitionID, err := svc.Workflow(ctx, "order.fulfillment", []servicebridge.WorkflowStep{
-  {ID: "reserve",  Type: "rpc",        Ref: "inventory/inventory.reserve"},
-  {ID: "charge",   Type: "rpc",        Ref: "payments/payment.charge",    Deps: []string{"reserve"}},
+  {ID: "reserve",  Type: "rpc",        Ref: "inventory.reserve"},
+  {ID: "charge",   Type: "rpc",        Ref: "payment.charge",    Deps: []string{"reserve"}},
   {ID: "wait_dlv", Type: "event_wait", Ref: "shipping.delivered", Deps: []string{"charge"}, TimeoutMs: 86_400_000},
   {ID: "notify",   Type: "event",      Ref: "orders.fulfilled",   Deps: []string{"wait_dlv"}},
 })`,
           py: `from service_bridge import WorkflowStep
 
 workflow_id = await sb.workflow("order.fulfillment", [
-    WorkflowStep(id="reserve",  type="rpc",        ref="inventory/inventory.reserve"),
-    WorkflowStep(id="charge",   type="rpc",        ref="payments/payment.charge",    deps=["reserve"]),
+    WorkflowStep(id="reserve",  type="rpc",        ref="inventory.reserve"),
+    WorkflowStep(id="charge",   type="rpc",        ref="payment.charge",    deps=["reserve"]),
     WorkflowStep(id="wait_dlv", type="event_wait",  ref="shipping.delivered", deps=["charge"], timeout_ms=86_400_000),
     WorkflowStep(id="notify",   type="event",       ref="orders.fulfilled",   deps=["wait_dlv"]),
 ])`,
@@ -251,24 +251,24 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("onboarding", [
-  { id: "create_user",  type: "rpc",   ref: "users/user.create" },
+  { id: "create_user",  type: "rpc",   ref: "user.create" },
   // These two run in parallel after create_user:
   { id: "send_welcome", type: "event", ref: "emails.welcome",  deps: ["create_user"] },
-  { id: "init_billing", type: "rpc",   ref: "billing/billing.init",    deps: ["create_user"] },
+  { id: "init_billing", type: "rpc",   ref: "billing.init",    deps: ["create_user"] },
   // This waits for BOTH to finish:
-  { id: "activate",     type: "rpc",   ref: "users/user.activate",  deps: ["send_welcome", "init_billing"] },
+  { id: "activate",     type: "rpc",   ref: "user.activate",  deps: ["send_welcome", "init_billing"] },
 ]);`,
           go: `svc.Workflow(ctx, "onboarding", []servicebridge.WorkflowStep{
-  {ID: "create_user",  Type: "rpc",   Ref: "users/user.create"},
+  {ID: "create_user",  Type: "rpc",   Ref: "user.create"},
   {ID: "send_welcome", Type: "event", Ref: "emails.welcome", Deps: []string{"create_user"}},
-  {ID: "init_billing", Type: "rpc",   Ref: "billing/billing.init",   Deps: []string{"create_user"}},
-  {ID: "activate",     Type: "rpc",   Ref: "users/user.activate", Deps: []string{"send_welcome", "init_billing"}},
+  {ID: "init_billing", Type: "rpc",   Ref: "billing.init",   Deps: []string{"create_user"}},
+  {ID: "activate",     Type: "rpc",   Ref: "user.activate", Deps: []string{"send_welcome", "init_billing"}},
 })`,
           py: `await sb.workflow("onboarding", [
-    WorkflowStep(id="create_user",  type="rpc",   ref="users/user.create"),
+    WorkflowStep(id="create_user",  type="rpc",   ref="user.create"),
     WorkflowStep(id="send_welcome", type="event", ref="emails.welcome",  deps=["create_user"]),
-    WorkflowStep(id="init_billing", type="rpc",   ref="billing/billing.init",    deps=["create_user"]),
-    WorkflowStep(id="activate",     type="rpc",   ref="users/user.activate",  deps=["send_welcome", "init_billing"]),
+    WorkflowStep(id="init_billing", type="rpc",   ref="billing.init",    deps=["create_user"]),
+    WorkflowStep(id="activate",     type="rpc",   ref="user.activate",  deps=["send_welcome", "init_billing"]),
 ])`,
         }}
       />
@@ -284,25 +284,25 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("payment.flow", [
-  { id: "initiate",    type: "rpc",        ref: "payments/payment.initiate" },
+  { id: "initiate",    type: "rpc",        ref: "payment.initiate" },
   // Suspend and wait up to 10 minutes for bank confirmation
   { id: "wait_bank",   type: "event_wait", ref: "payment.confirmed",
     deps: ["initiate"], timeoutMs: 600_000 },
-  { id: "fulfill",     type: "rpc",        ref: "orders/order.fulfill",
+  { id: "fulfill",     type: "rpc",        ref: "order.fulfill",
     deps: ["wait_bank"] },
 ]);`,
           go: `svc.Workflow(ctx, "payment.flow", []servicebridge.WorkflowStep{
-  {ID: "initiate",  Type: "rpc",        Ref: "payments/payment.initiate"},
+  {ID: "initiate",  Type: "rpc",        Ref: "payment.initiate"},
   {ID: "wait_bank", Type: "event_wait", Ref: "payment.confirmed",
    Deps: []string{"initiate"}, TimeoutMs: 600_000},
-  {ID: "fulfill",   Type: "rpc",        Ref: "orders/order.fulfill",
+  {ID: "fulfill",   Type: "rpc",        Ref: "order.fulfill",
    Deps: []string{"wait_bank"}},
 })`,
           py: `await sb.workflow("payment.flow", [
-    WorkflowStep(id="initiate",  type="rpc",        ref="payments/payment.initiate"),
+    WorkflowStep(id="initiate",  type="rpc",        ref="payment.initiate"),
     WorkflowStep(id="wait_bank", type="event_wait",  ref="payment.confirmed",
                  deps=["initiate"], timeout_ms=600_000),
-    WorkflowStep(id="fulfill",   type="rpc",        ref="orders/order.fulfill",
+    WorkflowStep(id="fulfill",   type="rpc",        ref="order.fulfill",
                  deps=["wait_bank"]),
 ])`,
         }}
@@ -319,31 +319,31 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("order.fulfillment", [
-  { id: "reserve",   type: "rpc",   ref: "inventory/inventory.reserve" },
-  { id: "charge",    type: "rpc",   ref: "payments/payment.charge",  deps: ["reserve"] },
+  { id: "reserve",   type: "rpc",   ref: "inventory.reserve" },
+  { id: "charge",    type: "rpc",   ref: "payment.charge",  deps: ["reserve"] },
   // Only notify if reserve succeeded — "reserved" came from reserve's output
   { id: "notify",    type: "event", ref: "orders.confirmed",
     deps: ["charge"],
     if: "reserved=true" },
   // Only ship if payment ok
-  { id: "ship",      type: "rpc",   ref: "shipping/shipping.create",
+  { id: "ship",      type: "rpc",   ref: "shipping.create",
     deps: ["notify"],
     if: "ok=true" },
 ]);`,
           go: `svc.Workflow(ctx, "order.fulfillment", []servicebridge.WorkflowStep{
-  {ID: "reserve",  Type: "rpc",   Ref: "inventory/inventory.reserve"},
-  {ID: "charge",   Type: "rpc",   Ref: "payments/payment.charge",   Deps: []string{"reserve"}},
+  {ID: "reserve",  Type: "rpc",   Ref: "inventory.reserve"},
+  {ID: "charge",   Type: "rpc",   Ref: "payment.charge",   Deps: []string{"reserve"}},
   {ID: "notify",   Type: "event", Ref: "orders.confirmed",
    Deps: []string{"charge"}, If: "reserved=true"},
-  {ID: "ship",     Type: "rpc",   Ref: "shipping/shipping.create",
+  {ID: "ship",     Type: "rpc",   Ref: "shipping.create",
    Deps: []string{"notify"}, If: "ok=true"},
 })`,
           py: `await sb.workflow("order.fulfillment", [
-    WorkflowStep(id="reserve",  type="rpc",   ref="inventory/inventory.reserve"),
-    WorkflowStep(id="charge",   type="rpc",   ref="payments/payment.charge",   deps=["reserve"]),
+    WorkflowStep(id="reserve",  type="rpc",   ref="inventory.reserve"),
+    WorkflowStep(id="charge",   type="rpc",   ref="payment.charge",   deps=["reserve"]),
     WorkflowStep(id="notify",   type="event", ref="orders.confirmed",
                  deps=["charge"],  if_expr="reserved=true"),
-    WorkflowStep(id="ship",     type="rpc",   ref="shipping/shipping.create",
+    WorkflowStep(id="ship",     type="rpc",   ref="shipping.create",
                  deps=["notify"],  if_expr="ok=true"),
 ])`,
         }}
@@ -362,22 +362,22 @@ workflow_id = await sb.workflow("order.fulfillment", [
           ts: `await sb.workflow("order.post-purchase", [
   { id: "fulfillment", type: "workflow", ref: "order.fulfillment" },
   // Runs after the entire fulfillment sub-workflow completes:
-  { id: "analytics",   type: "rpc",      ref: "analytics/analytics.record",
+  { id: "analytics",   type: "rpc",      ref: "analytics.record",
     deps: ["fulfillment"] },
-  { id: "loyalty",     type: "rpc",      ref: "rewards/rewards.credit",
+  { id: "loyalty",     type: "rpc",      ref: "rewards.credit",
     deps: ["fulfillment"] },
 ]);`,
           go: `svc.Workflow(ctx, "order.post-purchase", []servicebridge.WorkflowStep{
   {ID: "fulfillment", Type: "workflow", Ref: "order.fulfillment"},
-  {ID: "analytics",   Type: "rpc",     Ref: "analytics/analytics.record",
+  {ID: "analytics",   Type: "rpc",     Ref: "analytics.record",
    Deps: []string{"fulfillment"}},
-  {ID: "loyalty",     Type: "rpc",     Ref: "rewards/rewards.credit",
+  {ID: "loyalty",     Type: "rpc",     Ref: "rewards.credit",
    Deps: []string{"fulfillment"}},
 })`,
           py: `await sb.workflow("order.post-purchase", [
     WorkflowStep(id="fulfillment", type="workflow", ref="order.fulfillment"),
-    WorkflowStep(id="analytics",   type="rpc",      ref="analytics/analytics.record",  deps=["fulfillment"]),
-    WorkflowStep(id="loyalty",     type="rpc",      ref="rewards/rewards.credit",    deps=["fulfillment"]),
+    WorkflowStep(id="analytics",   type="rpc",      ref="analytics.record",  deps=["fulfillment"]),
+    WorkflowStep(id="loyalty",     type="rpc",      ref="rewards.credit",    deps=["fulfillment"]),
 ])`,
         }}
       />
@@ -392,19 +392,19 @@ workflow_id = await sb.workflow("order.fulfillment", [
       <MultiCodeBlock
         code={{
           ts: `await sb.workflow("trial.expiry", [
-  { id: "send_reminder", type: "rpc",   ref: "emails/emails.send_trial_reminder" },
+  { id: "send_reminder", type: "rpc",   ref: "emails.send_trial_reminder" },
   { id: "wait_7d",       type: "sleep", durationMs: 604_800_000,             deps: ["send_reminder"] },
-  { id: "expire",        type: "rpc",   ref: "billing/billing.expire_trial",         deps: ["wait_7d"] },
+  { id: "expire",        type: "rpc",   ref: "billing.expire_trial",         deps: ["wait_7d"] },
 ]);`,
           go: `svc.Workflow(ctx, "trial.expiry", []servicebridge.WorkflowStep{
-  {ID: "send_reminder", Type: "rpc",   Ref: "emails/emails.send_trial_reminder"},
+  {ID: "send_reminder", Type: "rpc",   Ref: "emails.send_trial_reminder"},
   {ID: "wait_7d",       Type: "sleep", DurationMs: 604_800_000,            Deps: []string{"send_reminder"}},
-  {ID: "expire",        Type: "rpc",   Ref: "billing/billing.expire_trial",        Deps: []string{"wait_7d"}},
+  {ID: "expire",        Type: "rpc",   Ref: "billing.expire_trial",        Deps: []string{"wait_7d"}},
 })`,
           py: `await sb.workflow("trial.expiry", [
-    WorkflowStep(id="send_reminder", type="rpc",   ref="emails/emails.send_trial_reminder"),
+    WorkflowStep(id="send_reminder", type="rpc",   ref="emails.send_trial_reminder"),
     WorkflowStep(id="wait_7d",       type="sleep", duration_ms=604_800_000,           deps=["send_reminder"]),
-    WorkflowStep(id="expire",        type="rpc",   ref="billing/billing.expire_trial",        deps=["wait_7d"]),
+    WorkflowStep(id="expire",        type="rpc",   ref="billing.expire_trial",        deps=["wait_7d"]),
 ])`,
         }}
       />
