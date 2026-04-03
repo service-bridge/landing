@@ -153,13 +153,13 @@ asyncio.run(notifications.serve())`,
       <MultiCodeBlock
         code={{
           ts: `await orders.workflow("order.fulfillment", [
-  { id: "reserve",  type: "rpc",        ref: "inventory.reserve" },
+  { id: "reserve",  type: "rpc",        ref: "stock.reserve" },
   { id: "charge",   type: "rpc",        ref: "payment.charge",       deps: ["reserve"] },
   { id: "wait_dlv", type: "event_wait", ref: "shipping.delivered",    deps: ["charge"] },
   { id: "notify",   type: "event",      ref: "orders.fulfilled",      deps: ["wait_dlv"] },
 ]);`,
           go: `orders.Workflow(ctx, "order.fulfillment", []servicebridge.WorkflowStep{
-  {ID: "reserve",  Type: "rpc",        Ref: "inventory.reserve"},
+  {ID: "reserve",  Type: "rpc",        Ref: "stock.reserve"},
   {ID: "charge",   Type: "rpc",        Ref: "payment.charge",    Deps: []string{"reserve"}},
   {ID: "wait_dlv", Type: "event_wait", Ref: "shipping.delivered", Deps: []string{"charge"}},
   {ID: "notify",   Type: "event",      Ref: "orders.fulfilled",   Deps: []string{"wait_dlv"}},
@@ -167,7 +167,7 @@ asyncio.run(notifications.serve())`,
           py: `from service_bridge import WorkflowStep
 
 await orders.workflow("order.fulfillment", [
-    WorkflowStep(id="reserve",  type="rpc",        ref="inventory.reserve"),
+    WorkflowStep(id="reserve",  type="rpc",        ref="stock.reserve"),
     WorkflowStep(id="charge",   type="rpc",        ref="payment.charge",       deps=["reserve"]),
     WorkflowStep(id="wait_dlv", type="event_wait",  ref="shipping.delivered",    deps=["charge"]),
     WorkflowStep(id="notify",   type="event",       ref="orders.fulfilled",      deps=["wait_dlv"]),

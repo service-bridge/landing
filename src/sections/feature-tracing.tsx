@@ -128,7 +128,7 @@ const HTTP_SPANS: Span[] = [
   },
   {
     id: "h2b",
-    name: "inventory.reserve",
+    name: "stock.reserve",
     service: "inventory",
     type: "rpc",
     status: "success",

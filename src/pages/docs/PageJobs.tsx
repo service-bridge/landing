@@ -26,6 +26,12 @@ export function PageJobs() {
         no separate "job handler" concept. Write your business logic as a normal handler, schedule
         it with <Mono>job()</Mono>. The scheduler calls in as if it were another service.
       </P>
+      <P>
+        The <Mono>target</Mono> string is the same registered name as in <Mono>handleRpc</Mono>,{" "}
+        <Mono>handleEvent</Mono>, or the workflow name for <Mono>via: &quot;workflow&quot;</Mono> — one
+        dot-notation identifier (e.g. <Mono>billing.collect</Mono>), not a separate{" "}
+        <Mono>service</Mono> + <Mono>fn</Mono> pair like <Mono>rpc(service, fn)</Mono>.
+      </P>
       <MultiCodeBlock
         code={{
           ts: `// Define the handler as usual

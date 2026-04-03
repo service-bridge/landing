@@ -48,7 +48,7 @@ await sb.job("reports.daily", { cron: "0 9 * * *", via: "rpc" });
 // Multi-step workflow with parallel steps
 await sb.workflow("checkout.flow", [
   { id: "charge",   type: "rpc",   ref: "payment.charge",   deps: [] },
-  { id: "reserve",  type: "rpc",   ref: "inventory.reserve", deps: [] },
+  { id: "reserve",  type: "rpc",   ref: "stock.reserve", deps: [] },
   { id: "confirm",  type: "event", ref: "order.confirmed",   deps: ["charge", "reserve"] },
 ]);
 
@@ -103,7 +103,7 @@ func main() {
   // Multi-step workflow with parallel steps
   svc.Workflow("checkout.flow", []servicebridge.WorkflowStep{
     {ID: "charge",  Type: "rpc",   Ref: "payment.charge",   Deps: []string{}},
-    {ID: "reserve", Type: "rpc",   Ref: "inventory.reserve", Deps: []string{}},
+    {ID: "reserve", Type: "rpc",   Ref: "stock.reserve", Deps: []string{}},
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   })
 
@@ -145,7 +145,7 @@ async def bootstrap():
     # Multi-step workflow with parallel steps
     await sb.workflow("checkout.flow", [
         {"id": "charge",  "type": "rpc",   "ref": "payment.charge",   "deps": []},
-        {"id": "reserve", "type": "rpc",   "ref": "inventory.reserve", "deps": []},
+        {"id": "reserve", "type": "rpc",   "ref": "stock.reserve", "deps": []},
         {"id": "confirm", "type": "event", "ref": "order.confirmed",   "deps": ["charge", "reserve"]},
     ])
 
@@ -230,7 +230,7 @@ interface ActivityRow {
 const ACTIVITY_POOL: Omit<ActivityRow, "id">[] = [
   { type: "rpc", name: "orders.create", ms: 12 },
   { type: "event", name: "order.created", ms: 3 },
-  { type: "rpc", name: "inventory.reserve", ms: 8 },
+  { type: "rpc", name: "stock.reserve", ms: 8 },
   { type: "rpc", name: "payments.charge", ms: 94 },
   { type: "event", name: "payment.completed", ms: 4 },
   { type: "rpc", name: "notify.send", ms: 6 },
