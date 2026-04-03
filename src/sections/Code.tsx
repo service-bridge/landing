@@ -20,11 +20,10 @@ const LANG_TABS = [
     filename: "orders-service.ts",
     code: `import { servicebridge } from "service-bridge";
 
-// Connect: control plane address + sbv2 service key + service name
+// Connect: control plane address + sbv2 service key
 const sb = servicebridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!, // sbv2.<id>.<secret>.<ca>
-  "orders"
 );
 
 // RPC handler — direct gRPC, zero proxy hops

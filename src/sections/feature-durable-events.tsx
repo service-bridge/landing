@@ -34,7 +34,6 @@ sb.handleEvent("order.*", async (payload, ctx) => {
   const ok = await sendEmail(payload);
   if (!ok) ctx.retry(30_000);  // reschedule after 30s
 }, {
-  groupName: "notify:email",
   filterExpr: "customer.tier!=free,amount>=1000",
   retryPolicyJson: JSON.stringify({
     maxAttempts: 5, baseDelayMs: 5_000,
@@ -60,7 +59,6 @@ svc.HandleEvent("order.*",
         }
         return nil
     }, &servicebridge.HandleEventOpts{
-        GroupName:       "notify:email",
         FilterExpr:      "customer.tier!=free,amount>=1000",
         RetryPolicyJSON: \`{"maxAttempts":5,"baseDelayMs":5000,"factor":2}\`,
     })
@@ -77,7 +75,6 @@ svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @svc.handle_event(
     "order.*",
-    group_name="notify:email",
     filter_expr="customer.tier!=free,amount>=1000",
     retry_policy_json='{"maxAttempts":5,"baseDelayMs":5000,"factor":2}',
 )

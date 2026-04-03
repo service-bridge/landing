@@ -34,7 +34,6 @@ const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> 
 const sb = servicebridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
-  "my-service"
 );
 
 sb.handleRpc("hello", async (payload) => {

@@ -29,16 +29,13 @@ price>=9.99                   // numeric >=`}
         code={{
           ts: `sb.handleEvent("orders.*", handler, {
   filterExpr: "status=paid,amount>100",
-  groupName: "billing.high-value",
 });`,
           go: `svc.HandleEvent("orders.*", handler,
   &servicebridge.HandleEventOpts{
     FilterExpr: "status=paid,amount>100",
-    GroupName:  "billing.high-value",
   })`,
           py: `@sb.handle_event(
     "orders.*",
-    group_name="billing.high-value",
     filter_expr="status=paid,amount>100",
 )
 async def on_high_value_order(payload: dict, ctx) -> None:

@@ -136,7 +136,7 @@ message_id = await sb.event(
       <P>
         Register a consumer handler for a topic pattern. Handlers run in a named consumer group —
         each group receives every matching event independently. Multiple instances of the same
-        service with the same <Mono>groupName</Mono> share a load-balanced queue.
+        service share a load-balanced queue for that subscription.
       </P>
 
       <H3 id="handle-event-signature">Signature</H3>
@@ -148,7 +148,7 @@ message_id = await sb.event(
   opts?: HandleEventOpts,
 ): ServiceBridgeService`,
           go: `func (c *Client) HandleEvent(topic string, handler func(ctx context.Context, payload json.RawMessage, ec *EventContext) error, opts *HandleEventOpts) *Client`,
-          py: `@sb.handle_event(topic: str, group_name: str = "", retry_policy_json: str = "", filter_expr: str = "")
+          py: `@sb.handle_event(topic: str, retry_policy_json: str = "", filter_expr: str = "")
 async def handler(payload: dict, ctx: EventContext) -> None: ...`,
         }}
       />
@@ -160,12 +160,6 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
             name: "pattern / topic",
             type: "string",
             desc: 'Topic pattern. Use * for single-segment wildcard: "orders.*" matches "orders.created" but not "orders.created.sub".',
-          },
-          {
-            name: "groupName / GroupName / group_name",
-            type: "string",
-            default: "<service>.<topic> (all SDKs)",
-            desc: "Consumer group name. All instances sharing this name receive load-balanced delivery.",
           },
           {
             name: "concurrency (Node)",
@@ -190,11 +184,11 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
         ]}
       />
       <Callout type="info">
-        Cross-SDK parity: <Mono>groupName/group_name</Mono>, retry policy, and{" "}
-        <Mono>filterExpr/filter_expr</Mono> are available in all SDKs. In Python, registering a
-        duplicate group name raises a <Mono>ValueError</Mono>. In Go and Node.js, the duplicate is
-        silently ignored (the original handler is kept). Node-only <Mono>concurrency</Mono>/
-        <Mono>prefetch</Mono> are currently hint fields.
+        Cross-SDK parity: retry policy and <Mono>filterExpr/filter_expr</Mono> are available in all
+        SDKs. In Python, registering a duplicate consumer group for the same topic raises a{" "}
+        <Mono>ValueError</Mono>. In Go and Node.js, the duplicate is silently ignored (the original
+        handler is kept). Node-only <Mono>concurrency</Mono>/<Mono>prefetch</Mono> are currently hint
+        fields.
       </Callout>
 
       <H3 id="handle-event-ctx">EventContext</H3>
@@ -214,11 +208,6 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
             name: "ctx.refs.topic (Node/Go) / ctx.topic (Python)",
             type: "string",
             desc: "The actual topic that matched the pattern.",
-          },
-          {
-            name: "ctx.refs.groupName (Node/Go) / ctx.group_name (Python)",
-            type: "string",
-            desc: "This consumer group's name.",
           },
           {
             name: "ctx.refs.messageId (Node/Go) / ctx.message_id (Python)",
@@ -259,7 +248,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
           ts: `sb.handleEvent("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string };
   console.log("received", ctx.refs.topic, body.orderId);
-  // attempt, groupName, messageId available in ctx.refs
+  // attempt, messageId available in ctx.refs
 });`,
           go: `svc.HandleEvent("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
@@ -432,14 +421,12 @@ async def on_payment(payload: dict, ctx) -> None:
         code={{
           ts: `sb.handleEvent("orders.*", handler, {
   filterExpr: "status=paid,amount>100",
-  groupName: "billing.high-value",
 });`,
           go: `svc.HandleEvent("orders.*", handler,
   &servicebridge.HandleEventOpts{
-    GroupName:  "billing.high-value",
     FilterExpr: "status=paid,amount>100",
   })`,
-          py: `@sb.handle_event("orders.*", group_name="billing.high-value", filter_expr="status=paid,amount>100")
+          py: `@sb.handle_event("orders.*", filter_expr="status=paid,amount>100")
 async def on_high_value_order(payload: dict, ctx: EventContext) -> None:
     ...`,
         }}
@@ -468,9 +455,9 @@ async def on_high_value_order(payload: dict, ctx: EventContext) -> None:
       </ul>
 
       <Callout type="tip">
-        Use a unique <Mono>groupName</Mono> per service for fan-out — each group gets every matching
-        event independently. Omit it and all instances of the same service share a load-balanced
-        queue (competing consumers). For real-time chunk streaming from a handler, see{" "}
+        Register handlers on different services (or rely on defaults) for fan-out — each consumer
+        group gets every matching event independently. Multiple instances of one service share a
+        load-balanced queue (competing consumers). For real-time chunk streaming from a handler, see{" "}
         <button
           type="button"
           className="text-primary hover:underline cursor-pointer"

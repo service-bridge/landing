@@ -126,14 +126,14 @@ notif.HandleEvent("orders.*",
     ec.Stream.Write(map[string]any{"status": "sending_email"}, "progress")
     // ... send email ...
     return nil
-  }, &servicebridge.HandleEventOpts{GroupName: "notifications.orders"})
+  }, nil)
 
 notif.Serve(ctx, nil)`,
           py: `from service_bridge import ServiceBridge, EventContext
 
 notifications = ServiceBridge("localhost:14445", "key")
 
-@notifications.handle_event("orders.*", group_name="notifications.orders")
+@notifications.handle_event("orders.*")
 async def on_order(payload: dict, ctx: EventContext) -> None:
     if not payload.get("order_id"):
         ctx.reject("missing_order_id")
