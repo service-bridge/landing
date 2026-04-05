@@ -46,19 +46,19 @@ export function PageWorkflows() {
       {/* ── Handlers ─────────────────────────────────────────────── */}
       <H2 id="handlers">Define handlers first</H2>
       <P>
-        Workflow steps call existing <Mono>handleRpc</Mono> or <Mono>handleEvent</Mono> handlers.
+        Workflow steps call existing <Mono>rpc.handle</Mono> or <Mono>events.handle</Mono> handlers.
         Register them in your service workers before calling <Mono>start()</Mono>:
       </P>
       <MultiCodeBlock
         code={{
           ts: `// payments service
-sb.handleRpc("payment.charge", async (payload: { orderId: string; amount: number }) => {
+sb.rpc.handle("payment.charge", async (payload: { orderId: string; amount: number }) => {
   const tx = await stripe.charge(payload);
   return { txId: tx.id };
 });
 
 // inventory service
-sb.handleRpc("stock.reserve", async (payload: { orderId: string }) => {
+sb.rpc.handle("stock.reserve", async (payload: { orderId: string }) => {
   await db.reserve(payload.orderId);
   return { reserved: true };
 });
@@ -68,13 +68,13 @@ sb.handleEvent("orders.fulfilled", async (payload, ctx) => {
   await sendEmail(payload);
 });`,
           go: `// payments service
-svc.HandleRpc("payment.charge",
+svc.Rpc.Handle("payment.charge",
   func(ctx context.Context, payload json.RawMessage) (any, error) {
     return stripe.Charge(ctx, payload)
   })
 
 // inventory service
-svc.HandleRpc("stock.reserve",
+svc.Rpc.Handle("stock.reserve",
   func(ctx context.Context, payload json.RawMessage) (any, error) {
     return db.Reserve(ctx, payload)
   })
@@ -85,13 +85,13 @@ svc.HandleEvent("orders.fulfilled",
     return sendEmail(ctx, payload)
   }, nil)`,
           py: `# payments service
-@sb.handle_rpc("payment.charge")
+@sb.rpc.handle("payment.charge")
 async def charge(payload: dict) -> dict:
     tx = await stripe.charge(payload)
     return {"tx_id": tx.id}
 
 # inventory service
-@sb.handle_rpc("stock.reserve")
+@sb.rpc.handle("stock.reserve")
 async def reserve(payload: dict) -> dict:
     await db.reserve(payload["order_id"])
     return {"reserved": True}

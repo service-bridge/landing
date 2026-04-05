@@ -16,7 +16,7 @@ const DISCOVERY_CODE: CodeLangs = {
 
 // Worker: endpoint is advertised on start()
 const payments = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
-payments.handleRpc("payment.charge", handler);
+payments.rpc.handle("payment.charge", handler);
 await payments.start();  // → RegisterFunction + Heartbeat loop
 
 // Caller: lazy resolution on first rpc() call
@@ -30,7 +30,7 @@ const result = await orders.rpc("payment.charge", { amount: 4990 });`,
 payments := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-payments.HandleRpc("payment.charge",
+payments.Rpc.Handle("payment.charge",
     func(ctx context.Context, p json.RawMessage) (any, error) {
         return map[string]any{"ok": true, "txId": "tx_001"}, nil
     })
@@ -49,7 +49,7 @@ result, _ := orders.Rpc(ctx, "payment.charge",
 # Worker: endpoint is advertised on start()
 payments = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-@payments.handle_rpc("payment.charge")
+@payments.rpc.handle("payment.charge")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "txId": "tx_001"}
 

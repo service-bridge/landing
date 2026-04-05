@@ -46,7 +46,7 @@ export const NAV: NavGroup[] = [
           { id: "rpc-call", label: "rpc()" },
           { id: "rpc-opts", label: "Options" },
           { id: "rpc-errors", label: "Error handling" },
-          { id: "handle-rpc", label: "handleRpc()" },
+          { id: "handle-rpc", label: "rpc.handle()" },
           { id: "handle-opts", label: "Handler options" },
           { id: "handle-streaming", label: "Streaming responses" },
           { id: "handle-acl", label: "Access control" },

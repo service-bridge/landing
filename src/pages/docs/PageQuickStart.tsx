@@ -58,7 +58,7 @@ const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
 
-sb.handleRpc("charge", async (payload: { orderId: string; amount: number }) => {
+sb.rpc.handle("charge", async (payload: { orderId: string; amount: number }) => {
   return { ok: true, txId: \`tx_\${Date.now()}\`, orderId: payload.orderId };
 });
 
@@ -83,7 +83,7 @@ func main() {
 
   svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-  svc.HandleRpc("charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
+  svc.Rpc.Handle("charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
     var req struct {
       OrderID string \`json:"order_id"\`
       Amount  int    \`json:"amount"\`
@@ -103,7 +103,7 @@ from service_bridge import ServiceBridge
 
 sb = ServiceBridge("localhost:14445", "your-service-key")
 
-@sb.handle_rpc("charge")
+@sb.rpc.handle("charge")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "tx_id": f"tx_{int(asyncio.get_event_loop().time())}"}
 

@@ -17,7 +17,7 @@ const RPC_CODE: CodeLangs = {
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Register — advertises endpoint to the registry
-sb.handleRpc("orders.create", async (payload) => {
+sb.rpc.handle("orders.create", async (payload) => {
   // SDK opens a direct gRPC channel to payments worker
   const charge = await sb.rpc("payment.charge", {
     orderId: payload.id,
@@ -40,7 +40,7 @@ func main() {
     sb := servicebridge.New("localhost:14445",
         os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-    sb.HandleRpc("orders.create",
+    sb.Rpc.Handle("orders.create",
         func(ctx context.Context, p json.RawMessage) (any, error) {
             charge, _ := sb.Rpc(ctx, "payment.charge",
                 map[string]any{"orderId": "ord_42", "amount": 4990}, nil)
@@ -55,7 +55,7 @@ import os
 
 sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-@sb.handle_rpc("orders.create")
+@sb.rpc.handle("orders.create")
 async def orders_create(payload: dict) -> dict:
     charge = await sb.rpc("payment.charge", {
         "orderId": payload["id"],

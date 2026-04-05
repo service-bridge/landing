@@ -22,30 +22,30 @@ export function PageJobs() {
       {/* ── Handler side ─────────────────────────────────────────── */}
       <H2 id="handler-side">Handler side</H2>
       <P>
-        Jobs target regular <Mono>handleRpc</Mono> or <Mono>handleEvent</Mono> handlers — there is
+        Jobs target regular <Mono>rpc.handle</Mono> or <Mono>events.handle</Mono> handlers — there is
         no separate "job handler" concept. Write your business logic as a normal handler, schedule
         it with <Mono>job()</Mono>. The scheduler calls in as if it were another service.
       </P>
       <P>
-        The <Mono>target</Mono> string is the same registered name as in <Mono>handleRpc</Mono>,{" "}
-        <Mono>handleEvent</Mono>, or the workflow name for <Mono>via: &quot;workflow&quot;</Mono> — one
+        The <Mono>target</Mono> string is the same registered name as in <Mono>rpc.handle</Mono>,{" "}
+        <Mono>events.handle</Mono>, or the workflow name for <Mono>via: &quot;workflow&quot;</Mono> — one
         dot-notation identifier (e.g. <Mono>billing.collect</Mono>), not a separate{" "}
         <Mono>service</Mono> + <Mono>fn</Mono> pair like <Mono>rpc(service, fn)</Mono>.
       </P>
       <MultiCodeBlock
         code={{
           ts: `// Define the handler as usual
-sb.handleRpc("billing.collect", async (payload) => {
+sb.rpc.handle("billing.collect", async (payload) => {
   await chargeAllSubscriptions();
   return { charged: true };
 });
 
 await sb.start();`,
-          go: `svc.HandleRpc("billing.collect", func(ctx context.Context, payload json.RawMessage) (any, error) {
+          go: `svc.Rpc.Handle("billing.collect", func(ctx context.Context, payload json.RawMessage) (any, error) {
   return chargeAllSubscriptions(ctx)
 })
 svc.Start(ctx, nil)`,
-          py: `@sb.handle_rpc("billing.collect")
+          py: `@sb.rpc.handle("billing.collect")
 async def collect(payload: dict) -> dict:
     await charge_all_subscriptions()
     return {"charged": True}

@@ -36,7 +36,7 @@ const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
 
-sb.handleRpc("hello", async (payload) => {
+sb.rpc.handle("hello", async (payload) => {
   return { message: "Hello from ServiceBridge!" };
 });
 
@@ -58,7 +58,7 @@ sb = ServiceBridge(
     os.environ["SERVICEBRIDGE_SERVICE_KEY"],
 )
 
-@sb.handle_rpc("hello")
+@sb.rpc.handle("hello")
 async def hello(payload: dict) -> dict:
     return {"message": "Hello from ServiceBridge!"}
 
@@ -95,7 +95,7 @@ func main() {
 
   svc := sb.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-  svc.HandleRpc("hello", func(ctx context.Context, payload json.RawMessage) (any, error) {
+  svc.Rpc.Handle("hello", func(ctx context.Context, payload json.RawMessage) (any, error) {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil
   })
 

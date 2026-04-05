@@ -58,7 +58,7 @@ await sb.job("billing", "reconcile", {
   retryPolicyJson: JSON.stringify({ maxAttempts: 3, factor: 2 }),
 });
 
-sb.handleRpc("reconcile", async () => {
+sb.rpc.handle("reconcile", async () => {
   await reconcileAll();
   return { ok: true };
 });
@@ -73,7 +73,7 @@ _, _ := svc.JobRPC(ctx, "billing", "reconcile",
         Misfire: "fire_now",
     })
 
-svc.HandleRpc("reconcile",
+svc.Rpc.Handle("reconcile",
     func(ctx context.Context, p json.RawMessage) (any, error) {
         reconcileAll(ctx)
         return map[string]any{"ok": true}, nil
@@ -89,7 +89,7 @@ job_id = await svc.job_rpc(
     ScheduleOpts(cron="0 * * * *", misfire="fire_now"),
 )
 
-@svc.handle_rpc("reconcile")
+@svc.rpc.handle("reconcile")
 async def billing_reconcile(payload: dict) -> dict:
     await reconcile_all()
     return {"ok": True}

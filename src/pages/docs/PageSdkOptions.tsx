@@ -161,7 +161,7 @@ sb = ServiceBridge(
           },
           {
             name: "Node-only handler hints",
-            type: "handleRpc.timeout/retryable/concurrency + handleEvent.concurrency/prefetch",
+            type: "rpc.handle timeout/retryable/concurrency + events.handle concurrency/prefetch",
             desc: "Accepted by Node API as hints; currently not strict runtime limits.",
           },
           {

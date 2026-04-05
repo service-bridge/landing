@@ -131,8 +131,8 @@ message_id = await sb.event(
         any offline-queued events are flushed — use idempotency keys to prevent duplicates.
       </Callout>
 
-      {/* ── handleEvent() ────────────────────────────────────────── */}
-      <H2 id="handle-event">handleEvent() — consume</H2>
+      {/* ── events.handle() ────────────────────────────────────────── */}
+      <H2 id="handle-event">events.handle() — consume</H2>
       <P>
         Register a consumer handler for a topic pattern. Handlers run in a named consumer group —
         each group receives every matching event independently. Multiple instances of the same

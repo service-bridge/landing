@@ -24,10 +24,10 @@ export function PageRpc() {
         — without a service mesh.
       </Callout>
 
-      {/* ── rpc() ────────────────────────────────────────────────── */}
-      <H2 id="rpc-call">rpc() — call a handler</H2>
+      {/* ── rpc.invoke() ─────────────────────────────────────────── */}
+      <H2 id="rpc-call">rpc.invoke() — call a handler</H2>
       <P>
-        Call any registered <Mono>handleRpc</Mono> handler on another service. The runtime resolves
+        Call any registered <Mono>rpc.handle</Mono> handler on another service. The runtime resolves
         the target address automatically from its in-memory registry — zero SQL on every call. If
         multiple instances are running, calls are automatically round-robin balanced.
       </P>
@@ -35,9 +35,9 @@ export function PageRpc() {
       <H3 id="rpc-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `rpc<T = unknown>(fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
-          go: `func (c *Client) Rpc(ctx context.Context, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
-          py: `async def rpc(fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "", parent_span_id: str = "", mode: str | None = None) -> Any`,
+          ts: `rpc.invoke<T = unknown>(fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
+          go: `func (r *RpcNamespace) Invoke(ctx context.Context, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
+          py: `async def rpc.invoke(fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "", parent_span_id: str = "", mode: str | None = None) -> Any`,
         }}
       />
 
@@ -47,7 +47,7 @@ export function PageRpc() {
           {
             name: "fn",
             type: "string",
-            desc: 'Global function name as registered with handleRpc (e.g. "payment.charge"). Must not contain "/".',
+            desc: 'Global function name as registered with rpc.handle (e.g. "payment.charge"). Must not contain "/".',
           },
           {
             name: "payload",
@@ -185,8 +185,8 @@ except ServiceBridgeError as e:
         }}
       />
 
-      {/* ── handleRpc() ──────────────────────────────────────────── */}
-      <H2 id="handle-rpc">handleRpc() — register a handler</H2>
+      {/* ── rpc.handle() ──────────────────────────────────────────── */}
+      <H2 id="handle-rpc">rpc.handle() — register a handler</H2>
       <P>
         Register a function that callers can invoke by name. The SDK starts a gRPC server on{" "}
         <Mono>start()</Mono> — only the ServiceBridge control plane can call in, authenticated via
@@ -194,25 +194,25 @@ except ServiceBridgeError as e:
       </P>
 
       <Callout type="warning">
-        If this service also invokes <Mono>rpc()</Mono> on other services, declare each callee before{" "}
-        <Mono>start()</Mono> with <Mono>callsRpc(fn)</Mono> (Go: <Mono>CallsRpc</Mono>, Python:{" "}
-        <Mono>calls_rpc</Mono>). The runtime uses these declarations for registration and policy.
+        If this service also invokes <Mono>rpc.invoke()</Mono> on other services, declare each callee before{" "}
+        <Mono>start()</Mono> with <Mono>rpc.declare(fn)</Mono> (Go: <Mono>Rpc.Declare</Mono>, Python:{" "}
+        <Mono>rpc.declare</Mono>). The runtime uses these declarations for registration and policy.
       </Callout>
 
       <H3 id="handle-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `handleRpc(
+          ts: `rpc.handle(
   fn: string,
   handler: (payload: unknown, ctx?: RpcContext) => unknown | Promise<unknown>,
   opts?: HandleRpcOpts,
 ): ServiceBridgeService`,
           go: `// Simple handler
-func (c *Client) HandleRpc(fn string, handler func(ctx context.Context, payload json.RawMessage) (any, error)) *Client
+func (r *RpcNamespace) Handle(fn string, handler func(ctx context.Context, payload json.RawMessage) (any, error)) *Client
 
 // With RpcContext (stream + trace)
-func (c *Client) HandleRpcWithOpts(fn string, handler func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error), opts *HandleRpcOpts) *Client`,
-          py: `@sb.handle_rpc(fn: str, *, allowed_callers: list[str] | None = None, schema: RpcSchemaOpts | None = None)
+func (r *RpcNamespace) HandleWithOpts(fn string, handler func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error), opts *HandleRpcOpts) *Client`,
+          py: `@sb.rpc.handle(fn: str, *, allowed_callers: list[str] | None = None, schema: RpcSchemaOpts | None = None)
 async def handler(payload: dict, ctx = None) -> dict: ...`,
         }}
       />
@@ -262,15 +262,15 @@ async def handler(payload: dict, ctx = None) -> dict: ...`,
       <H3 id="handle-basic">Basic handler</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("greet", async (payload: { name: string }) => {
+          ts: `sb.rpc.handle("greet", async (payload: { name: string }) => {
   return { message: \`Hello, \${payload.name}!\` };
 });`,
-          go: `svc.HandleRpc("greet", func(ctx context.Context, payload json.RawMessage) (any, error) {
+          go: `svc.Rpc.Handle("greet", func(ctx context.Context, payload json.RawMessage) (any, error) {
   var req struct{ Name string \`json:"name"\` }
   json.Unmarshal(payload, &req)
   return map[string]any{"message": "Hello, " + req.Name + "!"}, nil
 })`,
-          py: `@sb.handle_rpc("greet")
+          py: `@sb.rpc.handle("greet")
 async def greet(payload: dict) -> dict:
     return {"message": f"Hello, {payload['name']}!"}`,
         }}
@@ -292,21 +292,21 @@ async def greet(payload: dict) -> dict:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("ai.generate", async (payload: { prompt: string }, ctx) => {
+          ts: `sb.rpc.handle("ai.generate", async (payload: { prompt: string }, ctx) => {
   const tokens = await callLLM(payload.prompt);
   for (const token of tokens) {
     await ctx?.stream.write({ token }, "output");
   }
   return { done: true };
 });`,
-          go: `svc.HandleRpcWithOpts("ai.generate",
+          go: `svc.Rpc.HandleWithOpts("ai.generate",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
     for _, token := range callLLM(ctx) {
       rpcCtx.Stream.Write(map[string]any{"token": token}, "output")
     }
     return map[string]any{"done": true}, nil
   }, nil)`,
-          py: `@sb.handle_rpc("ai.generate")
+          py: `@sb.rpc.handle("ai.generate")
 async def generate(payload: dict, ctx) -> dict:
     async for token in call_llm(payload["prompt"]):
         await ctx.stream.write({"token": token}, "output")
@@ -324,13 +324,13 @@ async def generate(payload: dict, ctx) -> dict:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("charge", handler, {
+          ts: `sb.rpc.handle("charge", handler, {
   allowedCallers: ["orders", "api-gateway"],
 });`,
-          go: `svc.HandleRpcWithOpts("charge", handler,
+          go: `svc.Rpc.HandleWithOpts("charge", handler,
   &servicebridge.HandleRpcOpts{AllowedCallers: []string{"orders", "api-gateway"}},
 )`,
-          py: `@sb.handle_rpc("charge", allowed_callers=["orders", "api-gateway"])
+          py: `@sb.rpc.handle("charge", allowed_callers=["orders", "api-gateway"])
 async def charge(payload: dict) -> dict:
     ...`,
         }}
@@ -354,7 +354,7 @@ async def charge(payload: dict) -> dict:
       <H3 id="schema-handler">Handler</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("payment.charge", chargeHandler, {
+          ts: `sb.rpc.handle("payment.charge", chargeHandler, {
   schema: {
     input: {
       userId:   { type: "string", id: 1 },
@@ -367,7 +367,7 @@ async def charge(payload: dict) -> dict:
     },
   },
 });`,
-          go: `svc.HandleRpcWithOpts("payment.charge", chargeHandler,
+          go: `svc.Rpc.HandleWithOpts("payment.charge", chargeHandler,
   &servicebridge.HandleRpcOpts{
     Schema: &servicebridge.RpcSchemaOpts{
       Input: servicebridge.RpcSchema{
@@ -384,7 +384,7 @@ async def charge(payload: dict) -> dict:
 )`,
           py: `from service_bridge import RpcSchemaOpts, RpcFieldDef
 
-@sb.handle_rpc("payment.charge", schema=RpcSchemaOpts(
+@sb.rpc.handle("payment.charge", schema=RpcSchemaOpts(
     input={
         "user_id":  RpcFieldDef(type="string", id=1),
         "amount":   RpcFieldDef(type="int64",  id=2),
@@ -497,7 +497,7 @@ res = await sb.rpc(
       />
 
       <Callout type="info">
-        <Mono>handleRpc()</Mono> is chainable in Node.js and Go — register multiple handlers before
+        <Mono>rpc.handle()</Mono> is chainable in Node.js and Go — register multiple handlers before
         calling <Mono>start()</Mono>.
       </Callout>
     </div>

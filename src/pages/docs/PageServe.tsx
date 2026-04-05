@@ -23,8 +23,8 @@ export function PageServe() {
           <Mono>new ServiceBridge(url, key)</Mono> (or language equivalent).
         </li>
         <li>
-          <strong className="text-foreground">Register handlers</strong> — <Mono>handleRpc()</Mono>,{" "}
-          <Mono>handleEvent()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>. Can be done in
+          <strong className="text-foreground">Register handlers</strong> — <Mono>rpc.handle()</Mono>,{" "}
+          <Mono>events.handle()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>. Can be done in
           any order.
         </li>
         <li>
@@ -48,8 +48,8 @@ const sb = new ServiceBridge(
 );
 
 // 2. Register handlers (order doesn't matter)
-sb.handleRpc("charge", chargeHandler);
-sb.handleRpc("refund", refundHandler);
+sb.rpc.handle("charge", chargeHandler);
+sb.rpc.handle("refund", refundHandler);
 sb.handleEvent("orders.*", orderEventHandler);
 
 // 3. Start worker and wait until ready
@@ -74,8 +74,8 @@ func main() {
     nil,
   )
 
-  svc.HandleRpc("charge", chargeHandler)
-  svc.HandleRpc("refund", refundHandler)
+  svc.Rpc.Handle("charge", chargeHandler)
+  svc.Rpc.Handle("refund", refundHandler)
   svc.HandleEvent("orders.*", orderEventHandler, nil)
 
   // Blocks until ctx is cancelled (e.g. SIGINT)
@@ -91,7 +91,7 @@ sb = ServiceBridge(
     "your-service-key",
 )
 
-@sb.handle_rpc("charge")
+@sb.rpc.handle("charge")
 async def charge(payload: dict) -> dict:
     return {"ok": True}
 

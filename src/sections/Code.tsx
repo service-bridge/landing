@@ -27,7 +27,7 @@ const sb = new ServiceBridge(
 );
 
 // RPC handler — direct gRPC, zero proxy hops
-sb.handleRpc("orders.create", async (payload) => {
+sb.rpc.handle("orders.create", async (payload) => {
   const order = await db.insert(payload);
 
   // Publish durable event — trace context forwarded automatically
@@ -81,7 +81,7 @@ func main() {
   svc := servicebridge.New(grpcURL, os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
   // RPC handler — direct gRPC, context carries trace
-  svc.HandleRpc("payment.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
+  svc.Rpc.Handle("payment.charge", func(ctx context.Context, payload json.RawMessage) (any, error) {
     txId, err := stripe.Charge(ctx, payload)
     if err != nil {
       return nil, err
@@ -125,7 +125,7 @@ sb = ServiceBridge(
 )
 
 # RPC handler — direct gRPC, zero proxy hops
-@sb.handle_rpc("notify.send")
+@sb.rpc.handle("notify.send")
 async def send_notification(payload: dict) -> dict:
     await send_email(payload)
     return {"sent": True}

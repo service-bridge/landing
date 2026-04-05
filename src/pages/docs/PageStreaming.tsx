@@ -141,28 +141,28 @@ async with httpx.AsyncClient() as client:
       {/* ── Writing chunks ───────────────────────────────────────── */}
       <H2 id="write-chunks">Writing chunks from a handler</H2>
       <P>
-        Both <Mono>handleRpc</Mono> and <Mono>handleEvent</Mono> receive a <Mono>ctx</Mono> with{" "}
+        Both <Mono>rpc.handle</Mono> and <Mono>events.handle</Mono> receive a <Mono>ctx</Mono> with{" "}
         <Mono>stream.write(data, key)</Mono>. Call it freely before returning the final result.
       </P>
 
       <H3 id="rpc-stream">From an RPC handler</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleRpc("ai.generate", async (payload: { prompt: string }, ctx) => {
+          ts: `sb.rpc.handle("ai.generate", async (payload: { prompt: string }, ctx) => {
   const stream = await callLLM(payload.prompt);
   for await (const chunk of stream) {
     await ctx?.stream.write({ token: chunk }, "output");
   }
   return { done: true };
 });`,
-          go: `svc.HandleRpcWithOpts("ai.generate",
+          go: `svc.Rpc.HandleWithOpts("ai.generate",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
     for _, token := range callLLM(ctx) {
       rpcCtx.Stream.Write(map[string]any{"token": token}, "output")
     }
     return map[string]any{"done": true}, nil
   }, nil)`,
-          py: `@sb.handle_rpc("ai.generate")
+          py: `@sb.rpc.handle("ai.generate")
 async def generate(payload: dict, ctx) -> dict:
     async for chunk in call_llm(payload["prompt"]):
         await ctx.stream.write({"token": chunk}, "output")
@@ -365,7 +365,7 @@ async def generate(request: Request):
       <MultiCodeBlock
         code={{
           ts: `// Handler
-sb.handleRpc("reports.generate", async (payload, ctx) => {
+sb.rpc.handle("reports.generate", async (payload, ctx) => {
   const rows = await db.fetchRows();
   for (let i = 0; i < rows.length; i++) {
     await ctx?.stream.write({ pct: Math.round((i / rows.length) * 100) }, "progress");
@@ -386,7 +386,7 @@ for await (const evt of sb.watchTrace(traceId, { key: "progress" })) {
   if (evt.type === "trace_complete") break;
 }`,
           go: `// Handler
-svc.HandleRpcWithOpts("reports.generate",
+svc.Rpc.HandleWithOpts("reports.generate",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
     rows := fetchRows(ctx)
     for i, row := range rows {
@@ -411,7 +411,7 @@ for evt := range ch {
   if evt.Done { break }
 }`,
           py: `# Handler
-@sb.handle_rpc("reports.generate")
+@sb.rpc.handle("reports.generate")
 async def generate(payload: dict, ctx) -> dict:
     rows = await db.fetch_rows()
     for i, row in enumerate(rows):

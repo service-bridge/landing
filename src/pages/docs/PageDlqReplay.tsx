@@ -53,7 +53,7 @@ export function PageDlqReplay() {
       <H2 id="retry-policy">Retry policy</H2>
       <P>
         Configure the consumer retry policy via <Mono>retryPolicyJson</Mono> in{" "}
-        <Mono>handleEvent()</Mono>. The default policy retries up to 3 times with exponential
+        <Mono>events.handle()</Mono>. The default policy retries up to 3 times with exponential
         backoff before moving to DLQ.
       </P>
       <H3 id="retry-policy-json">Retry policy JSON</H3>

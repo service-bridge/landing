@@ -23,7 +23,7 @@ export function PageEndToEnd() {
 
 const payments = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-payments.handleRpc("charge", async (payload: { orderId: string; amount: number }, ctx) => {
+payments.rpc.handle("charge", async (payload: { orderId: string; amount: number }, ctx) => {
   await ctx?.stream.write({ status: "charging", orderId: payload.orderId }, "progress");
 
   // ... charge logic ...
@@ -36,7 +36,7 @@ payments.handleRpc("charge", async (payload: { orderId: string; amount: number }
 await payments.start({ host: "localhost" });`,
           go: `svc := servicebridge.New("localhost:14445", key, nil)
 
-svc.HandleRpcWithOpts("charge",
+svc.Rpc.HandleWithOpts("charge",
   func(ctx context.Context, payload json.RawMessage, rpcCtx servicebridge.RpcContext) (any, error) {
     rpcCtx.Stream.Write(map[string]any{"status": "charging"}, "progress")
     // ... charge logic ...
@@ -49,7 +49,7 @@ svc.Start(ctx, nil)`,
 
 payments = ServiceBridge("localhost:14445", "key")
 
-@payments.handle_rpc("charge")
+@payments.rpc.handle("charge")
 async def charge(payload: dict, ctx) -> dict:
     await ctx.stream.write({"status": "charging", "order_id": payload["order_id"]}, "progress")
     # ... charge logic ...
