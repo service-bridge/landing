@@ -28,7 +28,7 @@ import { PageReconnectResume } from "./docs/PageReconnectResume";
 import { PageReliability } from "./docs/PageReliability";
 import { PageRpc } from "./docs/PageRpc";
 import { PageSdkOptions } from "./docs/PageSdkOptions";
-import { PageServe } from "./docs/PageServe";
+import { PageStart } from "./docs/PageStart";
 import { PageServerConfig } from "./docs/PageServerConfig";
 import { PageServiceKeys } from "./docs/PageServiceKeys";
 import { PageSessionLifecycle } from "./docs/PageSessionLifecycle";
@@ -50,7 +50,7 @@ const PAGES: Record<string, () => React.ReactNode> = {
   jobs: PageJobs,
   workflows: PageWorkflows,
   streaming: PageStreaming,
-  serve: PageServe,
+  serve: PageStart,
   "http-middleware": PageHttpMiddleware,
   "manual-spans": PageManualSpans,
   tracing: PageTracing,

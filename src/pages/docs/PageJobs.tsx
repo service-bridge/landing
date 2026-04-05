@@ -40,17 +40,17 @@ sb.handleRpc("billing.collect", async (payload) => {
   return { charged: true };
 });
 
-await sb.serve();`,
+await sb.start();`,
           go: `svc.HandleRpc("billing.collect", func(ctx context.Context, payload json.RawMessage) (any, error) {
   return chargeAllSubscriptions(ctx)
 })
-svc.Serve(ctx, nil)`,
+svc.Start(ctx, nil)`,
           py: `@sb.handle_rpc("billing.collect")
 async def collect(payload: dict) -> dict:
     await charge_all_subscriptions()
     return {"charged": True}
 
-await sb.serve()`,
+await sb.start()`,
         }}
       />
 

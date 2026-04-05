@@ -124,8 +124,9 @@ export const NAV: NavGroup[] = [
         label: "Startup & Shutdown",
         toc: [
           { id: "lifecycle", label: "Worker lifecycle" },
-          { id: "serve-sig", label: "serve()" },
-          { id: "serve-opts", label: "ServeOpts" },
+          { id: "outgoing-deps", label: "Outgoing dependencies" },
+          { id: "start-sig", label: "start()" },
+          { id: "start-opts", label: "StartOpts" },
           { id: "instance-weight", label: "instanceId & weight" },
           { id: "tls-behavior", label: "TLS / mTLS" },
           { id: "graceful-shutdown", label: "Graceful shutdown" },

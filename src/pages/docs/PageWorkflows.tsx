@@ -47,7 +47,7 @@ export function PageWorkflows() {
       <H2 id="handlers">Define handlers first</H2>
       <P>
         Workflow steps call existing <Mono>handleRpc</Mono> or <Mono>handleEvent</Mono> handlers.
-        Register them in your service workers before calling <Mono>serve()</Mono>:
+        Register them in your service workers before calling <Mono>start()</Mono>:
       </P>
       <MultiCodeBlock
         code={{
