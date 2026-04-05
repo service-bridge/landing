@@ -24,13 +24,13 @@ const orders = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SE
 
 // First call  → LookupFunction → opens persistent gRPC channel
 // All after   → direct wire, zero lookup overhead
-const result = await orders.rpc("payments", "payment.charge", { amount: 4990 });`,
+const result = await orders.rpc("payment.charge", { amount: 4990 });`,
 
   go: `// Worker: endpoint is advertised on Start()
 payments := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-payments.HandleRpc("payments.charge",
+payments.HandleRpc("payment.charge",
     func(ctx context.Context, p json.RawMessage) (any, error) {
         return map[string]any{"ok": true, "txId": "tx_001"}, nil
     })
@@ -41,7 +41,7 @@ go payments.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})
 orders := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-result, _ := orders.Rpc(ctx, "payments", "payment.charge",
+result, _ := orders.Rpc(ctx, "payment.charge",
     map[string]any{"amount": 4990}, nil)`,
 
   py: `from service_bridge import ServiceBridge
@@ -57,7 +57,7 @@ asyncio.create_task(payments.start(host="localhost"))
 
 # Caller: first rpc() → LookupFunction → opens gRPC channel
 orders = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
-result = await orders.rpc("payments", "payment.charge", {"amount": 4990})`,
+result = await orders.rpc("payment.charge", {"amount": 4990})`,
 };
 
 const REGISTRY_ROWS = [

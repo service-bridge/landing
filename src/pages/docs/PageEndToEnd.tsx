@@ -65,9 +65,9 @@ asyncio.run(payments.start())`,
         code={{
           ts: `const orders = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-// If orders also ran start(): orders.callsRpc("payments", "payment.charge"); orders.callsEvent("orders.completed");
+// If orders also ran start(): orders.callsRpc("payment.charge"); orders.callsEvent("orders.completed");
 
-const charge = await orders.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
+const charge = await orders.rpc<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 });
@@ -80,10 +80,10 @@ await orders.event("orders.completed", {
   headers: { source: "checkout" },
 });`,
           go: `orders := servicebridge.New("localhost:14445", key, nil)
-// orders.CallsRpc("payments", "payment.charge")
+// orders.CallsRpc("payment.charge")
 // orders.CallsEvent("orders.completed")
 
-result, _ := orders.Rpc(ctx, "payments", "payment.charge", map[string]any{
+result, _ := orders.Rpc(ctx, "payment.charge", map[string]any{
   "order_id": "ord_42", "amount": 4990,
 }, nil)
 
@@ -94,11 +94,11 @@ orders.Event(ctx, "orders.completed", map[string]any{
   Headers:        map[string]string{"source": "checkout"},
 })`,
           py: `orders = ServiceBridge("localhost:14445", "key")
-# orders.calls_rpc("payments", "payment.charge")
+# orders.calls_rpc("payment.charge")
 # orders.calls_event("orders.completed")
 
 async def process_order():
-    charge = await orders.rpc("payments", "payment.charge", {
+    charge = await orders.rpc("payment.charge", {
         "order_id": "ord_42",
         "amount": 4990,
     })

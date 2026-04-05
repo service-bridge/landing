@@ -35,9 +35,9 @@ export function PageRpc() {
       <H3 id="rpc-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `rpc<T = unknown>(service: string, fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
-          go: `func (c *Client) Rpc(ctx context.Context, service string, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
-          py: `async def rpc(target_service: str, fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "") -> Any`,
+          ts: `rpc<T = unknown>(fn: string, payload?: unknown, opts?: RpcOpts): Promise<T>`,
+          go: `func (c *Client) Rpc(ctx context.Context, fn string, payload any, opts *RpcOpts) (json.RawMessage, error)`,
+          py: `async def rpc(fn: str, payload: Any = None, *, retries: int | None = None, timeout_ms: int | None = None, retry_delay_ms: int | None = None, trace_id: str = "", parent_span_id: str = "", mode: str | None = None) -> Any`,
         }}
       />
 
@@ -45,14 +45,9 @@ export function PageRpc() {
       <ParamTable
         rows={[
           {
-            name: "service / target_service",
-            type: "string",
-            desc: "Callee logical service name (e.g. payments).",
-          },
-          {
             name: "fn",
             type: "string",
-            desc: 'Function name as registered with handleRpc (e.g. "payment.charge"). Use dot notation to group methods; do not use "/" in fn.',
+            desc: 'Global function name as registered with handleRpc (e.g. "payment.charge"). Must not contain "/".',
           },
           {
             name: "payload",
@@ -103,10 +98,10 @@ export function PageRpc() {
       <MultiCodeBlock
         code={{
           ts: `// Basic call
-const user = await sb.rpc<{ id: string; name: string }>("users", "user.get", { id: "u_1" });
+const user = await sb.rpc<{ id: string; name: string }>("user.get", { id: "u_1" });
 
 // With options — 2 retries, 5 s timeout, explicit trace ID
-const result = await sb.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
+const result = await sb.rpc<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 }, {
@@ -115,10 +110,10 @@ const result = await sb.rpc<{ ok: boolean; txId: string }>("payments", "payment.
   traceId: "trace-ord-42",  // use this ID in watchTrace() for streaming
 });`,
           go: `// Basic call
-result, err := svc.Rpc(ctx, "users", "user.get", map[string]any{"id": "u_1"}, nil)
+result, err := svc.Rpc(ctx, "user.get", map[string]any{"id": "u_1"}, nil)
 
 // With options
-result, err = svc.Rpc(ctx, "payments", "payment.charge", map[string]any{
+result, err = svc.Rpc(ctx, "payment.charge", map[string]any{
   "order_id": "ord_42",
   "amount":   4990,
 }, &servicebridge.RpcOpts{
@@ -126,11 +121,10 @@ result, err = svc.Rpc(ctx, "payments", "payment.charge", map[string]any{
   TimeoutMs: 5000,
 })`,
           py: `# Basic call
-user = await sb.rpc("users", "user.get", {"id": "u_1"})
+user = await sb.rpc("user.get", {"id": "u_1"})
 
 # With options
 result = await sb.rpc(
-    "payments",
     "payment.charge",
     {"order_id": "ord_42", "amount": 4990},
     retries=2,
@@ -166,14 +160,14 @@ result = await sb.rpc(
           ts: `import { ServiceBridgeError } from "service-bridge";
 
 try {
-  await sb.rpc("payments", "payment.charge", { orderId: "ord_1" });
+  await sb.rpc("payment.charge", { orderId: "ord_1" });
 } catch (e) {
   if (e instanceof ServiceBridgeError) {
     console.error(e.component, e.operation, e.severity, e.code, e.retryable);
   }
   throw e;
 }`,
-          go: `result, err := svc.Rpc(ctx, "payments", "payment.charge", payload, nil)
+          go: `result, err := svc.Rpc(ctx, "payment.charge", payload, nil)
 if err != nil {
   var sbErr *servicebridge.ServiceBridgeError
   if errors.As(err, &sbErr) {
@@ -184,7 +178,7 @@ if err != nil {
           py: `from service_bridge import ServiceBridgeError
 
 try:
-    await sb.rpc("payments", "payment.charge", {"order_id": "ord_1"})
+    await sb.rpc("payment.charge", {"order_id": "ord_1"})
 except ServiceBridgeError as e:
     print(e.component, e.operation, e.severity, e.code, e.retryable)
     raise`,
@@ -195,9 +189,15 @@ except ServiceBridgeError as e:
       <H2 id="handle-rpc">handleRpc() — register a handler</H2>
       <P>
         Register a function that callers can invoke by name. The SDK starts a gRPC server on{" "}
-        <Mono>serve()</Mono> — only the ServiceBridge control plane can call in, authenticated via
+        <Mono>start()</Mono> — only the ServiceBridge control plane can call in, authenticated via
         mTLS. Unauthorized callers are rejected before the handler runs.
       </P>
+
+      <Callout type="warning">
+        If this service also invokes <Mono>rpc()</Mono> on other services, declare each callee before{" "}
+        <Mono>start()</Mono> with <Mono>callsRpc(fn)</Mono> (Go: <Mono>CallsRpc</Mono>, Python:{" "}
+        <Mono>calls_rpc</Mono>). The runtime uses these declarations for registration and policy.
+      </Callout>
 
       <H3 id="handle-signature">Signature</H3>
       <MultiCodeBlock
@@ -405,19 +405,17 @@ async def charge(payload: dict) -> dict:
         code={{
           ts: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
 const res = await sb.rpc<{ txId: string; ok: boolean }>(
-  "payments",
   "payment.charge",
   { userId: "u_42", amount: 9900, currency: "USD" }
 );`,
           go: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
-res, err := svc.Rpc(ctx, "payments", "payment.charge", map[string]any{
+res, err := svc.Rpc(ctx, "payment.charge", map[string]any{
   "user_id":  "u_42",
   "amount":   9900,
   "currency": "USD",
 }, nil)`,
           py: `# No changes needed — SDK auto-detects schema via registry and switches to Protobuf
 res = await sb.rpc(
-    "payments",
     "payment.charge",
     {"user_id": "u_42", "amount": 9900, "currency": "USD"}
 )`,
@@ -500,7 +498,7 @@ res = await sb.rpc(
 
       <Callout type="info">
         <Mono>handleRpc()</Mono> is chainable in Node.js and Go — register multiple handlers before
-        calling <Mono>serve()</Mono>.
+        calling <Mono>start()</Mono>.
       </Callout>
     </div>
   );

@@ -62,7 +62,7 @@ sb.handleRpc("charge", async (payload: { orderId: string; amount: number }) => {
   return { ok: true, txId: \`tx_\${Date.now()}\`, orderId: payload.orderId };
 });
 
-// If this service also called other services: sb.callsRpc("payments", "payment.refund"); etc.
+// If this service also called other services: sb.callsRpc("payment.refund"); etc.
 await sb.start({ host: "localhost" });`,
           go: `package main
 
@@ -92,7 +92,7 @@ func main() {
     return map[string]any{"ok": true, "tx_id": fmt.Sprintf("tx_%s", req.OrderID)}, nil
   })
 
-  // svc.CallsRpc("payments", "payment.refund") // before Start if this worker also calls out
+  // svc.CallsRpc("payment.refund") // before Start if this worker also calls out
 
   if err := svc.Start(ctx, nil); err != nil {
     log.Fatal(err)
@@ -107,7 +107,7 @@ sb = ServiceBridge("localhost:14445", "your-service-key")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "tx_id": f"tx_{int(asyncio.get_event_loop().time())}"}
 
-# sb.calls_rpc("payments", "payment.refund")  # before start() if this worker also calls out
+# sb.calls_rpc("payment.refund")  # before start() if this worker also calls out
 
 asyncio.run(sb.start())`,
         }}
@@ -117,7 +117,7 @@ asyncio.run(sb.start())`,
       <P>
         Any service with a valid service key can call any registered RPC function directly — no
         broker, no sidecar, no proxy. If this caller ever runs a worker (<Mono>start()</Mono>),
-        register the callee first with <Mono>callsRpc(&quot;payments&quot;, &quot;payment.charge&quot;)</Mono>{" "}
+        register the callee first with <Mono>callsRpc(&quot;payment.charge&quot;)</Mono>{" "}
         (or the Go/Python equivalents) before <Mono>start()</Mono>.
       </P>
       <MultiCodeBlock
@@ -129,7 +129,7 @@ const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
 
-const result = await sb.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
+const result = await sb.rpc<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 });
@@ -150,7 +150,7 @@ import (
 func main() {
   svc := servicebridge.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-  result, err := svc.Rpc(context.Background(), "payments", "payment.charge", map[string]any{
+  result, err := svc.Rpc(context.Background(), "payment.charge", map[string]any{
     "order_id": "ord_42",
     "amount":   4990,
   }, nil)
@@ -171,7 +171,7 @@ from service_bridge import ServiceBridge
 sb = ServiceBridge("localhost:14445", "your-service-key")
 
 async def main():
-    result = await sb.rpc("payments", "payment.charge", {
+    result = await sb.rpc("payment.charge", {
         "order_id": "ord_42",
         "amount": 4990,
     })

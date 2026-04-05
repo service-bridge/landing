@@ -39,7 +39,7 @@ span := svc.StartHttpSpan(servicebridge.HttpSpanOpts{
 defer span.End(servicebridge.HttpSpanEndOpts{StatusCode: 200})
 
 ctx := servicebridge.WithTraceContext(r.Context(), span.TraceID, span.SpanID)
-result, err := svc.Rpc(ctx, "users", "user.get", payload, nil)
+result, err := svc.Rpc(ctx, "user.get", payload, nil)
 if err != nil {
   span.End(servicebridge.HttpSpanEndOpts{StatusCode: 500, Error: err.Error()})
   return

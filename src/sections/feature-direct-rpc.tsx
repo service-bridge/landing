@@ -19,7 +19,7 @@ const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVIC
 // Register — advertises endpoint to the registry
 sb.handleRpc("orders.create", async (payload) => {
   // SDK opens a direct gRPC channel to payments worker
-  const charge = await sb.rpc("payments", "payment.charge", {
+  const charge = await sb.rpc("payment.charge", {
     orderId: payload.id,
     amount: payload.total,
   });
@@ -42,7 +42,7 @@ func main() {
 
     sb.HandleRpc("orders.create",
         func(ctx context.Context, p json.RawMessage) (any, error) {
-            charge, _ := sb.Rpc(ctx, "payments", "payment.charge",
+            charge, _ := sb.Rpc(ctx, "payment.charge",
                 map[string]any{"orderId": "ord_42", "amount": 4990}, nil)
             return map[string]any{"ok": true, "txId": charge["txId"]}, nil
         })
@@ -57,7 +57,7 @@ sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @sb.handle_rpc("orders.create")
 async def orders_create(payload: dict) -> dict:
-    charge = await sb.rpc("payments", "payment.charge", {
+    charge = await sb.rpc("payment.charge", {
         "orderId": payload["id"],
         "amount": payload["total"],
     })
