@@ -29,9 +29,9 @@ const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> 
   node: {
     filename: "my-service.ts",
     lang: "ts",
-    code: `import { servicebridge } from "service-bridge";
+    code: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge(
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
@@ -44,7 +44,7 @@ sb.handleEvent("order.*", async (payload) => {
   console.log("Event received:", payload);
 });
 
-await sb.serve(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
+await sb.start(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   python: {
     filename: "app.py",
@@ -66,7 +66,7 @@ async def hello(payload: dict) -> dict:
 async def on_order(payload: dict, ctx) -> None:
     print("Event received:", payload)
 
-asyncio.run(sb.serve())  # auto-provisions worker mTLS via ProvisionWorkerCertificate`,
+asyncio.run(sb.start())  # auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   go: {
     filename: "main.go",
@@ -104,7 +104,7 @@ func main() {
     return nil
   }, nil)
 
-  log.Fatal(svc.Serve(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
+  log.Fatal(svc.Start(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
 }`,
   },
 };
@@ -277,7 +277,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             </div>
             <p className="type-caption mt-3 text-muted-foreground/80">
               Control plane trust is read from the embedded CA in the <code>sbv2</code> key by
-              default. On <code>serve()</code>, SDK generates a local ECDSA P-256 key pair and sends
+              default. On <code>start()</code>, SDK generates a local ECDSA P-256 key pair and sends
               only the public key for worker cert provisioning.
             </p>
           </div>

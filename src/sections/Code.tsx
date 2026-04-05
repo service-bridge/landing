@@ -18,10 +18,10 @@ const LANG_TABS = [
     id: "typescript",
     label: "TypeScript",
     filename: "orders-service.ts",
-    code: `import { servicebridge } from "service-bridge";
+    code: `import { ServiceBridge } from "service-bridge";
 
 // Connect: control plane address + sbv2 service key
-const sb = servicebridge(
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!, // sbv2.<id>.<secret>.<ca>
 );
@@ -52,7 +52,7 @@ await sb.workflow("checkout.flow", [
   { id: "confirm",  type: "event", ref: "order.confirmed",   deps: ["charge", "reserve"] },
 ]);
 
-await sb.serve(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
+await sb.start(); // auto-provisions worker mTLS via ProvisionWorkerCertificate`,
   },
   {
     id: "go",
@@ -107,7 +107,7 @@ func main() {
     {ID: "confirm", Type: "event", Ref: "order.confirmed",   Deps: []string{"charge", "reserve"}},
   }, nil)
 
-  log.Fatal(svc.Serve(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
+  log.Fatal(svc.Start(ctx, nil)) // auto-provisions worker mTLS via ProvisionWorkerCertificate
 }`,
   },
   {
@@ -148,7 +148,7 @@ async def bootstrap():
         WorkflowStep(id="confirm", type="event", ref="order.confirmed",   deps=["charge", "reserve"]),
     ])
 
-    await sb.serve()  # auto-provisions worker mTLS via ProvisionWorkerCertificate
+    await sb.start()  # auto-provisions worker mTLS via ProvisionWorkerCertificate
 
 asyncio.run(bootstrap())`,
   },
@@ -397,7 +397,7 @@ export function CodeSection() {
       <SectionHeader
         eyebrow="Developer Experience"
         title={<>One SDK across languages. Zero manual instrumentation.</>}
-        subtitle="Examples match docs/readme: sbv2 service keys, embedded CA trust by default, and auto-provisioned worker mTLS on serve()."
+        subtitle="Examples match docs/readme: sbv2 service keys, embedded CA trust by default, and auto-provisioned worker mTLS on start()."
       />
 
       <div className="grid items-start gap-6 xl:grid-cols-[1.08fr_0.92fr] max-w-6xl mx-auto">

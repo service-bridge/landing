@@ -51,10 +51,10 @@ export function PageHttpMiddleware() {
       <MultiCodeBlock
         code={{
           ts: `import express from "express";
-import { servicebridge } from "service-bridge";
+import { ServiceBridge } from "service-bridge";
 import { servicebridgeMiddleware, registerExpressRoutes } from "service-bridge/express";
 
-const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = express();
 
 app.use(servicebridgeMiddleware({
@@ -147,10 +147,10 @@ app.listen(3000);`,
       <MultiCodeBlock
         code={{
           ts: `import Fastify from "fastify";
-import { servicebridge } from "service-bridge";
+import { ServiceBridge } from "service-bridge";
 import { servicebridgePlugin, wrapHandler } from "service-bridge/fastify";
 
-const sb = servicebridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge(process.env.SERVICEBRIDGE_URL!, process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = Fastify();
 
 await app.register(servicebridgePlugin, {

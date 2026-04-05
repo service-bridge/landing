@@ -27,7 +27,9 @@ export function PageOfflineQueue() {
       <H2 id="behavior">How it works</H2>
       <MultiCodeBlock
         code={{
-          ts: `const sb = servicebridge(url, serviceKey, {
+          ts: `import { ServiceBridge } from "service-bridge";
+
+const sb = new ServiceBridge(url, serviceKey, {
   queueMaxSize: 2_000,           // max buffered operations
   queueOverflow: "drop-oldest",  // eviction policy when full
 });

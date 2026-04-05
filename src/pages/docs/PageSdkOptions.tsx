@@ -13,9 +13,9 @@ export function PageSdkOptions() {
       <H2 id="constructor">Constructor</H2>
       <MultiCodeBlock
         code={{
-          ts: `import { servicebridge } from "service-bridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge(
+const sb = new ServiceBridge(
   url,         // gRPC control plane URL (e.g. "localhost:14445")
   serviceKey,  // Service authentication key
   {
@@ -165,14 +165,14 @@ sb = ServiceBridge(
             desc: "Accepted by Node API as hints; currently not strict runtime limits.",
           },
           {
-            name: "Serve flow-control field (all SDKs)",
+            name: "Start flow-control field (all SDKs)",
             type: "maxInFlight / MaxInFlight / max_in_flight",
             desc: "Bounded runtime-originated command concurrency over OpenWorkerSession.",
           },
           {
-            name: "Node-only serve fields",
+            name: "Node-only start fields",
             type: "instanceId/weight/tls",
-            desc: "Extra serve extensions beyond shared host/maxInFlight fields.",
+            desc: "Extra start extensions beyond shared host/maxInFlight fields.",
           },
         ]}
       />
@@ -185,7 +185,7 @@ sb = ServiceBridge(
       </P>
       <MultiCodeBlock
         code={{
-          ts: `const sb = servicebridge(url, key, {
+          ts: `const sb = new ServiceBridge(url, key, {
   queueMaxSize: 2_000,          // max buffered operations
   queueOverflow: "drop-oldest", // what to do when full
 });

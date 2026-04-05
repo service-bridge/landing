@@ -19,7 +19,7 @@ export function PageTlsMtls() {
 
       <H2 id="tls-provision">SDK gRPC provisioning</H2>
       <P>
-        When you call <Mono>serve()</Mono>, the SDK automatically provisions mTLS client
+        When you call <Mono>start()</Mono>, the SDK automatically provisions mTLS client
         certificates:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
@@ -48,21 +48,23 @@ export function PageTlsMtls() {
       </P>
       <MultiCodeBlock
         code={{
-          ts: `// Default — auto-provisions mTLS (just a service key needed)
-const sb = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
-await sb.serve();  // ← provisions TLS here
+          ts: `import { ServiceBridge } from "service-bridge";
+
+// Default — auto-provisions mTLS (just a service key needed)
+const sb = new ServiceBridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+await sb.start();  // ← provisions TLS here
 
 // Advanced TLS overrides: explicit certs override auto-provisioning
-const sb2 = servicebridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, {
+const sb2 = new ServiceBridge("server:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!, {
   workerTLS: { caCert: CA_PEM, cert: CERT_PEM, key: KEY_PEM },
 });
 
 // All SDKs auto-provision mTLS by default; set workerTLS/WorkerTLS/worker_tls only for explicit certs.
-await sb.serve();`,
+await sb.start();`,
           go: `// Default — auto-provisions mTLS
-svc.Serve(ctx, nil)`,
+svc.Start(ctx, nil)`,
           py: `# Default — auto-provisions mTLS
-await sb.serve()`,
+await sb.start()`,
         }}
       />
 

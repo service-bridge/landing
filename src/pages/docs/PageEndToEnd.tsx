@@ -19,9 +19,9 @@ export function PageEndToEnd() {
       <H2 id="payments-worker">Payments worker (RPC handler with streaming)</H2>
       <MultiCodeBlock
         code={{
-          ts: `import { servicebridge } from "service-bridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
-const payments = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const payments = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 payments.handleRpc("charge", async (payload: { orderId: string; amount: number }, ctx) => {
   await ctx?.stream.write({ status: "charging", orderId: payload.orderId }, "progress");
@@ -32,7 +32,8 @@ payments.handleRpc("charge", async (payload: { orderId: string; amount: number }
   return { ok: true, txId: \`tx_\${Date.now()}\` };
 });
 
-await payments.serve({ host: "localhost" });`,
+// payments worker has no outgoing rpc/event/workflow here — no calls* needed
+await payments.start({ host: "localhost" });`,
           go: `svc := servicebridge.New("localhost:14445", key, nil)
 
 svc.HandleRpcWithOpts("charge",
@@ -43,7 +44,7 @@ svc.HandleRpcWithOpts("charge",
     return map[string]any{"ok": true, "tx_id": "tx_123"}, nil
   }, nil)
 
-svc.Serve(ctx, nil)`,
+svc.Start(ctx, nil)`,
           py: `from service_bridge import ServiceBridge
 
 payments = ServiceBridge("localhost:14445", "key")
@@ -55,14 +56,16 @@ async def charge(payload: dict, ctx) -> dict:
     await ctx.stream.write({"status": "charged"}, "progress")
     return {"ok": True, "tx_id": f"tx_123"}
 
-asyncio.run(payments.serve())`,
+asyncio.run(payments.start())`,
         }}
       />
 
       <H2 id="orders-caller">Orders service (RPC call + event publish)</H2>
       <MultiCodeBlock
         code={{
-          ts: `const orders = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+          ts: `const orders = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+
+// If orders also ran start(): orders.callsRpc("payments", "payment.charge"); orders.callsEvent("orders.completed");
 
 const charge = await orders.rpc<{ ok: boolean; txId: string }>("payments", "payment.charge", {
   orderId: "ord_42",
@@ -77,6 +80,8 @@ await orders.event("orders.completed", {
   headers: { source: "checkout" },
 });`,
           go: `orders := servicebridge.New("localhost:14445", key, nil)
+// orders.CallsRpc("payments", "payment.charge")
+// orders.CallsEvent("orders.completed")
 
 result, _ := orders.Rpc(ctx, "payments", "payment.charge", map[string]any{
   "order_id": "ord_42", "amount": 4990,
@@ -89,6 +94,8 @@ orders.Event(ctx, "orders.completed", map[string]any{
   Headers:        map[string]string{"source": "checkout"},
 })`,
           py: `orders = ServiceBridge("localhost:14445", "key")
+# orders.calls_rpc("payments", "payment.charge")
+# orders.calls_event("orders.completed")
 
 async def process_order():
     charge = await orders.rpc("payments", "payment.charge", {
@@ -106,7 +113,7 @@ async def process_order():
       <H2 id="notifications">Notifications service (event consumer)</H2>
       <MultiCodeBlock
         code={{
-          ts: `const notifications = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+          ts: `const notifications = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 notifications.handleEvent("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string; txId: string };
@@ -118,7 +125,7 @@ notifications.handleEvent("orders.*", async (payload, ctx) => {
   // ... send email ...
 });
 
-await notifications.serve({ host: "localhost" });`,
+await notifications.start({ host: "localhost" });`,
           go: `notif := servicebridge.New("localhost:14445", key, nil)
 
 notif.HandleEvent("orders.*",
@@ -128,7 +135,7 @@ notif.HandleEvent("orders.*",
     return nil
   }, nil)
 
-notif.Serve(ctx, nil)`,
+notif.Start(ctx, nil)`,
           py: `from service_bridge import ServiceBridge, EventContext
 
 notifications = ServiceBridge("localhost:14445", "key")
@@ -141,7 +148,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
     await ctx.stream.write({"status": "sending_email"}, "progress")
     # ... send email ...
 
-asyncio.run(notifications.serve())`,
+asyncio.run(notifications.start())`,
         }}
       />
 

@@ -43,14 +43,17 @@ bun add service-bridge`,
 
       <H2 id="create-worker">3. Create a worker</H2>
       <P>
-        A worker is a service that handles incoming RPC calls. Register handlers, then call{" "}
-        <Mono>serve()</Mono> to connect to the runtime and start accepting requests.
+        A worker is a service that handles incoming RPC calls. Register handlers, declare any outgoing{" "}
+        <Mono>rpc()</Mono>/<Mono>event()</Mono>/<Mono>workflow()</Mono> usage with{" "}
+        <Mono>callsRpc()</Mono>/<Mono>callsEvent()</Mono>/<Mono>callsWorkflow()</Mono>, then call{" "}
+        <Mono>start()</Mono> to connect to the runtime and start accepting requests. This sample
+        worker only handles incoming RPCs, so no <Mono>calls*</Mono> lines are required.
       </P>
       <MultiCodeBlock
         code={{
-          ts: `import { servicebridge } from "service-bridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge(
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
@@ -59,7 +62,8 @@ sb.handleRpc("charge", async (payload: { orderId: string; amount: number }) => {
   return { ok: true, txId: \`tx_\${Date.now()}\`, orderId: payload.orderId };
 });
 
-await sb.serve({ host: "localhost" });`,
+// If this service also called other services: sb.callsRpc("payments", "payment.refund"); etc.
+await sb.start({ host: "localhost" });`,
           go: `package main
 
 import (
@@ -88,7 +92,9 @@ func main() {
     return map[string]any{"ok": true, "tx_id": fmt.Sprintf("tx_%s", req.OrderID)}, nil
   })
 
-  if err := svc.Serve(ctx, nil); err != nil {
+  // svc.CallsRpc("payments", "payment.refund") // before Start if this worker also calls out
+
+  if err := svc.Start(ctx, nil); err != nil {
     log.Fatal(err)
   }
 }`,
@@ -101,20 +107,24 @@ sb = ServiceBridge("localhost:14445", "your-service-key")
 async def charge(payload: dict) -> dict:
     return {"ok": True, "tx_id": f"tx_{int(asyncio.get_event_loop().time())}"}
 
-asyncio.run(sb.serve())`,
+# sb.calls_rpc("payments", "payment.refund")  # before start() if this worker also calls out
+
+asyncio.run(sb.start())`,
         }}
       />
 
       <H2 id="call-rpc">4. Call it from another service</H2>
       <P>
         Any service with a valid service key can call any registered RPC function directly — no
-        broker, no sidecar, no proxy.
+        broker, no sidecar, no proxy. If this caller ever runs a worker (<Mono>start()</Mono>),
+        register the callee first with <Mono>callsRpc(&quot;payments&quot;, &quot;payment.charge&quot;)</Mono>{" "}
+        (or the Go/Python equivalents) before <Mono>start()</Mono>.
       </P>
       <MultiCodeBlock
         code={{
-          ts: `import { servicebridge } from "service-bridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge(
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );
@@ -195,7 +205,9 @@ SERVICEBRIDGE_SERVICE_KEY=sbv2.<id>.<secret>.<ca>`,
       <H3 id="use-env">Read env in your service</H3>
       <MultiCodeBlock
         code={{
-          ts: `const sb = servicebridge(
+          ts: `import { ServiceBridge } from "service-bridge";
+
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL ?? "localhost:14445",
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );`,

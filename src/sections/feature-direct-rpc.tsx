@@ -12,9 +12,9 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const RPC_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "service-bridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Register — advertises endpoint to the registry
 sb.handleRpc("orders.create", async (payload) => {
@@ -26,7 +26,7 @@ sb.handleRpc("orders.create", async (payload) => {
   return { ok: charge.ok, txId: charge.txId };
 });
 
-await sb.serve();`,
+await sb.start();`,
 
   go: `package main
 
@@ -47,7 +47,7 @@ func main() {
             return map[string]any{"ok": true, "txId": charge["txId"]}, nil
         })
 
-    _ = sb.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})
+    _ = sb.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})
 }`,
 
   py: `from service_bridge import ServiceBridge
@@ -63,7 +63,7 @@ async def orders_create(payload: dict) -> dict:
     })
     return {"ok": charge["ok"], "txId": charge["txId"]}
 
-await sb.serve()`,
+await sb.start()`,
 };
 
 // ─── Animated packet dot ─────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ export function DirectRpcSection() {
             <div className="mt-5 grid gap-2 grid-cols-3">
               <Card className="p-3">
                 <p className="type-overline-mono text-muted-foreground">register</p>
-                <p className="mt-2 type-subsection-title text-blue-300">serve() → registry</p>
+                <p className="mt-2 type-subsection-title text-blue-300">start() → registry</p>
               </Card>
               <Card className="p-3">
                 <p className="type-overline-mono text-muted-foreground">resolve</p>

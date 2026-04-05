@@ -45,9 +45,9 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
     label: "Cron",
     filename: { ts: "billing-service.ts", go: "billing_service.go", py: "billing_service.py" },
     code: {
-      ts: `import { servicebridge } from "service-bridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Runs every hour — fires immediately if the node was down
 await sb.job("billing", "reconcile", {
@@ -63,7 +63,7 @@ sb.handleRpc("reconcile", async () => {
   return { ok: true };
 });
 
-await sb.serve();`,
+await sb.start();`,
       go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
@@ -79,7 +79,7 @@ svc.HandleRpc("reconcile",
         return map[string]any{"ok": true}, nil
     })
 
-_ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})`,
+_ = svc.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})`,
       py: `from service_bridge import ServiceBridge, ScheduleOpts
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
@@ -94,7 +94,7 @@ async def billing_reconcile(payload: dict) -> dict:
     await reconcile_all()
     return {"ok": True}
 
-await svc.serve()`,
+await svc.start()`,
     },
   },
   {
@@ -106,9 +106,9 @@ await svc.serve()`,
       py: "onboarding_service.py",
     },
     code: {
-      ts: `import { servicebridge } from "service-bridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Fires once after 24 hours, delivered as a durable event
 await sb.job("trial.reminder", {
@@ -121,7 +121,7 @@ sb.handleEvent("trial.reminder", async (payload, ctx) => {
   if (!sent) ctx.retry(60_000);
 });
 
-await sb.serve();`,
+await sb.start();`,
       go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
@@ -138,7 +138,7 @@ svc.HandleEvent("trial.reminder",
         return nil
     }, nil)
 
-_ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})`,
+_ = svc.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})`,
       py: `from service_bridge import ServiceBridge, ScheduleOpts
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
@@ -154,7 +154,7 @@ async def on_reminder(payload: dict, ctx) -> None:
     if not sent:
         ctx.retry(60_000)
 
-await svc.serve()`,
+await svc.start()`,
     },
   },
   {
@@ -162,9 +162,9 @@ await svc.serve()`,
     label: "Via Workflow",
     filename: { ts: "platform-service.ts", go: "platform_service.go", py: "platform_service.py" },
     code: {
-      ts: `import { servicebridge } from "service-bridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Daily job — kicks off a full workflow run
 await sb.job("billing.daily", {
@@ -180,7 +180,7 @@ await sb.workflow("billing.daily", [
   { id: "notify",  type: "event", ref: "billing.reconciled", deps: ["process"] },
 ]);
 
-await sb.serve();`,
+await sb.start();`,
       go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
@@ -195,7 +195,7 @@ svc.Workflow(ctx, "billing.daily", []servicebridge.WorkflowStep{
     {ID: "notify",  Type: "event", Ref: "billing.reconciled", Deps: []string{"process"}},
 }, nil)
 
-_ = svc.Serve(ctx, &servicebridge.ServeOpts{Host: "localhost"})`,
+_ = svc.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})`,
       py: `from service_bridge import ServiceBridge, ScheduleOpts, WorkflowStep
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
@@ -211,7 +211,7 @@ await svc.workflow("billing.daily", [
     WorkflowStep(id="notify",  type="event", ref="billing.reconciled", deps=["process"]),
 ])
 
-await svc.serve()`,
+await svc.start()`,
     },
   },
 ];

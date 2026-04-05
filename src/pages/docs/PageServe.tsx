@@ -20,7 +20,7 @@ export function PageServe() {
       <ol className="list-decimal pl-6 space-y-2 text-sm text-muted-foreground my-4">
         <li>
           <strong className="text-foreground">Construct the client</strong> —{" "}
-          <Mono>servicebridge(url, key)</Mono> (or language equivalent).
+          <Mono>new ServiceBridge(url, key)</Mono> (or language equivalent).
         </li>
         <li>
           <strong className="text-foreground">Register handlers</strong> — <Mono>handleRpc()</Mono>,{" "}
@@ -40,9 +40,9 @@ export function PageServe() {
       </ol>
       <MultiCodeBlock
         code={{
-          ts: `import { servicebridge } from "service-bridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge(
+const sb = new ServiceBridge(
   process.env.SERVICEBRIDGE_URL!,
   process.env.SERVICEBRIDGE_SERVICE_KEY!,
 );

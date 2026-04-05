@@ -68,13 +68,15 @@ scrape_configs:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `// All console.* calls are captured automatically
+          ts: `import { ServiceBridge } from "service-bridge";
+
+// All console.* calls are captured automatically
 console.log("order processed", orderId);
 console.error("charge failed", error);
 console.warn("retrying...");
 
 // Disable if needed
-const sb = servicebridge(url, key, { captureLogs: false });`,
+const sb = new ServiceBridge(url, key, { captureLogs: false });`,
         }}
       />
 

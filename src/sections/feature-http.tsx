@@ -18,10 +18,10 @@ const FRAMEWORK_TABS = [
     lang: "ts" as const,
     filename: "app.ts",
     code: `import express from "express";
-import { servicebridge } from "service-bridge";
+import { ServiceBridge } from "service-bridge";
 import { servicebridgeMiddleware } from "@service-bridge/http";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = express();
 
 // Auto-traces every request, registers routes in HTTP catalog
@@ -42,10 +42,10 @@ app.post("/api/orders", async (req, res) => {
     lang: "ts" as const,
     filename: "server.ts",
     code: `import Fastify from "fastify";
-import { servicebridge } from "service-bridge";
+import { ServiceBridge } from "service-bridge";
 import { servicebridgePlugin } from "@service-bridge/http";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 const app = Fastify();
 
 await app.register(servicebridgePlugin, { client: sb });

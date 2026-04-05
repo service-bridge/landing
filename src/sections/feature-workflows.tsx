@@ -22,9 +22,9 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const WORKFLOW_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "service-bridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // DAG: parallel fan-out → fan-in → conditional → sleep → followup
 await sb.workflow("merchant.onboarding", [

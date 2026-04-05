@@ -10,9 +10,9 @@ import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
 const WRITER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "service-bridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 sb.handleEvent("ai.generate", async (payload, ctx) => {
   // Stream tokens to any subscriber in real-time
@@ -46,9 +46,9 @@ async def on_generate(payload: dict, ctx) -> None:
 };
 
 const READER_CODE: CodeLangs = {
-  ts: `import { servicebridge } from "service-bridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
-const sb = servicebridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
+const sb = new ServiceBridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 const traceId = await sb.event("ai.generate", { prompt });
 
