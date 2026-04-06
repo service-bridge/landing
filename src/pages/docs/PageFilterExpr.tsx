@@ -34,7 +34,7 @@ price>=9.99                   // numeric >=`}
   &servicebridge.HandleEventOpts{
     FilterExpr: "status=paid,amount>100",
   })`,
-          py: `@sb.handle_event(
+          py: `@sb.events.handle(
     "orders.*",
     filter_expr="status=paid,amount>100",
 )

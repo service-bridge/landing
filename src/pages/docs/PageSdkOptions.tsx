@@ -179,8 +179,8 @@ sb = ServiceBridge(
 
       <H2 id="offline-queue">Offline queue behavior</H2>
       <P>
-        When the control plane is unavailable, the SDK buffers <Mono>event()</Mono>,{" "}
-        <Mono>job()</Mono>, <Mono>workflow()</Mono>, and telemetry writes in memory. They are
+        When the control plane is unavailable, the SDK buffers <Mono>events.publish()</Mono>,{" "}
+        <Mono>jobs.run()</Mono>, <Mono>workflows.run()</Mono>, and telemetry writes in memory. They are
         flushed automatically after reconnect.
       </P>
       <MultiCodeBlock
@@ -191,8 +191,8 @@ sb = ServiceBridge(
 });
 
 // These return immediately even when the control plane is down
-await sb.event("order.created", payload);        // queued
-await sb.job("billing", "collect", opts);        // queued (RPC job)`,
+await sb.events.publish("order.created", payload);        // queued
+await sb.jobs.run("billing", "collect", { via: "rpc", cron: "0 0 * * *" }); // queued (RPC job)`,
           go: `svc := servicebridge.New(url, key, &servicebridge.Options{
   QueueMaxSize:  2000,
   QueueOverflow: "drop-oldest",

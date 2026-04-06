@@ -11,7 +11,7 @@ export function PageOfflineQueue() {
       />
 
       <P>
-        The SDK buffers <Mono>event()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>, and
+        The SDK buffers <Mono>events.publish()</Mono>, <Mono>jobs.run()</Mono>, <Mono>workflows.run()</Mono>, and
         telemetry operations (trace spans, <Mono>ReportCall</Mono>) in an in-memory queue. Direct
         RPC calls between services continue working via cached endpoint lists — only control-plane
         writes are queued.
@@ -20,7 +20,7 @@ export function PageOfflineQueue() {
       <Callout type="warning">
         <Mono>stream.write()</Mono> / <Mono>ctx.stream.write()</Mono> calls are{" "}
         <strong>not buffered offline</strong> — they are silently dropped when the control plane is
-        unreachable. Use <Mono>event()</Mono>, <Mono>job()</Mono>, or <Mono>workflow()</Mono> for
+        unreachable. Use <Mono>events.publish()</Mono>, <Mono>jobs.run()</Mono>, or <Mono>workflows.run()</Mono> for
         reliable delivery instead.
       </Callout>
 
@@ -34,9 +34,9 @@ const sb = new ServiceBridge(url, serviceKey, {
   queueOverflow: "drop-oldest",  // eviction policy when full
 });
 
-// event() / job() / workflow() return immediately
+// events.publish() / jobs.run() / workflows.run() return immediately
 // even when the runtime is down — they're queued
-await sb.event("order.created", payload);  // buffered if offline
+await sb.events.publish("order.created", payload);  // buffered if offline
 
 // On reconnect, the queue drains automatically
 // No code changes needed`,
@@ -45,15 +45,15 @@ await sb.event("order.created", payload);  // buffered if offline
   QueueOverflow: "drop-oldest",
 })
 
-// Event, Job, Workflow calls queue automatically when offline
-svc.Event(ctx, "order.created", payload, nil) // buffered if offline`,
+// Events, jobs, and workflow calls queue automatically when offline
+svc.Events.Publish(ctx, "order.created", payload, nil) // buffered if offline`,
           py: `sb = ServiceBridge(url, key, opts=Options(
     queue_max_size=2000,
     queue_overflow="drop-oldest",
 ))
 
-# event() / job() / workflow() buffer automatically when offline
-await sb.event("order.created", payload)  # buffered if offline`,
+# events.publish() / jobs.run() / workflows.run() buffer automatically when offline
+await sb.events.publish("order.created", payload)  # buffered if offline`,
         }}
       />
 
@@ -91,8 +91,8 @@ await sb.event("order.created", payload)  # buffered if offline`,
       </P>
       <ul className="list-disc pl-5 space-y-2 text-sm text-muted-foreground my-3">
         <li>
-          <strong>SDK offline queue</strong> — buffers <Mono>event()</Mono> / <Mono>job()</Mono> /
-          <Mono>workflow()</Mono> calls <em>in-memory on the publisher side</em> when the publisher
+          <strong>SDK offline queue</strong> — buffers <Mono>events.publish()</Mono> / <Mono>jobs.run()</Mono> /
+          <Mono>workflows.run()</Mono> calls <em>in-memory on the publisher side</em> when the publisher
           cannot reach the ServiceBridge runtime. Once the publisher reconnects, queued calls are
           flushed to the runtime. This protects against short-lived publisher-to-runtime outages.
           Data is lost on process restart.
@@ -114,7 +114,7 @@ await sb.event("order.created", payload)  # buffered if offline`,
 
       <H2 id="return-values">Return values while offline</H2>
       <P>
-        <Mono>event()</Mono> and <Mono>job()</Mono> return an empty string (instead of the real
+        <Mono>events.publish()</Mono> and <Mono>jobs.run()</Mono> return an empty string (instead of the real
         message/job ID) when the operation is buffered. The real ID is available only after flushing
         — currently no callback is provided for this. Design your code to handle empty IDs
         gracefully.

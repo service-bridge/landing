@@ -42,7 +42,7 @@ sb.events.handle("order.*", async (payload, ctx) => {
 });
 
 // Publisher — durable, at-least-once per consumer group
-await sb.event("order.created", {
+await sb.events.publish("order.created", {
   orderId: "ord_123", amount: 4990,
   customer: { tier: "premium" },
 }, { idempotencyKey: "orders:ord_123:created" });`,
@@ -63,7 +63,7 @@ svc.Events.Handle("order.*",
         RetryPolicyJSON: \`{"maxAttempts":5,"baseDelayMs":5000,"factor":2}\`,
     })
 
-svc.Event(ctx, "order.created", map[string]any{
+svc.Events.Publish(ctx, "order.created", map[string]any{
     "orderId":  "ord_123",
     "amount":   4990,
     "customer": map[string]any{"tier": "premium"},
@@ -73,7 +73,7 @@ svc.Event(ctx, "order.created", map[string]any{
 
 svc = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-@svc.handle_event(
+@svc.events.handle(
     "order.*",
     filter_expr="customer.tier!=free,amount>=1000",
     retry_policy_json='{"maxAttempts":5,"baseDelayMs":5000,"factor":2}',
@@ -83,7 +83,7 @@ async def on_order(payload: dict, ctx) -> None:
     if not ok:
         ctx.retry(30_000)
 
-await svc.event(
+await svc.events.publish(
     "order.created",
     {"orderId": "ord_123", "amount": 4990, "customer": {"tier": "premium"}},
     idempotency_key="orders:ord_123:created",
@@ -94,7 +94,7 @@ const PIPELINE = [
   {
     icon: Radio,
     label: "Publish",
-    desc: "sb.event()",
+    desc: "sb.events.publish()",
     color: "text-blue-300",
     bg: "bg-blue-500/[0.08]",
     border: "border-blue-500/25",

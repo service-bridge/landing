@@ -39,7 +39,7 @@ span := svc.StartHttpSpan(servicebridge.HttpSpanOpts{
 defer span.End(servicebridge.HttpSpanEndOpts{StatusCode: 200})
 
 ctx := servicebridge.WithTraceContext(r.Context(), span.TraceID, span.SpanID)
-result, err := svc.Rpc(ctx, "user.get", payload, nil)
+result, err := svc.Rpc.Invoke(ctx, "user.get", payload, nil)
 if err != nil {
   span.End(servicebridge.HttpSpanEndOpts{StatusCode: 500, Error: err.Error()})
   return
@@ -101,7 +101,7 @@ const ctx = getTraceContext(); // { traceId, spanId }
 
 // Run a function inside an explicit trace context
 withTraceContext({ traceId: "trace-1", spanId: "span-1" }, async () => {
-  await sb.event("audit.log", { action: "user.login" });
+  await sb.events.publish("audit.log", { action: "user.login" });
 });`,
           go: `// Add trace context to a Go context.Context
 ctx = servicebridge.WithTraceContext(ctx, "trace-1", "span-1")
@@ -113,7 +113,7 @@ fmt.Println(tc.TraceID, tc.SpanID)`,
 # In HTTP handlers, read IDs from middleware state and pass them explicitly:
 trace_id = request.state.servicebridge_trace_id  # FastAPI
 # trace_id = g.trace_id                          # Flask
-await sb.event("audit.log", {"action": "user.login"}, trace_id=trace_id)`,
+await sb.events.publish("audit.log", {"action": "user.login"}, trace_id=trace_id)`,
         }}
       />
 

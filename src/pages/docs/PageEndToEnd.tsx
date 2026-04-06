@@ -32,7 +32,7 @@ payments.rpc.handle("charge", async (payload: { orderId: string; amount: number 
   return { ok: true, txId: \`tx_\${Date.now()}\` };
 });
 
-// payments worker has no outgoing rpc/event/workflow here — no calls* needed
+// payments worker has no outgoing rpc/event/workflow here — no declare() calls needed
 await payments.start({ host: "localhost" });`,
           go: `svc := servicebridge.New("localhost:14445", key, nil)
 
@@ -67,12 +67,12 @@ asyncio.run(payments.start())`,
 
 // If orders also ran start(): orders.rpc.declare("payment.charge"); orders.events.declare("orders.completed");
 
-const charge = await orders.rpc<{ ok: boolean; txId: string }>("payment.charge", {
+const charge = await orders.rpc.invoke<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 });
 
-await orders.event("orders.completed", {
+await orders.events.publish("orders.completed", {
   orderId: "ord_42",
   txId: charge.txId,
 }, {
@@ -80,33 +80,41 @@ await orders.event("orders.completed", {
   headers: { source: "checkout" },
 });`,
           go: `orders := servicebridge.New("localhost:14445", key, nil)
-// orders.CallsRpc("payment.charge")
-// orders.CallsEvent("orders.completed")
+// orders.Rpc.Declare("payment.charge")
+// orders.Events.Declare("orders.completed")
 
-result, _ := orders.Rpc(ctx, "payment.charge", map[string]any{
+result, _ := orders.Rpc.Invoke(ctx, "payment.charge", map[string]any{
   "order_id": "ord_42", "amount": 4990,
 }, nil)
 
-orders.Event(ctx, "orders.completed", map[string]any{
+orders.Events.Publish(ctx, "orders.completed", map[string]any{
   "order_id": "ord_42",
 }, &servicebridge.EventOpts{
   IdempotencyKey: "order:ord_42:completed",
   Headers:        map[string]string{"source": "checkout"},
 })`,
           py: `orders = ServiceBridge("localhost:14445", "key")
-# orders.calls_rpc("payment.charge")
-# orders.calls_event("orders.completed")
+# orders.rpc.declare("payment.charge")
+# orders.events.declare("orders.completed")
 
 async def process_order():
-    charge = await orders.rpc("payment.charge", {
-        "order_id": "ord_42",
-        "amount": 4990,
-    })
+    charge = await orders.rpc.invoke(
+        "payment.charge",
+        {
+            "order_id": "ord_42",
+            "amount": 4990,
+        },
+    )
 
-    await orders.event("orders.completed", {
-        "order_id": "ord_42",
-        "tx_id": charge["tx_id"],
-    }, idempotency_key="order:ord_42:completed", headers={"source": "checkout"})`,
+    await orders.events.publish(
+        "orders.completed",
+        {
+            "order_id": "ord_42",
+            "tx_id": charge["tx_id"],
+        },
+        idempotency_key="order:ord_42:completed",
+        headers={"source": "checkout"},
+    )`,
         }}
       />
 
@@ -140,7 +148,7 @@ notif.Start(ctx, nil)`,
 
 notifications = ServiceBridge("localhost:14445", "key")
 
-@notifications.handle_event("orders.*")
+@notifications.events.handle("orders.*")
 async def on_order(payload: dict, ctx: EventContext) -> None:
     if not payload.get("order_id"):
         ctx.reject("missing_order_id")

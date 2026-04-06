@@ -24,8 +24,8 @@ export function PageEvents() {
         separate queue infrastructure.
       </Callout>
 
-      {/* ── event() ──────────────────────────────────────────────── */}
-      <H2 id="event-publish">event() — publish</H2>
+      {/* ── events.publish ─────────────────────────────────────────── */}
+      <H2 id="event-publish">events.publish()</H2>
       <P>
         Publish a JSON payload to a topic. Every registered consumer group receives it independently
         with retries and DLQ on failure. Returns the <Mono>messageId</Mono> (UUID) on success, or an
@@ -35,9 +35,9 @@ export function PageEvents() {
       <H3 id="event-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `event(topic: string, payload?: unknown, opts?: EventOpts): Promise<string>`,
-          go: `func (c *Client) Event(ctx context.Context, topic string, payload any, opts *EventOpts) (string, error)`,
-          py: `async def event(topic: str, payload: Any = None, *, idempotency_key: str = "", trace_id: str = "", headers: dict[str, str] | None = None) -> str`,
+          ts: `events.publish(topic: string, payload?: unknown, opts?: EventOpts): Promise<string>`,
+          go: `func (e *EventsNamespace) Publish(ctx context.Context, topic string, payload any, opts *EventOpts) (string, error)`,
+          py: `async def publish(self, topic: str, payload: Any = None, *, idempotency_key: str = "", trace_id: str = "", headers: dict[str, str] | None = None) -> str`,
         }}
       />
 
@@ -81,19 +81,19 @@ export function PageEvents() {
       />
 
       <Callout type="info">
-        Node.js only: <Mono>publishEvent()</Mono> publishes via the worker session stream (requires{" "}
+        Node.js only: <Mono>events.publishWorker()</Mono> publishes via the worker session stream (requires{" "}
         <Mono>start()</Mono>). Use it from within a worker for lower-latency publishing. Use{" "}
-        <Mono>event()</Mono> when not serving (e.g. caller-only services).
+        <Mono>events.publish()</Mono> for control-plane publishing (e.g. caller-only services).
       </Callout>
 
       <H3 id="event-example">Examples</H3>
       <MultiCodeBlock
         code={{
           ts: `// Basic publish
-await sb.event("orders.created", { orderId: "ord_42", total: 4990 });
+await sb.events.publish("orders.created", { orderId: "ord_42", total: 4990 });
 
 // With idempotency and metadata headers
-const messageId = await sb.event("orders.completed", {
+const messageId = await sb.events.publish("orders.completed", {
   orderId: "ord_42",
   txId: "tx_123",
 }, {
@@ -102,10 +102,10 @@ const messageId = await sb.event("orders.completed", {
 });
   console.log(messageId); // "550e8400-e29b-41d4-a716-446655440000"`,
           go: `// Basic publish
-svc.Event(ctx, "orders.created", map[string]any{"order_id": "ord_42", "total": 4990}, nil)
+svc.Events.Publish(ctx, "orders.created", map[string]any{"order_id": "ord_42", "total": 4990}, nil)
 
 // With idempotency key and headers
-messageID, err := svc.Event(ctx, "orders.completed", map[string]any{
+messageID, err := svc.Events.Publish(ctx, "orders.completed", map[string]any{
   "order_id": "ord_42",
   "tx_id":    "tx_123",
 }, &servicebridge.EventOpts{
@@ -113,10 +113,10 @@ messageID, err := svc.Event(ctx, "orders.completed", map[string]any{
   Headers:        map[string]string{"source": "checkout"},
 })`,
           py: `# Basic publish
-await sb.event("orders.created", {"order_id": "ord_42", "total": 4990})
+await sb.events.publish("orders.created", {"order_id": "ord_42", "total": 4990})
 
 # With idempotency key and headers
-message_id = await sb.event(
+message_id = await sb.events.publish(
     "orders.completed",
     {"order_id": "ord_42", "tx_id": "tx_123"},
     idempotency_key="order:ord_42:completed",
@@ -255,7 +255,7 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
     fmt.Println("received", ec.Refs.Topic, ec.Refs.Attempt)
     return nil
   }, nil)`,
-          py: `@sb.handle_event("orders.*")
+          py: `@sb.events.handle("orders.*")
 async def on_order(payload: dict, ctx: EventContext) -> None:
     print("received", ctx.topic, ctx.attempt, payload.get("order_id"))`,
         }}
@@ -287,7 +287,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
     // returning a non-nil error triggers retry per policy
     return processOrder(ctx, body.OrderID)
   }, nil)`,
-          py: `@sb.handle_event("orders.*")
+          py: `@sb.events.handle("orders.*")
 async def on_order(payload: dict, ctx: EventContext) -> None:
     if not payload.get("order_id"):
         ctx.reject("missing_order_id")  # → DLQ immediately
@@ -381,7 +381,7 @@ policy = json.dumps({
     "jitter": 0.2,
 })
 
-@sb.handle_event("payments.*", retry_policy_json=policy)
+@sb.events.handle("payments.*", retry_policy_json=policy)
 async def on_payment(payload: dict, ctx) -> None:
     ...`,
         }}
@@ -426,7 +426,7 @@ async def on_payment(payload: dict, ctx) -> None:
   &servicebridge.HandleEventOpts{
     FilterExpr: "status=paid,amount>100",
   })`,
-          py: `@sb.handle_event("orders.*", filter_expr="status=paid,amount>100")
+          py: `@sb.events.handle("orders.*", filter_expr="status=paid,amount>100")
 async def on_high_value_order(payload: dict, ctx: EventContext) -> None:
     ...`,
         }}

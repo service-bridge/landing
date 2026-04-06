@@ -31,7 +31,7 @@ sb.rpc.handle("orders.create", async (payload) => {
   const order = await db.insert(payload);
 
   // Publish durable event — trace context forwarded automatically
-  await sb.event("order.created", { orderId: order.id, amount: order.total });
+  await sb.events.publish("order.created", { orderId: order.id, amount: order.total });
 
   return { id: order.id, status: "created" };
 });
@@ -131,7 +131,7 @@ async def send_notification(payload: dict) -> dict:
     return {"sent": True}
 
 # Event consumer with retry policy
-@sb.handle_event("order.created")
+@sb.events.handle("order.created")
 async def on_order_created(payload: dict, ctx) -> None:
     success = await send_welcome_email(payload)
     if not success:

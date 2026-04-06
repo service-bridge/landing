@@ -62,7 +62,7 @@ sb = ServiceBridge(
 async def hello(payload: dict) -> dict:
     return {"message": "Hello from ServiceBridge!"}
 
-@sb.handle_event("order.*")
+@sb.events.handle("order.*")
 async def on_order(payload: dict, ctx) -> None:
     print("Event received:", payload)
 

@@ -36,7 +36,7 @@ export function PageStreaming() {
       <H3 id="traceid-own">Pattern 1 — pass your own traceId</H3>
       <P>
         The most reliable pattern: generate a trace ID on the caller side, pass it to{" "}
-        <Mono>rpc()</Mono> or <Mono>event()</Mono>, then use that same ID as the <Mono>traceId</Mono>
+        <Mono>rpc.invoke()</Mono> or <Mono>events.publish()</Mono>, then use that same ID as the <Mono>traceId</Mono>
         for <Mono>watchTrace()</Mono>. The handler's trace is always stored under the caller's trace ID.
       </P>
       <MultiCodeBlock
@@ -46,7 +46,7 @@ export function PageStreaming() {
 const traceId = randomUUID();
 
 // Fire the call — non-blocking, we'll stream its output
-const rpcPromise = sb.rpc("ai", "ai.generate", { prompt: "Hello" }, { traceId });
+const rpcPromise = sb.rpc.invoke("ai.generate", { prompt: "Hello" }, { traceId });
 
 // Use the same ID to watch the stream immediately
 for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
@@ -59,7 +59,7 @@ await rpcPromise; // wait for the final return value`,
 
 // Start the call in a goroutine
 go func() {
-  svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "ai", "ai.generate", payload, nil)
+  _, _ = svc.Rpc.Invoke(servicebridge.WithTraceContext(ctx, traceID, ""), "ai.generate", map[string]any{"prompt": "Hello"}, nil)
 }()
 
 // Watch the stream using the same trace ID
@@ -76,7 +76,7 @@ from service_bridge import WatchTraceOpts
 trace_id = str(uuid.uuid4())
 
 # Fire the call
-asyncio.create_task(sb.rpc("ai", "ai.generate", {"prompt": "Hello"}, trace_id=trace_id))
+asyncio.create_task(sb.rpc.invoke("ai.generate", {"prompt": "Hello"}, trace_id=trace_id))
 
 # Watch immediately using the same trace ID
 async for event in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
@@ -186,7 +186,7 @@ async def generate(payload: dict, ctx) -> dict:
     ec.Stream.Write(map[string]any{"status": "done"}, "progress")
     return nil
   }, nil)`,
-          py: `@sb.handle_event("orders.*")
+          py: `@sb.events.handle("orders.*")
 async def on_order(payload: dict, ctx) -> None:
     await ctx.stream.write({"status": "processing"}, "progress")
     await fulfill_order(payload)
@@ -240,7 +240,7 @@ async def on_order(payload: dict, ctx) -> None:
           ts: `const traceId = randomUUID();
 
 // Fire and forget the RPC — it streams tokens while running
-sb.rpc("ai", "ai.generate", { prompt: "Write a poem" }, { traceId });
+void sb.rpc.invoke("ai.generate", { prompt: "Write a poem" }, { traceId });
 
 for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
   if (evt.type === "chunk") {
@@ -249,7 +249,9 @@ for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 
   if (evt.type === "trace_complete") break;
 }`,
           go: `traceID := uuid.New().String()
-go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "ai", "ai.generate", payload, nil)
+go func() {
+  _, _ = svc.Rpc.Invoke(servicebridge.WithTraceContext(ctx, traceID, ""), "ai.generate", map[string]any{"prompt": "Write a poem"}, nil)
+}()
 
 ch, err := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{
   Key:          "output",
@@ -265,7 +267,7 @@ for event := range ch {
 from service_bridge import WatchTraceOpts
 
 trace_id = str(uuid.uuid4())
-asyncio.create_task(sb.rpc("ai", "ai.generate", {"prompt": "Write a poem"}, trace_id=trace_id))
+asyncio.create_task(sb.rpc.invoke("ai.generate", {"prompt": "Write a poem"}, trace_id=trace_id))
 
 async for event in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
     if isinstance(event.data, dict) and (token := event.data.get("token")):
@@ -296,7 +298,7 @@ app.post("/api/generate", async (req, res) => {
   res.setHeader("x-trace-id", traceId);   // client can use this to reconnect
 
   // Fire the RPC — don't await, we'll stream its output
-  sb.rpc("ai", "ai.generate", { prompt }, { traceId }).catch(() => {});
+  void sb.rpc.invoke("ai.generate", { prompt }, { traceId }).catch(() => {});
 
   // Stream chunks to client as SSE events
   for await (const evt of sb.watchTrace(traceId, { key: "output", fromSequence: 0 })) {
@@ -318,8 +320,10 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("X-Trace-Id", traceID)
   flusher := w.(http.Flusher)
 
-  go svc.Rpc(servicebridge.WithTraceContext(r.Context(), traceID, ""),
-    "ai", "ai.generate", map[string]any{"prompt": body.Prompt}, nil)
+  go func() {
+    _, _ = svc.Rpc.Invoke(servicebridge.WithTraceContext(r.Context(), traceID, ""),
+      "ai.generate", map[string]any{"prompt": body.Prompt}, nil)
+  }()
 
   ch, _ := svc.WatchTrace(r.Context(), traceID, &servicebridge.WatchTraceOpts{Key: "output"})
   for evt := range ch {
@@ -339,7 +343,7 @@ async def generate(request: Request):
     body = await request.json()
 
     async def stream():
-        asyncio.create_task(sb.rpc("ai", "ai.generate", body, trace_id=trace_id))
+        asyncio.create_task(sb.rpc.invoke("ai.generate", body, trace_id=trace_id))
         async for evt in sb.watch_trace(trace_id, WatchTraceOpts(key="output", from_sequence=0)):
             yield f"data: {json.dumps(evt.data)}\n\n"
             if evt.done:
@@ -380,7 +384,7 @@ sb.rpc.handle("reports.generate", async (payload, ctx) => {
 import { randomUUID } from "crypto";
 const payload = { reportId: "rpt_42" };
 const traceId = randomUUID();
-void sb.rpc("reports", "reports.generate", payload, { traceId });
+void sb.rpc.invoke("reports.generate", payload, { traceId });
 for await (const evt of sb.watchTrace(traceId, { key: "progress" })) {
   updateProgressBar((evt.data as { pct: number }).pct);
   if (evt.type === "trace_complete") break;
@@ -402,7 +406,9 @@ svc.Rpc.HandleWithOpts("reports.generate",
 // Caller — watch progress key
 traceID := uuid.New().String()
 payload := map[string]any{"report_id": "rpt_42"}
-go svc.Rpc(servicebridge.WithTraceContext(ctx, traceID, ""), "reports", "reports.generate", payload, nil)
+go func() {
+  _, _ = svc.Rpc.Invoke(servicebridge.WithTraceContext(ctx, traceID, ""), "reports.generate", payload, nil)
+}()
 ch, _ := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{Key: "progress"})
 for evt := range ch {
   var data map[string]any
@@ -427,7 +433,7 @@ import asyncio, uuid
 from service_bridge import WatchTraceOpts
 payload = {"report_id": "rpt_42"}
 trace_id = str(uuid.uuid4())
-asyncio.create_task(sb.rpc("reports", "reports.generate", payload, trace_id=trace_id))
+asyncio.create_task(sb.rpc.invoke("reports.generate", payload, trace_id=trace_id))
 async for evt in sb.watch_trace(trace_id, WatchTraceOpts(key="progress")):
     update_progress_bar(evt.data["pct"])
     if evt.done:

@@ -60,7 +60,7 @@ export const NAV: NavGroup[] = [
         id: "events",
         label: "Events",
         toc: [
-          { id: "event-publish", label: "event()" },
+          { id: "event-publish", label: "events.publish()" },
           { id: "event-opts", label: "Options" },
           { id: "handle-event", label: "events.handle()" },
           { id: "handle-event-ctx", label: "EventContext" },
@@ -100,7 +100,7 @@ export const NAV: NavGroup[] = [
           { id: "conditional-if", label: "Conditional steps" },
           { id: "child-workflow", label: "Child workflows" },
           { id: "sleep-step", label: "Durable sleep" },
-          { id: "run-workflow", label: "executeWorkflow()" },
+          { id: "run-workflow", label: "workflows.run() (execute)" },
           { id: "cancel", label: "Cancel a trace" },
         ],
       },
@@ -120,7 +120,7 @@ export const NAV: NavGroup[] = [
         ],
       },
       {
-        id: "serve",
+        id: "start",
         label: "Startup & Shutdown",
         toc: [
           { id: "lifecycle", label: "Worker lifecycle" },

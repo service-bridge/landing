@@ -50,7 +50,7 @@ const PAGES: Record<string, () => React.ReactNode> = {
   jobs: PageJobs,
   workflows: PageWorkflows,
   streaming: PageStreaming,
-  serve: PageStart,
+  start: PageStart,
   "http-middleware": PageHttpMiddleware,
   "manual-spans": PageManualSpans,
   tracing: PageTracing,

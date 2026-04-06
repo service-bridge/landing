@@ -98,10 +98,10 @@ export function PageRpc() {
       <MultiCodeBlock
         code={{
           ts: `// Basic call
-const user = await sb.rpc<{ id: string; name: string }>("user.get", { id: "u_1" });
+const user = await sb.rpc.invoke<{ id: string; name: string }>("user.get", { id: "u_1" });
 
 // With options — 2 retries, 5 s timeout, explicit trace ID
-const result = await sb.rpc<{ ok: boolean; txId: string }>("payment.charge", {
+const result = await sb.rpc.invoke<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
   amount: 4990,
 }, {
@@ -110,10 +110,10 @@ const result = await sb.rpc<{ ok: boolean; txId: string }>("payment.charge", {
   traceId: "trace-ord-42",  // use this ID in watchTrace() for streaming
 });`,
           go: `// Basic call
-result, err := svc.Rpc(ctx, "user.get", map[string]any{"id": "u_1"}, nil)
+result, err := svc.Rpc.Invoke(ctx, "user.get", map[string]any{"id": "u_1"}, nil)
 
 // With options
-result, err = svc.Rpc(ctx, "payment.charge", map[string]any{
+result, err = svc.Rpc.Invoke(ctx, "payment.charge", map[string]any{
   "order_id": "ord_42",
   "amount":   4990,
 }, &servicebridge.RpcOpts{
@@ -121,10 +121,10 @@ result, err = svc.Rpc(ctx, "payment.charge", map[string]any{
   TimeoutMs: 5000,
 })`,
           py: `# Basic call
-user = await sb.rpc("user.get", {"id": "u_1"})
+user = await sb.rpc.invoke("user.get", {"id": "u_1"})
 
 # With options
-result = await sb.rpc(
+result = await sb.rpc.invoke(
     "payment.charge",
     {"order_id": "ord_42", "amount": 4990},
     retries=2,
@@ -142,8 +142,8 @@ result = await sb.rpc(
       </Callout>
 
       <Callout type="warning">
-        <Mono>rpc()</Mono> calls are <strong>not buffered offline</strong>. Unlike{" "}
-        <Mono>event()</Mono>, <Mono>job()</Mono>, and <Mono>workflow()</Mono>, an RPC call fails
+        <Mono>rpc.invoke()</Mono> calls are <strong>not buffered offline</strong>. Unlike{" "}
+        <Mono>events.publish()</Mono>, <Mono>jobs.run()</Mono>, and <Mono>workflows.run()</Mono>, an RPC call fails
         immediately (after retries) if the target service is unreachable. Use events or workflows
         for operations that must survive transient outages.
       </Callout>
@@ -160,14 +160,14 @@ result = await sb.rpc(
           ts: `import { ServiceBridgeError } from "service-bridge";
 
 try {
-  await sb.rpc("payment.charge", { orderId: "ord_1" });
+  await sb.rpc.invoke("payment.charge", { orderId: "ord_1" });
 } catch (e) {
   if (e instanceof ServiceBridgeError) {
     console.error(e.component, e.operation, e.severity, e.code, e.retryable);
   }
   throw e;
 }`,
-          go: `result, err := svc.Rpc(ctx, "payment.charge", payload, nil)
+          go: `result, err := svc.Rpc.Invoke(ctx, "payment.charge", payload, nil)
 if err != nil {
   var sbErr *servicebridge.ServiceBridgeError
   if errors.As(err, &sbErr) {
@@ -178,7 +178,7 @@ if err != nil {
           py: `from service_bridge import ServiceBridgeError
 
 try:
-    await sb.rpc("payment.charge", {"order_id": "ord_1"})
+    await sb.rpc.invoke("payment.charge", {"order_id": "ord_1"})
 except ServiceBridgeError as e:
     print(e.component, e.operation, e.severity, e.code, e.retryable)
     raise`,
@@ -404,18 +404,18 @@ async def charge(payload: dict) -> dict:
       <MultiCodeBlock
         code={{
           ts: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
-const res = await sb.rpc<{ txId: string; ok: boolean }>(
+const res = await sb.rpc.invoke<{ txId: string; ok: boolean }>(
   "payment.charge",
   { userId: "u_42", amount: 9900, currency: "USD" }
 );`,
           go: `// No changes needed — SDK auto-detects schema via registry and switches to Protobuf
-res, err := svc.Rpc(ctx, "payment.charge", map[string]any{
+res, err := svc.Rpc.Invoke(ctx, "payment.charge", map[string]any{
   "user_id":  "u_42",
   "amount":   9900,
   "currency": "USD",
 }, nil)`,
           py: `# No changes needed — SDK auto-detects schema via registry and switches to Protobuf
-res = await sb.rpc(
+res = await sb.rpc.invoke(
     "payment.charge",
     {"user_id": "u_42", "amount": 9900, "currency": "USD"}
 )`,

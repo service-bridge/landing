@@ -32,8 +32,8 @@ export function PageHttpMiddleware() {
           sent
         </li>
         <li>
-          Inject the SDK client into the request context so handlers can call <Mono>rpc()</Mono> /{" "}
-          <Mono>event()</Mono> in the same trace
+          Inject the SDK client into the request context so handlers can call <Mono>rpc.invoke()</Mono> /{" "}
+          <Mono>events.publish()</Mono> in the same trace
         </li>
         <li>
           Set the <Mono>x-trace-id</Mono> response header — useful for frontend correlation and{" "}
@@ -66,7 +66,7 @@ app.use(servicebridgeMiddleware({
 app.get("/users/:id", async (req, res) => {
   // req.servicebridge — SDK client, already inside the HTTP trace context
   // req.traceId, req.spanId — current trace/span IDs
-  const user = await req.servicebridge.rpc("user.get", { id: req.params.id });
+  const user = await req.servicebridge.rpc.invoke("user.get", { id: req.params.id });
   res.json(user);
 });
 
@@ -159,10 +159,10 @@ await app.register(servicebridgePlugin, {
   autoRegister: true,
 });
 
-// Use wrapHandler when handler code calls request.servicebridge.rpc()/event()
+// Use wrapHandler when handler code calls request.servicebridge.rpc.invoke()/events.publish()
 // so downstream SDK calls inherit the HTTP trace span
 app.get("/users/:id", wrapHandler(async (request, reply) => {
-  const user = await request.servicebridge.rpc("user.get", {
+  const user = await request.servicebridge.rpc.invoke("user.get", {
     id: (request.params as { id: string }).id,
   });
   return reply.send(user);
@@ -207,7 +207,7 @@ app.get("/users/:id", wrapHandler(async (request, reply) => {
 
       <Callout type="warning">
         Use <Mono>wrapHandler()</Mono> for Fastify handlers that call{" "}
-        <Mono>request.servicebridge.rpc()</Mono> or <Mono>event()</Mono>. Without it, SDK calls
+        <Mono>request.servicebridge.rpc.invoke()</Mono> or <Mono>events.publish()</Mono>. Without it, SDK calls
         still work, but run outside async-local trace context and won't be linked to the HTTP span
         in the trace waterfall.
       </Callout>
@@ -234,7 +234,7 @@ app.add_middleware(
 @app.get("/users/{user_id}")
 async def get_user(user_id: str, request: Request):
     client = get_client(request)   # SDK client in current trace context
-    user = await client.rpc("user.get", {"id": user_id})
+    user = await client.rpc.invoke("user.get", {"id": user_id})
     return user`,
         }}
       />
@@ -261,7 +261,7 @@ def get_user(user_id):
       />
 
       <Callout type="warning">
-        Flask is synchronous. Calling <Mono>rpc()</Mono> or <Mono>event()</Mono> from a Flask
+        Flask is synchronous. Calling <Mono>rpc.invoke()</Mono> or <Mono>events.publish()</Mono> from a Flask
         handler blocks the thread. For async-first workloads use FastAPI instead.
       </Callout>
 
@@ -280,7 +280,7 @@ r.Use(sbhttp.ChiMiddleware(svc))
 
 r.Get("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
   client := sbhttp.FromContext(r.Context()) // SDK client in trace context
-  result, _ := client.Rpc(r.Context(), "user.get", map[string]any{"id": chi.URLParam(r, "id")}, nil)
+  result, _ := client.Rpc.Invoke(r.Context(), "user.get", map[string]any{"id": chi.URLParam(r, "id")}, nil)
   w.Write(result)
 })`,
         }}
@@ -299,7 +299,7 @@ r.Use(sbhttp.GinMiddleware(svc))
 
 r.GET("/users/:id", func(c *gin.Context) {
   client := sbhttp.GinClient(c) // SDK client in trace context
-  result, _ := client.Rpc(c.Request.Context(), "user.get", map[string]any{"id": c.Param("id")}, nil)
+  result, _ := client.Rpc.Invoke(c.Request.Context(), "user.get", map[string]any{"id": c.Param("id")}, nil)
   c.JSON(200, result)
 })`,
         }}
@@ -318,7 +318,7 @@ e.Use(sbhttp.EchoMiddleware(svc))
 
 e.GET("/users/:id", func(c echo.Context) error {
   client := sbhttp.EchoClient(c) // SDK client in trace context
-  result, _ := client.Rpc(c.Request().Context(), "user.get", map[string]any{"id": c.Param("id")}, nil)
+  result, _ := client.Rpc.Invoke(c.Request().Context(), "user.get", map[string]any{"id": c.Param("id")}, nil)
   return c.JSON(200, result)
 })`,
         }}
@@ -375,7 +375,7 @@ e.GET("/users/:id", func(c echo.Context) error {
 mux := http.NewServeMux()
 mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
   client := sbhttp.FromContext(r.Context())
-  // client.Rpc(...)
+  // client.Rpc.Invoke(...)
 })
 
 // Wrap the entire mux

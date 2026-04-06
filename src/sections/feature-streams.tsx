@@ -39,7 +39,7 @@ svc.Events.Handle("ai.generate",
 
 svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-@svc.handle_event("ai.generate")
+@svc.events.handle("ai.generate")
 async def on_generate(payload: dict, ctx) -> None:
     async for token in llm.stream(payload["prompt"]):
         await ctx.stream.write({"token": token}, "output")`,
@@ -50,7 +50,7 @@ const READER_CODE: CodeLangs = {
 
 const sb = new ServiceBridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-const traceId = await sb.event("ai.generate", { prompt });
+const traceId = await sb.events.publish("ai.generate", { prompt });
 
 for await (const chunk of sb.watchTrace(traceId, { key: "output" })) {
   if (chunk.type === "trace_complete") break;
@@ -60,7 +60,7 @@ for await (const chunk of sb.watchTrace(traceId, { key: "output" })) {
   go: `svc := servicebridge.New(
     "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-traceID, _ := svc.Event(ctx, "ai.generate",
+traceID, _ := svc.Events.Publish(ctx, "ai.generate",
     map[string]any{"prompt": prompt}, nil)
 
 ch, _ := svc.WatchTrace(ctx, traceID, &servicebridge.WatchTraceOpts{Key: "output"})
@@ -75,7 +75,7 @@ for ev := range ch {
 
 svc = ServiceBridge("api.example.com:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
-trace_id, _ = await svc.event("ai.generate", {"prompt": prompt})
+trace_id, _ = await svc.events.publish("ai.generate", {"prompt": prompt})
 
 async for chunk in svc.watch_trace(trace_id, WatchTraceOpts(key="output")):
     if chunk.done:

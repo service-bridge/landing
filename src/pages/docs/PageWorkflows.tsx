@@ -97,7 +97,7 @@ async def reserve(payload: dict) -> dict:
     return {"reserved": True}
 
 # notifications
-@sb.handle_event("orders.fulfilled")
+@sb.events.handle("orders.fulfilled")
 async def on_fulfilled(payload: dict, ctx) -> None:
     await send_email(payload)`,
         }}

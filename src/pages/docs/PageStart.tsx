@@ -29,7 +29,7 @@ export function PageStart() {
         </li>
         <li>
           <strong className="text-foreground">Declare outgoing dependencies</strong> — For every{" "}
-          <Mono>rpc()</Mono>, <Mono>event()</Mono>, or <Mono>workflow()</Mono> this service invokes,
+          <Mono>rpc.invoke()</Mono>, <Mono>events.publish()</Mono>, or <Mono>workflows.run()</Mono> this service performs,
           call <Mono>rpc.declare(fn)</Mono>, <Mono>events.declare(topic)</Mono>, or{" "}
           <Mono>workflows.declare(service, name)</Mono> before <Mono>start()</Mono>. Pure workers that only
           handle incoming traffic can skip this step.
@@ -90,9 +90,9 @@ func main() {
   svc.Rpc.Handle("refund", refundHandler)
   svc.Events.Handle("orders.*", orderEventHandler, nil)
 
-  // svc.CallsRpc("stock.reserve")
-  // svc.CallsEvent("orders.shipped")
-  // svc.CallsWorkflow("fulfillment", "order.flow")
+  // svc.Rpc.Declare("stock.reserve")
+  // svc.Events.Declare("orders.shipped")
+  // svc.Workflows.Declare("fulfillment", "order.flow")
 
   // Blocks until ctx is cancelled (e.g. SIGINT)
   if err := svc.Start(ctx, nil); err != nil {
@@ -111,13 +111,13 @@ sb = ServiceBridge(
 async def charge(payload: dict) -> dict:
     return {"ok": True}
 
-@sb.handle_event("orders.*")
+@sb.events.handle("orders.*")
 async def on_order(payload: dict, ctx) -> None:
     pass
 
-# sb.calls_rpc("stock.reserve")
-# sb.calls_event("orders.shipped")
-# sb.calls_workflow("fulfillment", "order.flow")
+# sb.rpc.declare("stock.reserve")
+# sb.events.declare("orders.shipped")
+# sb.workflows.declare("fulfillment", "order.flow")
 
 asyncio.run(sb.start())`,
         }}
@@ -126,8 +126,8 @@ asyncio.run(sb.start())`,
       <H2 id="outgoing-deps">Outgoing dependencies</H2>
       <P>
         The runtime needs a static picture of cross-service usage. Before <Mono>start()</Mono>, call
-        the declaration helpers for each outgoing <Mono>rpc()</Mono>, <Mono>event()</Mono> publish,
-        or <Mono>workflow()</Mono> trigger your process will perform (matching global function name,
+        the declaration helpers for each outgoing <Mono>rpc.invoke()</Mono>, <Mono>events.publish()</Mono>,
+        or <Mono>workflows.run()</Mono> trigger your process will perform (matching global function name,
         topic, or workflow name as used at call time).
       </P>
       <MultiCodeBlock
@@ -135,12 +135,12 @@ asyncio.run(sb.start())`,
           ts: `sb.rpc.declare("payment.charge");
 sb.events.declare("orders.completed");
 sb.workflows.declare("fulfillment", "order.fulfillment");`,
-          go: `svc.CallsRpc("payment.charge")
-svc.CallsEvent("orders.completed")
-svc.CallsWorkflow("fulfillment", "order.fulfillment")`,
-          py: `sb.calls_rpc("payment.charge")
-sb.calls_event("orders.completed")
-sb.calls_workflow("fulfillment", "order.fulfillment")`,
+          go: `svc.Rpc.Declare("payment.charge")
+svc.Events.Declare("orders.completed")
+svc.Workflows.Declare("fulfillment", "order.fulfillment")`,
+          py: `sb.rpc.declare("payment.charge")
+sb.events.declare("orders.completed")
+sb.workflows.declare("fulfillment", "order.fulfillment")`,
         }}
       />
 

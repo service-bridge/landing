@@ -19,7 +19,7 @@ const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVIC
 // Register — advertises endpoint to the registry
 sb.rpc.handle("orders.create", async (payload) => {
   // SDK opens a direct gRPC channel to payments worker
-  const charge = await sb.rpc("payment.charge", {
+  const charge = await sb.rpc.invoke("payment.charge", {
     orderId: payload.id,
     amount: payload.total,
   });
@@ -33,37 +33,43 @@ await sb.start();`,
 import (
     "context"
     "encoding/json"
+    "os"
+
     servicebridge "github.com/service-bridge/go"
 )
 
 func main() {
+    ctx := context.Background()
     sb := servicebridge.New("localhost:14445",
         os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
     sb.Rpc.Handle("orders.create",
         func(ctx context.Context, p json.RawMessage) (any, error) {
-            charge, _ := sb.Rpc(ctx, "payment.charge",
+            raw, _ := sb.Rpc.Invoke(ctx, "payment.charge",
                 map[string]any{"orderId": "ord_42", "amount": 4990}, nil)
+            var charge map[string]any
+            _ = json.Unmarshal(raw, &charge)
             return map[string]any{"ok": true, "txId": charge["txId"]}, nil
         })
 
     _ = sb.Start(ctx, &servicebridge.StartOpts{Host: "localhost"})
 }`,
 
-  py: `from service_bridge import ServiceBridge
+  py: `import asyncio
+from service_bridge import ServiceBridge
 import os
 
 sb = ServiceBridge("localhost:14445", os.environ["SERVICEBRIDGE_SERVICE_KEY"])
 
 @sb.rpc.handle("orders.create")
 async def orders_create(payload: dict) -> dict:
-    charge = await sb.rpc("payment.charge", {
+    charge = await sb.rpc.invoke("payment.charge", {
         "orderId": payload["id"],
         "amount": payload["total"],
     })
     return {"ok": charge["ok"], "txId": charge["txId"]}
 
-await sb.start()`,
+asyncio.run(sb.start())`,
 };
 
 // ─── Animated packet dot ─────────────────────────────────────────────────────

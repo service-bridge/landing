@@ -148,7 +148,7 @@ await svc.job(
     ScheduleOpts(delay_ms=24 * 60 * 60 * 1000, via="event"),
 )
 
-@svc.handle_event("trial.reminder")
+@svc.events.handle("trial.reminder")
 async def on_reminder(payload: dict, ctx) -> None:
     sent = await send_reminder_email(payload)
     if not sent:
