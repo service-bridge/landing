@@ -30,7 +30,7 @@ const EVENT_CODE: CodeLangs = {
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
 // Consumer with server-side filter + retry policy
-sb.handleEvent("order.*", async (payload, ctx) => {
+sb.events.handle("order.*", async (payload, ctx) => {
   const ok = await sendEmail(payload);
   if (!ok) ctx.retry(30_000);  // reschedule after 30s
 }, {
@@ -50,7 +50,7 @@ await sb.event("order.created", {
   go: `svc := servicebridge.New(
     "localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-svc.HandleEvent("order.*",
+svc.Events.Handle("order.*",
     func(ctx context.Context, p json.RawMessage,
         ec *servicebridge.EventContext) error {
         ok := sendEmail(ctx, p)

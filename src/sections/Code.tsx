@@ -37,7 +37,7 @@ sb.rpc.handle("orders.create", async (payload) => {
 });
 
 // Event consumer with retry policy
-sb.handleEvent("payment.failed", async (payload, ctx) => {
+sb.events.handle("payment.failed", async (payload, ctx) => {
   const notified = await notifyCustomer(payload);
   if (!notified) ctx.retry(30_000);    // reschedule 30s later
 });
@@ -90,7 +90,7 @@ func main() {
   })
 
   // Event consumer with retry
-  svc.HandleEvent("order.created", func(ctx context.Context, payload json.RawMessage, ectx *servicebridge.EventContext) error {
+  svc.Events.Handle("order.created", func(ctx context.Context, payload json.RawMessage, ectx *servicebridge.EventContext) error {
     if err := processOrder(ctx, payload); err != nil {
       ectx.Retry(30_000)  // retry in 30s
     }

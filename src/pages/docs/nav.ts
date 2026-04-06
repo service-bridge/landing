@@ -62,7 +62,7 @@ export const NAV: NavGroup[] = [
         toc: [
           { id: "event-publish", label: "event()" },
           { id: "event-opts", label: "Options" },
-          { id: "handle-event", label: "handleEvent()" },
+          { id: "handle-event", label: "events.handle()" },
           { id: "handle-event-ctx", label: "EventContext" },
           { id: "handle-event-retry", label: "Retry & reject" },
           { id: "retry-policy", label: "Retry policy" },

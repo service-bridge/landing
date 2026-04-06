@@ -142,13 +142,13 @@ message_id = await sb.event(
       <H3 id="handle-event-signature">Signature</H3>
       <MultiCodeBlock
         code={{
-          ts: `handleEvent(
+          ts: `events.handle(
   pattern: string,
   handler: (payload: unknown, ctx: EventContext) => void | Promise<void>,
   opts?: HandleEventOpts,
 ): ServiceBridgeService`,
-          go: `func (c *Client) HandleEvent(topic string, handler func(ctx context.Context, payload json.RawMessage, ec *EventContext) error, opts *HandleEventOpts) *Client`,
-          py: `@sb.handle_event(topic: str, retry_policy_json: str = "", filter_expr: str = "")
+          go: `func (e *EventsNamespace) Handle(topic string, handler EventHandler, opts *HandleEventOpts) *Client`,
+          py: `@sb.events.handle(topic: str, retry_policy_json: str = "", filter_expr: str = "")
 async def handler(payload: dict, ctx: EventContext) -> None: ...`,
         }}
       />
@@ -245,12 +245,12 @@ async def handler(payload: dict, ctx: EventContext) -> None: ...`,
       <H3 id="handle-event-basic">Basic consumer</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("orders.*", async (payload, ctx) => {
+          ts: `sb.events.handle("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string };
   console.log("received", ctx.refs.topic, body.orderId);
   // attempt, messageId available in ctx.refs
 });`,
-          go: `svc.HandleEvent("orders.*",
+          go: `svc.Events.Handle("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
     fmt.Println("received", ec.Refs.Topic, ec.Refs.Attempt)
     return nil
@@ -264,7 +264,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
       <H3 id="handle-event-retry">Retry and reject</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("orders.*", async (payload, ctx) => {
+          ts: `sb.events.handle("orders.*", async (payload, ctx) => {
   const body = payload as { orderId?: string };
   if (!body.orderId) {
     ctx.reject("missing_order_id");  // → DLQ immediately
@@ -276,7 +276,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
     ctx.retry(5000);  // redeliver after 5 s (overrides policy backoff)
   }
 });`,
-          go: `svc.HandleEvent("orders.*",
+          go: `svc.Events.Handle("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
     var body struct{ OrderID string \`json:"order_id"\` }
     json.Unmarshal(payload, &body)
@@ -359,7 +359,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
       />
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("payments.*", handler, {
+          ts: `sb.events.handle("payments.*", handler, {
   retryPolicyJson: JSON.stringify({
     maxAttempts: 5,
     baseDelayMs: 5000,
@@ -370,7 +370,7 @@ async def on_order(payload: dict, ctx: EventContext) -> None:
 });
   // Attempt 1 → 5 s, attempt 2 → 10 s, attempt 3 → 20 s … up to 60 s`,
           go: `policy := \`{"maxAttempts":5,"baseDelayMs":5000,"factor":2,"maxDelayMs":60000,"jitter":0.2}\`
-svc.HandleEvent("payments.*", handler,
+svc.Events.Handle("payments.*", handler,
   &servicebridge.HandleEventOpts{RetryPolicyJSON: policy})`,
           py: `import json
 policy = json.dumps({
@@ -419,10 +419,10 @@ async def on_payment(payload: dict, ctx) -> None:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("orders.*", handler, {
+          ts: `sb.events.handle("orders.*", handler, {
   filterExpr: "status=paid,amount>100",
 });`,
-          go: `svc.HandleEvent("orders.*", handler,
+          go: `svc.Events.Handle("orders.*", handler,
   &servicebridge.HandleEventOpts{
     FilterExpr: "status=paid,amount>100",
   })`,

@@ -24,13 +24,13 @@ region!=us-east               // inequality
 price>=9.99                   // numeric >=`}
       />
 
-      <H2 id="usage">Usage in handleEvent</H2>
+      <H2 id="usage">Usage in events.handle</H2>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("orders.*", handler, {
+          ts: `sb.events.handle("orders.*", handler, {
   filterExpr: "status=paid,amount>100",
 });`,
-          go: `svc.HandleEvent("orders.*", handler,
+          go: `svc.Events.Handle("orders.*", handler,
   &servicebridge.HandleEventOpts{
     FilterExpr: "status=paid,amount>100",
   })`,

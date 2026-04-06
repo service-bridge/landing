@@ -116,7 +116,7 @@ await sb.job("trial.reminder", {
   via: "event",
 });
 
-sb.handleEvent("trial.reminder", async (payload, ctx) => {
+sb.events.handle("trial.reminder", async (payload, ctx) => {
   const sent = await sendReminderEmail(payload);
   if (!sent) ctx.retry(60_000);
 });
@@ -130,7 +130,7 @@ svc.Job(ctx, "trial.reminder", servicebridge.ScheduleOpts{
     Via:     "event",
 })
 
-svc.HandleEvent("trial.reminder",
+svc.Events.Handle("trial.reminder",
     func(ctx context.Context, p json.RawMessage, ec *servicebridge.EventContext) error {
         if !sendReminderEmail(ctx, p) {
             ec.Retry(60_000); return nil

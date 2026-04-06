@@ -7,14 +7,14 @@ export function PageServe() {
       <PageHeader
         badge="SDK Reference"
         title="Startup & Shutdown"
-        description="Start the worker gRPC server, register handlers with the control plane, and shut down cleanly. Go/Python serve() block until cancellation; Node serve() resolves once the worker is online."
+        description="Start the worker gRPC server, register handlers with the control plane, and shut down cleanly. Go/Python start() block until cancellation; Node start() resolves once the worker is online."
       />
 
       {/* ── Lifecycle ────────────────────────────────────────────── */}
       <H2 id="lifecycle">Worker lifecycle</H2>
       <P>
         Every worker follows the same four-step lifecycle. Register all your handlers before calling{" "}
-        <Mono>serve()</Mono> — handlers registered after <Mono>serve()</Mono> is running are
+        <Mono>start()</Mono> — handlers registered after <Mono>start()</Mono> is running are
         accepted but may miss the initial registration window.
       </P>
       <ol className="list-decimal pl-6 space-y-2 text-sm text-muted-foreground my-4">
@@ -24,11 +24,11 @@ export function PageServe() {
         </li>
         <li>
           <strong className="text-foreground">Register handlers</strong> — <Mono>rpc.handle()</Mono>,{" "}
-          <Mono>events.handle()</Mono>, <Mono>job()</Mono>, <Mono>workflow()</Mono>. Can be done in
+          <Mono>events.handle()</Mono>, <Mono>jobs.run()</Mono>, <Mono>workflows.run()</Mono>. Can be done in
           any order.
         </li>
         <li>
-          <strong className="text-foreground">serve()</strong> — Provisions mTLS cert over gRPC,
+          <strong className="text-foreground">start()</strong> — Provisions mTLS cert over gRPC,
           starts the worker gRPC server, opens reverse worker session, and registers the worker
           endpoint with the control plane. Go/Python block here; Node returns when startup is
           complete.
@@ -50,10 +50,10 @@ const sb = new ServiceBridge(
 // 2. Register handlers (order doesn't matter)
 sb.rpc.handle("charge", chargeHandler);
 sb.rpc.handle("refund", refundHandler);
-sb.handleEvent("orders.*", orderEventHandler);
+sb.events.handle("orders.*", orderEventHandler);
 
 // 3. Start worker and wait until ready
-await sb.serve({ host: "localhost" });`,
+await sb.start({ host: "localhost" });`,
           go: `package main
 
 import (
@@ -76,10 +76,10 @@ func main() {
 
   svc.Rpc.Handle("charge", chargeHandler)
   svc.Rpc.Handle("refund", refundHandler)
-  svc.HandleEvent("orders.*", orderEventHandler, nil)
+  svc.Events.Handle("orders.*", orderEventHandler, nil)
 
   // Blocks until ctx is cancelled (e.g. SIGINT)
-  if err := svc.Serve(ctx, nil); err != nil {
+  if err := svc.Start(ctx, nil); err != nil {
     panic(err)
   }
 }`,
@@ -95,25 +95,25 @@ sb = ServiceBridge(
 async def charge(payload: dict) -> dict:
     return {"ok": True}
 
-@sb.handle_event("orders.*")
+@sb.events.handle("orders.*")
 async def on_order(payload: dict, ctx) -> None:
     pass
 
-asyncio.run(sb.serve())`,
+asyncio.run(sb.start())`,
         }}
       />
 
-      {/* ── serve() ──────────────────────────────────────────────── */}
-      <H2 id="serve-sig">serve()</H2>
+      {/* ── start() ──────────────────────────────────────────────── */}
+      <H2 id="start-sig">start()</H2>
       <MultiCodeBlock
         code={{
-          ts: `serve(opts?: ServeOpts): Promise<void>`,
-          go: `func (c *Client) Serve(ctx context.Context, opts *ServeOpts) error`,
-          py: `async def serve(*, host: str = "localhost", max_in_flight: int = 128) -> None`,
+          ts: `start(opts?: StartOpts): Promise<void>`,
+          go: `func (c *Client) Start(ctx context.Context, opts *StartOpts) error`,
+          py: `async def start(*, host: str = "localhost", max_in_flight: int = 128) -> None`,
         }}
       />
 
-      <H2 id="serve-opts">ServeOpts</H2>
+      <H2 id="start-opts">StartOpts</H2>
       <ParamTable
         rows={[
           {
@@ -148,7 +148,7 @@ asyncio.run(sb.serve())`,
         ]}
       />
       <Callout type="info">
-        For portable examples across all SDKs, use only <Mono>host</Mono>. Node-specific serve
+        For portable examples across all SDKs, use only <Mono>host</Mono>. Node-specific start
         fields (<Mono>instanceId</Mono>, <Mono>weight</Mono>, <Mono>tls</Mono>) are optional
         extensions.
       </Callout>
@@ -156,33 +156,33 @@ asyncio.run(sb.serve())`,
       {/* ── instanceId & weight ──────────────────────────────────── */}
       <H2 id="instance-weight">instanceId & weight</H2>
       <P>
-        Serve-level <Mono>instanceId</Mono> and <Mono>weight</Mono> are supported in the Node SDK.
+        Start-level <Mono>instanceId</Mono> and <Mono>weight</Mono> are supported in the Node SDK.
         Go and Python generate instance IDs automatically and do not expose weight in{" "}
-        <Mono>serve()</Mono>:
+        <Mono>start()</Mono>:
       </P>
       <MultiCodeBlock
         code={{
-          ts: `await sb.serve({
+          ts: `await sb.start({
   host: "localhost",
   // Use pod name in K8s for readable replica IDs in the dashboard
   instanceId: process.env.POD_NAME ?? undefined,
   // This replica gets 2x more traffic than weight:1 instances
           weight: 2,
 });`,
-          go: `// Go SDK: ServeOpts exposes Host and MaxInFlight
-svc.Serve(ctx, &servicebridge.ServeOpts{
+          go: `// Go SDK: StartOpts exposes Host and MaxInFlight
+svc.Start(ctx, &servicebridge.StartOpts{
   Host: "localhost",
   MaxInFlight: 256,
 })`,
-          py: `# Python SDK: instance_id/weight are not serve() parameters
-await sb.serve(host="localhost", max_in_flight=256)`,
+          py: `# Python SDK: instance_id/weight are not start() parameters
+await sb.start(host="localhost", max_in_flight=256)`,
         }}
       />
 
       {/* ── TLS / mTLS ───────────────────────────────────────────── */}
       <H2 id="tls-behavior">TLS / mTLS behavior</H2>
       <P>
-        By default, <Mono>serve()</Mono> auto-provisions an mTLS certificate over gRPC. The process
+        By default, <Mono>start()</Mono> auto-provisions an mTLS certificate over gRPC. The process
         is fully automatic and the private key never leaves your process:
       </P>
       <ol className="list-decimal pl-6 space-y-1 text-muted-foreground text-sm my-3">
@@ -200,10 +200,10 @@ await sb.serve(host="localhost", max_in_flight=256)`,
       <MultiCodeBlock
         code={{
           ts: `// Default — auto-provisions mTLS (recommended)
-await sb.serve({ host: "localhost" });
+await sb.start({ host: "localhost" });
 
 // Bring your own certificates
-await sb.serve({
+await sb.start({
   host: "localhost",
   tls: {
     caCert: process.env.CA_CERT!,
@@ -212,9 +212,9 @@ await sb.serve({
   },
 });`,
           go: `// Default — auto-provisions mTLS
-svc.Serve(ctx, nil)`,
+svc.Start(ctx, nil)`,
           py: `# Default — auto-provisions mTLS
-await sb.serve()`,
+await sb.start()`,
         }}
       />
 
@@ -228,7 +228,7 @@ await sb.serve()`,
       {/* ── Graceful shutdown ────────────────────────────────────── */}
       <H2 id="graceful-shutdown">Graceful shutdown</H2>
       <P>
-        On Go/Python, <Mono>serve()</Mono> blocks until cancellation. On Node, the returned Promise
+        On Go/Python, <Mono>start()</Mono> blocks until cancellation. On Node, the returned Promise
         resolves after startup and your process continues running. In all cases, use signal handlers
         for predictable shutdown.
       </P>
@@ -242,7 +242,7 @@ await sb.serve()`,
   process.exit(0);
 });
 
-await sb.serve({ host: "localhost" });`,
+await sb.start({ host: "localhost" });`,
         }}
       />
 
@@ -253,8 +253,8 @@ await sb.serve({ host: "localhost" });`,
 ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 defer cancel()
 
-// Serve returns when ctx is cancelled — shutdown is automatic
-if err := svc.Serve(ctx, nil); err != nil {
+// Start returns when ctx is cancelled — shutdown is automatic
+if err := svc.Start(ctx, nil); err != nil {
   log.Fatal(err)
 }`,
         }}
@@ -269,7 +269,7 @@ import signal
 async def main():
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, lambda: asyncio.create_task(sb.stop()))
-    await sb.serve()
+    await sb.start()
 
 asyncio.run(main())`,
         }}
@@ -291,7 +291,7 @@ asyncio.run(main())`,
       />
 
       <Callout type="info">
-        In Go, cancelling the <Mono>ctx</Mono> passed to <Mono>Serve()</Mono> triggers a clean
+        In Go, cancelling the <Mono>ctx</Mono> passed to <Mono>Start()</Mono> triggers a clean
         shutdown automatically via <Mono>signal.NotifyContext</Mono> — you rarely need to call{" "}
         <Mono>Stop()</Mono> directly.
       </Callout>

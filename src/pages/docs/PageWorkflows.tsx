@@ -64,7 +64,7 @@ sb.rpc.handle("stock.reserve", async (payload: { orderId: string }) => {
 });
 
 // notifications — listens for the workflow's final event
-sb.handleEvent("orders.fulfilled", async (payload, ctx) => {
+sb.events.handle("orders.fulfilled", async (payload, ctx) => {
   await sendEmail(payload);
 });`,
           go: `// payments service
@@ -80,7 +80,7 @@ svc.Rpc.Handle("stock.reserve",
   })
 
 // notifications
-svc.HandleEvent("orders.fulfilled",
+svc.Events.Handle("orders.fulfilled",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
     return sendEmail(ctx, payload)
   }, nil)`,

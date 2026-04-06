@@ -14,7 +14,7 @@ const WRITER_CODE: CodeLangs = {
 
 const sb = new ServiceBridge("api.example.com:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-sb.handleEvent("ai.generate", async (payload, ctx) => {
+sb.events.handle("ai.generate", async (payload, ctx) => {
   // Stream tokens to any subscriber in real-time
   for await (const token of llm.stream(payload.prompt)) {
     await ctx.stream.write({ token }, "output");
@@ -25,7 +25,7 @@ sb.handleEvent("ai.generate", async (payload, ctx) => {
   go: `svc := servicebridge.New(
     "api.example.com:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), nil)
 
-svc.HandleEvent("ai.generate",
+svc.Events.Handle("ai.generate",
     func(ctx context.Context, p json.RawMessage,
         ec *servicebridge.EventContext) error {
         for _, token := range llm.Stream(ctx, getPrompt(p)) {

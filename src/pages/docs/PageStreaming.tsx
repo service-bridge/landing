@@ -173,13 +173,13 @@ async def generate(payload: dict, ctx) -> dict:
       <H3 id="event-stream">From an event handler</H3>
       <MultiCodeBlock
         code={{
-          ts: `sb.handleEvent("orders.*", async (payload, ctx) => {
+          ts: `sb.events.handle("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string };
   await ctx.stream.write({ status: "processing", orderId: body.orderId }, "progress");
   await fulfillOrder(body.orderId);
   await ctx.stream.write({ status: "done" }, "progress");
 });`,
-          go: `svc.HandleEvent("orders.*",
+          go: `svc.Events.Handle("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
     ec.Stream.Write(map[string]any{"status": "processing"}, "progress")
     if err := fulfillOrder(ctx, payload); err != nil { return err }

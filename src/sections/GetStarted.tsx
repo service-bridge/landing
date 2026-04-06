@@ -40,7 +40,7 @@ sb.rpc.handle("hello", async (payload) => {
   return { message: "Hello from ServiceBridge!" };
 });
 
-sb.handleEvent("order.*", async (payload) => {
+sb.events.handle("order.*", async (payload) => {
   console.log("Event received:", payload);
 });
 
@@ -99,7 +99,7 @@ func main() {
     return map[string]any{"message": "Hello from ServiceBridge!"}, nil
   })
 
-  svc.HandleEvent("order.*", func(ctx context.Context, payload json.RawMessage, ectx *sb.EventContext) error {
+  svc.Events.Handle("order.*", func(ctx context.Context, payload json.RawMessage, ectx *sb.EventContext) error {
     fmt.Println("Event received:", payload)
     return nil
   }, nil)

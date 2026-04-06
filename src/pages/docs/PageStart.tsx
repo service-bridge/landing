@@ -30,8 +30,8 @@ export function PageStart() {
         <li>
           <strong className="text-foreground">Declare outgoing dependencies</strong> — For every{" "}
           <Mono>rpc()</Mono>, <Mono>event()</Mono>, or <Mono>workflow()</Mono> this service invokes,
-          call <Mono>callsRpc(fn)</Mono>, <Mono>callsEvent(topic)</Mono>, or{" "}
-          <Mono>callsWorkflow(service, name)</Mono> before <Mono>start()</Mono>. Pure workers that only
+          call <Mono>rpc.declare(fn)</Mono>, <Mono>events.declare(topic)</Mono>, or{" "}
+          <Mono>workflows.declare(service, name)</Mono> before <Mono>start()</Mono>. Pure workers that only
           handle incoming traffic can skip this step.
         </li>
         <li>
@@ -57,12 +57,12 @@ const sb = new ServiceBridge(
 // 2. Register handlers (order doesn't matter)
 sb.rpc.handle("charge", chargeHandler);
 sb.rpc.handle("refund", refundHandler);
-sb.handleEvent("orders.*", orderEventHandler);
+sb.events.handle("orders.*", orderEventHandler);
 
 // 3. Declare outgoing calls (omit if this worker never calls out)
-// sb.callsRpc("stock.reserve");
-// sb.callsEvent("orders.shipped");
-// sb.callsWorkflow("fulfillment", "order.flow");
+// sb.rpc.declare("stock.reserve");
+// sb.events.declare("orders.shipped");
+// sb.workflows.declare("fulfillment", "order.flow");
 
 // 4. Start worker and wait until ready
 await sb.start({ host: "localhost" });`,
@@ -88,7 +88,7 @@ func main() {
 
   svc.Rpc.Handle("charge", chargeHandler)
   svc.Rpc.Handle("refund", refundHandler)
-  svc.HandleEvent("orders.*", orderEventHandler, nil)
+  svc.Events.Handle("orders.*", orderEventHandler, nil)
 
   // svc.CallsRpc("stock.reserve")
   // svc.CallsEvent("orders.shipped")
@@ -132,9 +132,9 @@ asyncio.run(sb.start())`,
       </P>
       <MultiCodeBlock
         code={{
-          ts: `sb.callsRpc("payment.charge");
-sb.callsEvent("orders.completed");
-sb.callsWorkflow("fulfillment", "order.fulfillment");`,
+          ts: `sb.rpc.declare("payment.charge");
+sb.events.declare("orders.completed");
+sb.workflows.declare("fulfillment", "order.fulfillment");`,
           go: `svc.CallsRpc("payment.charge")
 svc.CallsEvent("orders.completed")
 svc.CallsWorkflow("fulfillment", "order.fulfillment")`,

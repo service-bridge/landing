@@ -65,7 +65,7 @@ asyncio.run(payments.start())`,
         code={{
           ts: `const orders = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-// If orders also ran start(): orders.callsRpc("payment.charge"); orders.callsEvent("orders.completed");
+// If orders also ran start(): orders.rpc.declare("payment.charge"); orders.events.declare("orders.completed");
 
 const charge = await orders.rpc<{ ok: boolean; txId: string }>("payment.charge", {
   orderId: "ord_42",
@@ -115,7 +115,7 @@ async def process_order():
         code={{
           ts: `const notifications = new ServiceBridge("localhost:14445", process.env.SERVICEBRIDGE_SERVICE_KEY!);
 
-notifications.handleEvent("orders.*", async (payload, ctx) => {
+notifications.events.handle("orders.*", async (payload, ctx) => {
   const body = payload as { orderId: string; txId: string };
   if (!body.orderId) {
     ctx.reject("missing_order_id");
@@ -128,7 +128,7 @@ notifications.handleEvent("orders.*", async (payload, ctx) => {
 await notifications.start({ host: "localhost" });`,
           go: `notif := servicebridge.New("localhost:14445", key, nil)
 
-notif.HandleEvent("orders.*",
+notif.Events.Handle("orders.*",
   func(ctx context.Context, payload json.RawMessage, ec *servicebridge.EventContext) error {
     ec.Stream.Write(map[string]any{"status": "sending_email"}, "progress")
     // ... send email ...

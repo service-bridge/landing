@@ -45,7 +45,7 @@ bun add service-bridge`,
       <P>
         A worker is a service that handles incoming RPC calls. Register handlers, declare any outgoing{" "}
         <Mono>rpc()</Mono>/<Mono>event()</Mono>/<Mono>workflow()</Mono> usage with{" "}
-        <Mono>callsRpc()</Mono>/<Mono>callsEvent()</Mono>/<Mono>callsWorkflow()</Mono>, then call{" "}
+        <Mono>rpc.declare()</Mono>/<Mono>events.declare()</Mono>/<Mono>workflows.declare()</Mono>, then call{" "}
         <Mono>start()</Mono> to connect to the runtime and start accepting requests. This sample
         worker only handles incoming RPCs, so no <Mono>calls*</Mono> lines are required.
       </P>
@@ -62,7 +62,7 @@ sb.rpc.handle("charge", async (payload: { orderId: string; amount: number }) => 
   return { ok: true, txId: \`tx_\${Date.now()}\`, orderId: payload.orderId };
 });
 
-// If this service also called other services: sb.callsRpc("payment.refund"); etc.
+// If this service also called other services: sb.rpc.declare("payment.refund"); etc.
 await sb.start({ host: "localhost" });`,
           go: `package main
 
@@ -117,7 +117,7 @@ asyncio.run(sb.start())`,
       <P>
         Any service with a valid service key can call any registered RPC function directly — no
         broker, no sidecar, no proxy. If this caller ever runs a worker (<Mono>start()</Mono>),
-        register the callee first with <Mono>callsRpc(&quot;payment.charge&quot;)</Mono>{" "}
+        register the callee first with <Mono>rpc.declare(&quot;payment.charge&quot;)</Mono>{" "}
         (or the Go/Python equivalents) before <Mono>start()</Mono>.
       </P>
       <MultiCodeBlock
