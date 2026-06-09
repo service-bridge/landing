@@ -131,14 +131,13 @@ const ACTIVITY_TONE: Record<ActivityType, string> = {
   event: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
 };
 
-let actId = 0;
-
 function RegistryPanel() {
   const [pings, setPings] = useState(REGISTRY_SERVICES.map((s) => s.base));
   const [activity, setActivity] = useState<ActivityRow[]>(() =>
-    ACTIVITY_POOL.slice(0, 3).map((r) => ({ ...r, id: actId++ }))
+    ACTIVITY_POOL.slice(0, 3).map((r, i) => ({ ...r, id: i }))
   );
   const poolIdx = useRef(3);
+  const idRef = useRef(3);
 
   useEffect(() => {
     const pingId = setInterval(() => {
@@ -148,7 +147,7 @@ function RegistryPanel() {
     const actId2 = setInterval(() => {
       const next = ACTIVITY_POOL[poolIdx.current % ACTIVITY_POOL.length];
       poolIdx.current++;
-      setActivity((prev) => [{ ...next, id: actId++ }, ...prev.slice(0, 2)]);
+      setActivity((prev) => [{ ...next, id: idRef.current++ }, ...prev.slice(0, 2)]);
     }, 2200);
 
     return () => {
