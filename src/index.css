@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 225 22% 5%;
+    --foreground: 210 20% 93%;
+    --card: 225 20% 7%;
+    --card-foreground: 210 20% 93%;
+    --popover: 225 20% 7%;
+    --popover-foreground: 210 20% 93%;
+    --primary: 210 18% 92%;
+    --primary-foreground: 225 22% 8%;
+    --secondary: 225 14% 15%;
+    --secondary-foreground: 210 20% 93%;
+    --muted: 225 14% 13%;
+    --muted-foreground: 215 12% 52%;
+    --accent: 225 14% 17%;
+    --accent-foreground: 210 20% 93%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 225 14% 15%;
+    --input: 225 14% 15%;
+    --ring: 210 18% 70%;
+    --radius: 0.625rem;
+    
+    /* Unified code block tokens */
+    --code-bg: 225 30% 5%;
+    --code-chrome: 225 25% 7%;
+    
+    /* Unified surface tokens */
+    --surface: 0 0% 100% / 0.025;
+    --surface-border: 0 0% 100% / 0.07;
+    --section-border: 0 0% 100% / 0.04;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
+  body {
+    @apply bg-background text-foreground antialiased text-sm leading-6;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  h1 {
+    @apply text-5xl font-bold tracking-tight;
+  }
+  h2 {
+    @apply text-4xl font-bold tracking-tight;
+  }
+  h3 {
+    @apply text-xl font-semibold tracking-tight;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  :where(section[id], div[id]) {
+    scroll-margin-top: 5.5rem;
+  }
+}
+
+@layer components {
+  .type-display-xl {
+    @apply text-5xl font-bold tracking-tight font-display;
+    line-height: 1.08;
+  }
+  @media (max-width: 479px) {
+    .type-display-xl {
+      font-size: 2.25rem;
+      line-height: 1.1;
+    }
+  }
+  .type-display-lg {
+    @apply text-4xl font-bold tracking-tight font-display;
+    line-height: 1.12;
+  }
+  .type-page-title {
+    @apply text-3xl font-bold tracking-tight font-display;
+    line-height: 1.15;
+  }
+  .type-section-title {
+    @apply text-2xl font-semibold tracking-tight font-display;
+    line-height: 1.2;
+  }
+  .type-subsection-title {
+    @apply text-lg font-semibold tracking-tight font-display;
+    line-height: 1.25;
+  }
+  .type-body-lg {
+    @apply text-base leading-7 text-foreground;
+  }
+  .type-body {
+    @apply text-sm leading-6 text-foreground;
+  }
+  .type-body-sm {
+    @apply text-xs leading-5 text-muted-foreground;
+  }
+  .type-label {
+    @apply text-sm font-medium leading-5 text-foreground;
+  }
+  .type-overline {
+    @apply font-semibold uppercase text-muted-foreground;
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+    letter-spacing: 0.14em;
+  }
+  .type-overline-mono {
+    @apply font-mono uppercase text-muted-foreground;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.14em;
+  }
+  .type-caption {
+    @apply text-muted-foreground;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.005em;
+  }
+  .type-code-sm {
+    @apply font-mono;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.005em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+.bg-grid {
+  background-image: linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.02) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 60%, #7c8fa6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtle-glow {
+  box-shadow: 0 0 60px -12px rgba(148, 163, 184, 0.07);
+}
+
+@keyframes harrow-fwd {
+  from { left: -4px; }
+  to   { left: calc(100% + 4px); }
+}
+
+@keyframes harrow-rev {
+  from { left: calc(100% + 4px); }
+  to   { left: -4px; }
+}

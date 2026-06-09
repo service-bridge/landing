@@ -1,0 +1,12 @@
+# Set SKIP_HOOK=1 to bypass all checks.
+if [ "${SKIP_HOOK:-}" = "1" ]; then
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo "[pre-commit] building landing..."
+bun run build
+
+echo "[pre-commit] all checks passed."
