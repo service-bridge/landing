@@ -317,7 +317,7 @@ export function PageWorkflows() {
       <P>{t.handlersP}</P>
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 // inventory service. Credentials come from the constructor, not the environment.
 const sb = new ServiceBridge("localhost:14445", serviceKey);

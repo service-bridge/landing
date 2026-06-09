@@ -164,7 +164,7 @@ certs/ca.key   # CA private key  (mode 0600)`} />
       </ol>
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 // One service key is all the TLS material you provide.
 // start() provisions the mTLS leaf and opens the encrypted control stream.

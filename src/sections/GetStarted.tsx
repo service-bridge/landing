@@ -16,14 +16,14 @@ const SDK_TABS = [{ id: "node" as const, label: "Node" }];
 type TabId = (typeof SDK_TABS)[number]["id"];
 
 const INSTALL_CMDS: Record<TabId, string> = {
-  node: "bun add servicebridge",
+  node: "bun add service-bridge",
 };
 
 const CONNECT: Record<TabId, { filename: string; lang: SdkLang; code: string }> = {
   node: {
     filename: "my-service.ts",
     lang: "ts",
-    code: `import { ServiceBridge } from "servicebridge";
+    code: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445",

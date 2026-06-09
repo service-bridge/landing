@@ -27,7 +27,7 @@ const HERO_STATS = [
 const INSTALL_TABS = [{ id: "node" as const, label: "Node" }];
 
 const INSTALL_CMDS: Record<(typeof INSTALL_TABS)[number]["id"], string> = {
-  node: "bun add servicebridge",
+  node: "bun add service-bridge",
 };
 
 export function HeroSection({ onDocs }: { onDocs?: () => void }) {

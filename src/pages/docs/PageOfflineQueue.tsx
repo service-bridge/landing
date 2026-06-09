@@ -59,7 +59,7 @@ const T = {
     fullP:
       "The SDK never drops your events to make room; there is no eviction policy. If the outbox reaches the cap because the runtime has been unreachable for a while, publish() throws OutboxFullError. Catch it, slow the producer down, or raise maxOutboxRows.",
     fullCode:
-      'import { OutboxFullError } from "servicebridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime has been down too long and the local outbox is full —\n    // slow down the producer or raise maxOutboxRows in the constructor\n  }\n  throw err;\n}',
+      'import { OutboxFullError } from "service-bridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime has been down too long and the local outbox is full —\n    // slow down the producer or raise maxOutboxRows in the constructor\n  }\n  throw err;\n}',
 
     calloutPersist:
       "The offline queue is durable, not in-memory. Events buffered while offline live in sdk.db on disk and survive a process restart. Point dataDir at a persistent volume.",
@@ -114,7 +114,7 @@ const T = {
     fullP:
       "SDK никогда не выбрасывает ваши события, чтобы освободить место; политики вытеснения нет. Если outbox достиг лимита из-за долгой недоступности runtime, publish() бросает OutboxFullError. Поймайте ошибку, притормозите производителя или поднимите maxOutboxRows.",
     fullCode:
-      'import { OutboxFullError } from "servicebridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime недоступен слишком долго, локальный outbox заполнен —\n    // замедлите производителя или увеличьте maxOutboxRows в конструкторе\n  }\n  throw err;\n}',
+      'import { OutboxFullError } from "service-bridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime недоступен слишком долго, локальный outbox заполнен —\n    // замедлите производителя или увеличьте maxOutboxRows в конструкторе\n  }\n  throw err;\n}',
 
     calloutPersist:
       "Офлайн-очередь долговечная, а не в памяти. События, буферизованные в офлайне, лежат в файле sdk.db на диске и переживают перезапуск процесса. Укажите dataDir на постоянном томе.",

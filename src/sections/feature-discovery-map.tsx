@@ -12,7 +12,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const DISCOVERY_CODE: CodeLangs = {
-  ts: `import { ServiceBridge } from "servicebridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
 // Worker: handler is declared before start(), endpoint
 // is advertised to the registry on start()

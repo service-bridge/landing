@@ -12,7 +12,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
 const RPC_CODE: CodeLangs = {
-  ts: `import { ServiceBridge } from "servicebridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 

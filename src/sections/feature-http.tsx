@@ -18,7 +18,7 @@ const FRAMEWORK_TABS = [
     lang: "ts" as const,
     filename: "app.ts",
     code: `import express from "express";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { attachExpress } from "servicebridge/express";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
@@ -42,7 +42,7 @@ app.listen(8080);`,
     lang: "ts" as const,
     filename: "server.ts",
     code: `import Fastify from "fastify";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { sbFastify } from "servicebridge/fastify";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
@@ -63,7 +63,7 @@ await app.listen({ port: 8080 });`,
     lang: "ts" as const,
     filename: "server.ts",
     code: `import { Hono } from "hono";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { attachHono } from "servicebridge/hono";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);

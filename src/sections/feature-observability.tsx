@@ -7,7 +7,7 @@ import { CodePanel } from "../ui/CodePanel";
 import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 
-const LOGGER_CODE = `import { ServiceBridge } from "servicebridge";
+const LOGGER_CODE = `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", key);
 

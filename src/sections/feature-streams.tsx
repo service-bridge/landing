@@ -10,7 +10,7 @@ import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
 const WRITER_CODE: CodeLangs = {
-  ts: `import { ServiceBridge } from "servicebridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("api.example.com:14445", serviceKey);
 
@@ -28,7 +28,7 @@ await sb.start();`,
 };
 
 const READER_CODE: CodeLangs = {
-  ts: `import { ServiceBridge } from "servicebridge";
+  ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("api.example.com:14445", serviceKey);
 

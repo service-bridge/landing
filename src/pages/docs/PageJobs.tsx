@@ -227,7 +227,7 @@ export function PageJobs() {
       <P>{t.handleP}</P>
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 

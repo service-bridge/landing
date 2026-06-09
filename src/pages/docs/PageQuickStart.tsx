@@ -1,4 +1,4 @@
-// keywords: servicebridge quick-start getting-started bun add servicebridge npm i servicebridge RPC gRPC microservices Node.js TypeScript SDK distributed-tracing mTLS service-mesh zero-sidecar proto schema sb.rpc.handle sb.rpc.call sb.client
+// keywords: servicebridge quick-start getting-started bun add service-bridge npm i servicebridge RPC gRPC microservices Node.js TypeScript SDK distributed-tracing mTLS service-mesh zero-sidecar proto schema sb.rpc.handle sb.rpc.call sb.client
 
 import { MultiCodeBlock } from "../../ui/CodeBlock";
 import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader } from "../../ui/DocComponents";
@@ -91,7 +91,7 @@ export function PageQuickStart() {
       <P>{t.installP}</P>
       <MultiCodeBlock
         code={{
-          ts: `bun add servicebridge
+          ts: `bun add service-bridge
 # or
 npm i servicebridge`,
         }}
@@ -127,7 +127,7 @@ message ChargeResponse {
       <MultiCodeBlock
         filename={t.workerFileCaption}
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445",
@@ -157,7 +157,7 @@ console.log("payment online:", sb.identity()?.serviceName);`,
       <MultiCodeBlock
         filename={t.callClientCaption}
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445",

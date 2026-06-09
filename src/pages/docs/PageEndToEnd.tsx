@@ -95,7 +95,7 @@ export function PageEndToEnd() {
 			</P>
 			<MultiCodeBlock
 				code={{
-					ts: `import { ServiceBridge } from "servicebridge";
+					ts: `import { ServiceBridge } from "service-bridge";
 
 const payments = new ServiceBridge(
   "localhost:14445",

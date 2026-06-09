@@ -47,7 +47,7 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
     label: "Cron",
     filename: { ts: "billing-service.ts" },
     code: {
-      ts: `import { ServiceBridge } from "servicebridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 
@@ -75,7 +75,7 @@ await sb.start();`,
     label: "Delayed",
     filename: { ts: "onboarding-service.ts" },
     code: {
-      ts: `import { ServiceBridge } from "servicebridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 
@@ -101,7 +101,7 @@ await sb.start();`,
     label: "Interval + Workflow",
     filename: { ts: "platform-service.ts" },
     code: {
-      ts: `import { ServiceBridge } from "servicebridge";
+      ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 

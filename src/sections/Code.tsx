@@ -17,7 +17,7 @@ const LANG_TABS = [
     id: "typescript",
     label: "orders-service.ts",
     filename: "orders-service.ts",
-    code: `import { ServiceBridge } from "servicebridge";
+    code: `import { ServiceBridge } from "service-bridge";
 
 // Connect: gRPC control-plane address + sbv2 service key
 const sb = new ServiceBridge(

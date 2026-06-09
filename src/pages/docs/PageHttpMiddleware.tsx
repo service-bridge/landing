@@ -154,7 +154,7 @@ export function PageHttpMiddleware() {
       <MultiCodeBlock
         code={{
           ts: `import express from "express";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { attachExpress } from "servicebridge/express";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);
@@ -190,7 +190,7 @@ await sb.start();`,
       <MultiCodeBlock
         code={{
           ts: `import Fastify from "fastify";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { sbFastify } from "servicebridge/fastify";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);
@@ -222,7 +222,7 @@ await sb.start();`,
       <MultiCodeBlock
         code={{
           ts: `import { Hono } from "hono";
-import { ServiceBridge } from "servicebridge";
+import { ServiceBridge } from "service-bridge";
 import { attachHono } from "servicebridge/hono";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);

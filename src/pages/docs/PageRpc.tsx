@@ -237,7 +237,7 @@ export function PageRpc() {
       <H3 id="rpc-call-example">{t.callExampleTitle}</H3>
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 
@@ -302,7 +302,7 @@ const charged = await sb.rpc.call(
       <P>{t.errorsP1}</P>
       <MultiCodeBlock
         code={{
-          ts: `import { RpcAccessDeniedError, ServiceBridgeError } from "servicebridge";
+          ts: `import { RpcAccessDeniedError, ServiceBridgeError } from "service-bridge";
 
 try {
   await sb.rpc.call("payments", "Charge", { userId: "u-1", amount: 4990 });
@@ -335,7 +335,7 @@ try {
       />
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge } from "servicebridge";
+          ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 

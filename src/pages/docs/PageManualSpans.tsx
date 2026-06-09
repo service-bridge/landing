@@ -137,7 +137,7 @@ export function PageManualSpans() {
       <P>{t.startOpP2}</P>
       <MultiCodeBlock
         code={{
-          ts: `import { ServiceBridge, Channel } from "servicebridge";
+          ts: `import { ServiceBridge, Channel } from "service-bridge";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
 
@@ -181,7 +181,7 @@ const op = sb.telemetry.startOp({
       <P>{t.lifecycleP1}</P>
       <MultiCodeBlock
         code={{
-          ts: `import { Channel, Status } from "servicebridge";
+          ts: `import { Channel, Status } from "service-bridge";
 
 const op = sb.telemetry.startOp({
   channel: Channel.USER,

@@ -165,7 +165,7 @@ const KEY_GEN = `go run ./cmd/sbkey-gen \\
   -ca-key=./certs/ca.key \\
   -dsn="postgres://servicebridge:servicebridge@localhost:5433/servicebridge"`;
 
-const KEY_CONSTRUCT = `import { ServiceBridge } from "servicebridge";
+const KEY_CONSTRUCT = `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445", // gRPC control plane
