@@ -13,6 +13,7 @@ import { PageAlertsChannels } from "./docs/PageAlertsChannels";
 import { PageAlertsOverview } from "./docs/PageAlertsOverview";
 import { PageAlertsRules } from "./docs/PageAlertsRules";
 import { PageAlertsTelegram } from "./docs/PageAlertsTelegram";
+import { PageAiSkill } from "./docs/PageAiSkill";
 import { PageConfigPush } from "./docs/PageConfigPush";
 import { PageDlqReplay } from "./docs/PageDlqReplay";
 import { PageEndToEnd } from "./docs/PageEndToEnd";
@@ -45,6 +46,7 @@ import { PageZoneAware } from "./docs/PageZoneAware";
 const PAGES: Record<string, () => React.ReactNode> = {
   installation: PageInstallation,
   "quick-start": PageQuickStart,
+  "ai-skill": PageAiSkill,
   "end-to-end": PageEndToEnd,
   rpc: PageRpc,
   events: PageEvents,

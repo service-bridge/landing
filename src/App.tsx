@@ -36,6 +36,9 @@ const TraceFlowSection = lazy(() =>
   import("./components/RunFlow").then((m) => ({ default: m.TraceFlowSection }))
 );
 const CodeSection = lazy(() => import("./sections/Code").then((m) => ({ default: m.CodeSection })));
+const AiSkillSection = lazy(() =>
+  import("./sections/AiSkill").then((m) => ({ default: m.AiSkillSection }))
+);
 const ArchitectureSection = lazy(() =>
   import("./sections/Architecture").then((m) => ({ default: m.ArchitectureSection }))
 );
@@ -444,6 +447,7 @@ export default function App() {
             <UseCasesSection />
             <TraceFlowSection />
             <CodeSection />
+            <AiSkillSection />
             <ArchitectureSection />
             <DirectRpcSection />
             <HttpSection />

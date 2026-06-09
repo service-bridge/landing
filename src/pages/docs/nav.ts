@@ -28,6 +28,16 @@ export const NAV: NavGroup[] = [
         ],
       },
       {
+        id: "ai-skill",
+        label: "AI Coding Skill",
+        ru: "Навык для AI-агентов",
+        toc: [
+          { id: "what", label: "What it is", ru: "Что это" },
+          { id: "install", label: "Install", ru: "Установка" },
+          { id: "covers", label: "What the agent learns", ru: "Чему учится агент" },
+        ],
+      },
+      {
         id: "end-to-end",
         label: "End-to-End Example",
         ru: "Полный пример",
