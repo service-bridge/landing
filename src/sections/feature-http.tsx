@@ -18,7 +18,7 @@ const FRAMEWORK_TABS = [
     lang: "ts" as const,
     filename: "app.ts",
     code: `import express from "express";
-import { ServiceBridge } from "service-bridge";
+import { ServiceBridge } from "servicebridge";
 import { attachExpress } from "servicebridge/express";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
@@ -42,7 +42,7 @@ app.listen(8080);`,
     lang: "ts" as const,
     filename: "server.ts",
     code: `import Fastify from "fastify";
-import { ServiceBridge } from "service-bridge";
+import { ServiceBridge } from "servicebridge";
 import { sbFastify } from "servicebridge/fastify";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
@@ -63,7 +63,7 @@ await app.listen({ port: 8080 });`,
     lang: "ts" as const,
     filename: "server.ts",
     code: `import { Hono } from "hono";
-import { ServiceBridge } from "service-bridge";
+import { ServiceBridge } from "servicebridge";
 import { attachHono } from "servicebridge/hono";
 
 const sb = new ServiceBridge("localhost:14445", serviceKey);
@@ -152,7 +152,7 @@ export function HttpSection() {
       stickyColumn="content"
       eyebrow="HTTP Integrations"
       title={<>Your HTTP server, traced. Automatically.</>}
-      subtitle="Attach one integration to your Express, Fastify, or Hono app. Every request gets a span, X-SB-Trace propagation, and its routes published to the Service Map — with no changes to your handlers."
+      subtitle="Attach one integration to your Express, Fastify, or Hono app. Every request gets a span, X-SB-Trace propagation, and Service Map routes — zero handler changes."
       content={
         <motion.div variants={fadeInUp}>
           <CodePanel>
@@ -182,7 +182,7 @@ export function HttpSection() {
               </button>
             </div>
             <pre
-              className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-muted-foreground"
+              className="max-w-full overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-muted-foreground"
               style={{ minHeight: minFwCodeHeight }}
             >
               <code>{highlightCode(tab.code.trim(), tab.lang)}</code>
@@ -195,13 +195,16 @@ export function HttpSection() {
           <Card>
             <p className="type-overline-mono text-muted-foreground">trace propagation</p>
             <p className="mt-2 type-subsection-title">One integration, full request chain.</p>
+            <p className="mt-3 text-xs font-mono font-semibold text-emerald-300">
+              The runtime never proxies your business HTTP — no sidecar, no Envoy.
+            </p>
             <p className="mt-2 type-body-sm">
-              Every inbound request emits an HTTP.HANDLE op. Downstream{" "}
+              Each inbound request emits an HTTP.HANDLE op. Downstream{" "}
               <code className="text-foreground/80 bg-surface px-1 rounded">
                 sb.rpc.call()
               </code>{" "}
               and <code className="text-foreground/80 bg-surface px-1 rounded">sb.event.publish()</code>{" "}
-              inherit the trace context automatically.
+              inherit the trace automatically.
             </p>
 
             <div className="mt-5 space-y-1.5">
@@ -237,7 +240,7 @@ export function HttpSection() {
                   </div>
                   <div
                     className={cn(
-                      "flex-1 flex items-center gap-3 rounded-xl border px-3 py-2",
+                      "flex-1 flex items-start gap-3 rounded-xl border px-3 py-2 min-w-0",
                       step.tone
                     )}
                   >
@@ -249,7 +252,9 @@ export function HttpSection() {
                     >
                       {step.label}
                     </span>
-                    <span className="text-2xs text-muted-foreground font-mono">{step.sub}</span>
+                    <span className="text-2xs text-muted-foreground font-mono min-w-0 break-words">
+                      {step.sub}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -261,8 +266,7 @@ export function HttpSection() {
               </div>
               <p className="type-body-sm">
                 Routes appear in the <span className="text-zinc-200">Service Map</span> and{" "}
-                Service Discovery automatically — method, path, and HTTP endpoint. The runtime
-                never proxies your business HTTP.
+                Service Discovery automatically — method, path, and HTTP endpoint.
               </p>
             </div>
           </Card>
@@ -270,6 +274,13 @@ export function HttpSection() {
       }
       cards={
         <>
+          <FeatureCard
+            variant="compact"
+            icon={CheckCircle2}
+            title="Unified traces"
+            description="HTTP ops join the same trace as RPC, event, and workflow ops. Full cross-service waterfall in the dashboard."
+            iconClassName="text-emerald-400"
+          />
           <FeatureCard
             variant="compact"
             icon={Globe}
@@ -281,15 +292,8 @@ export function HttpSection() {
             variant="compact"
             icon={Zap}
             title="Zero handler changes"
-            description="Attach the integration once. Every route gets tracing, X-SB-Trace propagation, and Service Map registration automatically."
+            description="Attach the integration once — no sidecar, no Envoy. Every route gets tracing, X-SB-Trace propagation, and Service Map registration automatically."
             iconClassName="text-blue-400"
-          />
-          <FeatureCard
-            variant="compact"
-            icon={CheckCircle2}
-            title="Unified traces"
-            description="HTTP ops join the same trace as RPC, event, and workflow ops. Full cross-service waterfall in the dashboard."
-            iconClassName="text-emerald-400"
           />
         </>
       }

@@ -1,14 +1,17 @@
 import {
   AlertTriangle,
+  ArrowRight,
   Bell,
   CheckCircle2,
   Clock,
+  Filter,
   MessageCircle,
   Send,
   ShieldAlert,
   Webhook,
 } from "lucide-react";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { Card } from "../ui/Card";
 import { CodePanel } from "../ui/CodePanel";
 import { FeatureCard } from "../ui/FeatureCard";
@@ -55,24 +58,24 @@ const FLOW_STEPS = [
 const ALERT_FEATURES = [
   {
     icon: ShieldAlert,
-    iconColor: "text-red-400",
-    title: "Built-in Conditions",
-    desc: "Eight condition types: DLQ spikes, error rate, service offline, delivery failures, job errors, workflow errors, metric threshold, latency p99.",
+    iconColor: "text-amber-400",
+    title: "Define the condition",
+    desc: "Pick a condition type and a threshold — error_rate > 10% in 5 min, or DLQ grew by 50 in 1 min. 8 built-in types cover the common failure modes.",
     tags: ["dlq_new", "error_rate", "service_offline", "latency_p99"],
   },
   {
-    icon: MessageCircle,
-    iconColor: "text-blue-400",
-    title: "Telegram",
-    desc: "Add a bot token from @BotFather, grab your chat_id via @userinfobot, then deliver in polling or webhook mode.",
-    tags: ["Bot API", "Polling or webhook"],
+    icon: Filter,
+    iconColor: "text-emerald-400",
+    title: "Tune the filter chain",
+    desc: "A cooldown → window → dedup chain decides when a rule may fire, so a single incident never turns into an alert storm.",
+    tags: ["cooldown", "window", "dedup"],
   },
   {
-    icon: Webhook,
-    iconColor: "text-purple-400",
-    title: "Webhook, Email & In-App",
-    desc: "Structured JSON to any HTTP endpoint with custom headers, email, in-app alerts over SSE, and browser Web-Push.",
-    tags: ["Structured JSON", "SSE + Web-Push"],
+    icon: CheckCircle2,
+    iconColor: "text-violet-400",
+    title: "All in the UI",
+    desc: "Create and edit rules in the console — no YAML, no PromQL. Every fire is recorded in alert_history for later review.",
+    tags: ["No YAML", "No PromQL", "alert_history"],
   },
 ];
 
@@ -88,7 +91,7 @@ export function AlertsSection() {
               <p className="type-body-sm text-muted-foreground">{f.desc}</p>
               <div className="flex flex-wrap gap-1.5 mt-3">
                 {f.tags.map((tag) => (
-                  <Badge key={tag} tone="border-surface-border bg-surface text-muted-foreground">
+                  <Badge key={tag} tone="border-border bg-muted/50 text-foreground/80">
                     {tag}
                   </Badge>
                 ))}
@@ -97,6 +100,12 @@ export function AlertsSection() {
           </div>
         </Card>
       ))}
+      <Button asChild variant="link" size="sm" className="h-auto px-0 text-emerald-300">
+        <a href="#docs">
+          Set up an alert rule in the UI in under a minute
+          <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+        </a>
+      </Button>
     </div>
   );
 
@@ -132,7 +141,7 @@ export function AlertsSection() {
       id="alerts"
       eyebrow="Alerting"
       title="Know before your users notice"
-      subtitle="Configure alert rules directly in the UI. Get notified instantly via Telegram, Webhook, email, in-app, or browser Web-Push when something goes wrong."
+      subtitle="No YAML, no PromQL — alert rules live in the UI. Get notified instantly via Telegram, Webhook, email, in-app, or browser Web-Push when something goes wrong."
       content={content}
       demo={demo}
       cards={
@@ -141,28 +150,28 @@ export function AlertsSection() {
             variant="compact"
             icon={ShieldAlert}
             title="8 condition types"
-            description="DLQ spikes, error rate, service offline, delivery failures, job errors, workflow errors, metric threshold, latency p99 — covers the most common failure modes."
+            description="Covers the most common failure modes — from DLQ spikes and error rate to latency p99."
             iconClassName="text-red-400"
           />
           <FeatureCard
             variant="compact"
             icon={MessageCircle}
             title="Telegram delivery"
-            description="Bot token from @BotFather, chat_id from the @userinfobot helper, polling or webhook mode — Markdown messages via the Bot API."
+            description="Bot token from @BotFather, chat_id from @userinfobot — deliver in polling or webhook mode."
             iconClassName="text-blue-400"
           />
           <FeatureCard
             variant="compact"
             icon={Webhook}
             title="Webhook, email, in-app"
-            description="Send JSON to any endpoint with custom headers, deliver by email, push in-app alerts over SSE and to the browser via Web-Push — zero polling."
+            description="Structured JSON to any endpoint (custom headers), email, in-app over SSE, browser Web-Push."
             iconClassName="text-purple-400"
           />
           <FeatureCard
             variant="compact"
             icon={Clock}
             title="Cooldown protection"
-            description="A cooldown → window → dedup filter chain prevents alert storms. Each rule tracks last fire time and respects its cooldown_seconds interval."
+            description="A cooldown → window → dedup chain prevents alert storms; each rule respects its cooldown_seconds."
             iconClassName="text-violet-400"
           />
         </>

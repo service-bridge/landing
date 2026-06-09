@@ -6,7 +6,7 @@ import { Badge } from "../ui/Badge";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
-type TraceType = "event" | "rpc" | "job" | "workflow";
+type TraceType = "event" | "rpc" | "job" | "workflow" | "http";
 type TraceStatus = "running" | "success" | "error" | "pending";
 
 interface Trace {
@@ -30,6 +30,8 @@ const TRACE_TEMPLATES: { name: string; service: string; type: TraceType }[] = [
   { name: "crm.contacts.get", service: "crm", type: "rpc" },
   { name: "reports.generate", service: "scheduler", type: "job" },
   { name: "mailer.send", service: "mailer", type: "event" },
+  { name: "GET /v1/orders", service: "gateway", type: "http" },
+  { name: "POST /v1/checkout", service: "gateway", type: "http" },
 ];
 
 const TYPE_COLORS: Record<TraceType, string> = {
@@ -37,6 +39,7 @@ const TYPE_COLORS: Record<TraceType, string> = {
   rpc: "bg-blue-500/10 text-blue-400 border-blue-500/20",
   job: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   workflow: "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20",
+  http: "bg-sky-500/10 text-sky-400 border-sky-500/20",
 };
 
 function genId(): string {
@@ -47,17 +50,17 @@ function StatusCell({ status }: { status: TraceStatus }) {
   const configs = {
     success: {
       icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />,
-      label: "completed",
+      label: "success",
       color: "text-emerald-400",
     },
     error: {
       icon: <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />,
-      label: "failed",
+      label: "error",
       color: "text-red-400",
     },
     running: {
       icon: <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />,
-      label: "running",
+      label: "pending",
       color: "text-amber-400",
     },
     pending: {
@@ -215,8 +218,8 @@ export function TraceFlowSection() {
     <Section id="traces">
       <SectionHeader
         eyebrow="Traces"
-        title="Every execution, tracked in real time"
-        subtitle="Events, RPC calls, jobs and workflows — all traces are visible, filterable and inspectable with full trace details."
+        title="Every execution traced, in real time"
+        subtitle="Events, RPC, jobs, workflows and HTTP — every trace visible, filterable, inspectable down to the span. No OTel collector, no separate tracing backend — all in one binary."
       />
 
       <div ref={contentRef}>
@@ -225,7 +228,7 @@ export function TraceFlowSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-3xl mx-auto"
         >
           <div className="rounded-2xl border border-surface-border bg-code overflow-hidden shadow-2xl shadow-emerald-500/[0.04]">
             {/* Window chrome */}
@@ -250,9 +253,14 @@ export function TraceFlowSection() {
             </div>
 
             {/* Column headers + rows — scroll horizontally on narrow screens */}
-            <div className="overflow-x-auto">
-              <div className="min-w-[540px]">
-                <div className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-2.5 type-overline-mono text-muted-foreground/60 border-b border-white/[0.04]">
+            <div className="relative">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-code to-transparent sm:hidden"
+              />
+              <div className="overflow-x-auto">
+                <div className="min-w-[540px]">
+                <div className="grid grid-cols-[minmax(160px,1fr)_80px_120px_90px_70px] px-5 py-2.5 type-overline-mono text-muted-foreground/60 border-b border-white/[0.04]">
                   <span>Name &amp; Service</span>
                   <span>Type</span>
                   <span>Status</span>
@@ -270,13 +278,13 @@ export function TraceFlowSection() {
                         animate={{ opacity: 1, y: 0, backgroundColor: "rgba(52,211,153,0)" }}
                         exit={{ opacity: 0, height: 0, overflow: "hidden" }}
                         transition={{ duration: 0.3 }}
-                        className="grid grid-cols-[1fr_80px_120px_90px_70px] px-5 py-3 border-b border-white/[0.03] last:border-0 items-center"
+                        className="grid grid-cols-[minmax(160px,1fr)_80px_120px_90px_70px] px-5 py-3 border-b border-white/[0.03] last:border-0 items-center"
                       >
                         <div className="flex flex-col min-w-0 pr-3">
                           <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
                             {trace.name}
                           </span>
-                          <span className="text-3xs text-muted-foreground/60 mt-0.5">
+                          <span className="text-2xs text-muted-foreground/60 mt-0.5">
                             {trace.service}
                           </span>
                         </div>
@@ -287,7 +295,7 @@ export function TraceFlowSection() {
 
                         <StatusCell status={trace.status} />
 
-                        <span className="text-3xs text-muted-foreground/70 font-mono tabular-nums">
+                        <span className="text-2xs text-muted-foreground/70 font-mono tabular-nums">
                           {trace.startedAt.toLocaleTimeString("en-US", {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -296,7 +304,7 @@ export function TraceFlowSection() {
                           })}
                         </span>
 
-                        <span className="text-right font-mono text-3xs text-muted-foreground tabular-nums">
+                        <span className="text-right font-mono text-2xs text-muted-foreground tabular-nums">
                           {trace.durationMs !== null ? `${trace.durationMs}ms` : "—"}
                         </span>
                       </motion.div>
@@ -304,6 +312,7 @@ export function TraceFlowSection() {
                   </AnimatePresence>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Footer */}
@@ -322,6 +331,13 @@ export function TraceFlowSection() {
               </div>
             </div>
           </div>
+
+          <p className="mt-4 text-center text-2xs text-muted-foreground/70">
+            Click any trace for the full span tree.{" "}
+            <a href="#docs" className="text-emerald-400 hover:text-emerald-300 transition-colors">
+              See the tracing docs →
+            </a>
+          </p>
         </motion.div>
       </div>
     </Section>

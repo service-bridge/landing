@@ -8,7 +8,6 @@ import { highlightCode } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
-import { TabStrip } from "../ui/Tabs";
 
 // ─── SDK example ──────────────────────────────────────────────────────────────
 
@@ -25,7 +24,7 @@ const sb = new ServiceBridge(
   serviceKey, // sbv2.<id>.<secret>.<ca>
 );
 
-// RPC handler — direct caller→callee mTLS, schema decodes the payload
+// RPC handler — direct mTLS, schema-decoded payload
 sb.rpc.handle("orders.create", async (payload) => {
   const order = await db.insert(payload);
 
@@ -35,7 +34,7 @@ sb.rpc.handle("orders.create", async (payload) => {
   return { id: order.id, status: "success" };
 }, { schema: { protoFile: "orders.proto" } });
 
-// Durable event consumer — at-least-once, retries + DLQ owned by the runtime
+// Durable consumer — at-least-once, retries + DLQ by the runtime
 sb.event.handle("payment.failed", async (payload) => {
   await notifyCustomer(payload);
 });
@@ -59,11 +58,9 @@ sb.workflow.handle("checkout.flow", {
   ],
 });
 
-await sb.start(); // provisions a leaf mTLS cert from the service key, then connects`,
+await sb.start(); // provisions an mTLS cert from your key, then connects`,
   },
 ] as const;
-
-type LangId = (typeof LANG_TABS)[number]["id"];
 
 // ─── Live registry ────────────────────────────────────────────────────────────
 
@@ -274,8 +271,7 @@ function RegistryPanel() {
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export function CodeSection() {
-  const activeLang: LangId = "typescript";
-  const tab = LANG_TABS.find((t) => t.id === activeLang) ?? LANG_TABS[0];
+  const tab = LANG_TABS[0];
 
   const maxCodeLines = Math.max(...LANG_TABS.map((t) => t.code.trim().split("\n").length));
   const minCodeHeight = maxCodeLines * 20 + 40;
@@ -285,19 +281,17 @@ export function CodeSection() {
       <SectionHeader
         eyebrow="Developer Experience"
         title={<>One Node SDK. Zero manual instrumentation.</>}
-        subtitle="One ServiceBridge facade for RPC, durable events, DAG workflows, and cron jobs. The SDK provisions a leaf mTLS cert from your service key on start() and emits traces and metrics with no extra code."
+        subtitle="One facade for RPC, durable events, DAG workflows, and cron jobs — mTLS, traces, and metrics come for free on start()."
       />
 
       <div className="grid items-start gap-6 xl:grid-cols-[1.08fr_0.92fr] max-w-6xl mx-auto">
         <motion.div variants={fadeInUp} className="min-w-0">
           <CodePanel>
-            <div className="flex items-center gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
-              <TabStrip
-                size="sm"
-                items={LANG_TABS}
-                active={activeLang}
-                onChange={() => {}}
-              />
+            <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-4 py-2.5">
+              <span className="text-xs font-mono text-muted-foreground">{tab.filename}</span>
+              <span className="type-overline-mono rounded-md border border-surface-border bg-surface px-2 py-0.5 text-muted-foreground/70">
+                Node SDK
+              </span>
             </div>
             <pre
               className="overflow-x-auto p-5 font-mono text-[12.5px] leading-relaxed text-muted-foreground"

@@ -85,27 +85,26 @@ export function DiscoveryMapSection() {
       id="service-discovery"
       eyebrow="Service Discovery"
       title={<>Registry-driven. Zero proxy. Zero DB on the hot path.</>}
-      subtitle="Workers self-register over a push stream. The control plane keeps an in-memory snapshot and streams it back. Callers resolve endpoints from that snapshot — no database queries, no sidecar, no DNS polling."
+      subtitle="Workers self-register over a push stream; the control plane streams back a live in-memory snapshot. Callers resolve endpoints from it — 0 DB queries, no sidecar, no DNS polling. No Consul, no Envoy sidecar, no DNS TTL lag."
       content={
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
             <p className="type-overline-mono text-muted-foreground">registry model</p>
             <h2 className="mt-2 type-subsection-title">Self-register once. Resolve from memory.</h2>
             <p className="mt-3 type-body-sm">
-              Workers call{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 start()
               </code>{" "}
-              to advertise their endpoint over the{" "}
+              advertises the endpoint over the{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 RegisterAndWatch
               </code>{" "}
-              stream. The control plane maintains a live in-memory snapshot and pushes it back.
-              Callers read it through{" "}
+              stream. Callers read the pushed snapshot via{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 serviceMap()
               </code>{" "}
-              and reach callees directly over mTLS — no SQL at call time.
+              and reach callees directly over mTLS — no SQL at call time. Drop the stream and the
+              control plane evicts those instances from the snapshot within a heartbeat.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">
@@ -114,23 +113,35 @@ export function DiscoveryMapSection() {
               <Badge tone="border-violet-500/20 bg-violet-500/[0.08] text-violet-300">
                 in-memory snapshot
               </Badge>
-              <Badge tone="border-blue-500/20 bg-blue-500/[0.08] text-blue-300">
+              <Badge tone="border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400">
                 push stream
               </Badge>
             </div>
+            <a
+              href="#docs"
+              className="mt-4 inline-flex items-center gap-1 type-label text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              See the discovery API →
+            </a>
           </Card>
           <MultiCodeBlock code={DISCOVERY_CODE} filename={{ ts: "discovery.ts" }} />
         </motion.div>
       }
       demo={
         <motion.div variants={fadeInUp}>
-          <CodePanel title={`registry.snapshot · ${REGISTRY_ROWS.length} services`}>
-            <div className="flex items-center gap-1.5 absolute top-2.5 right-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-mono text-2xs text-emerald-400/70">live</span>
-            </div>
-
-            <div ref={tableRef} className="p-4 space-y-1 overflow-x-auto">
+          <CodePanel
+            title={`registry.snapshot · ${REGISTRY_ROWS.length} services`}
+            headerActions={
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-mono text-2xs text-emerald-400/70">live</span>
+              </div>
+            }
+          >
+            <div
+              ref={tableRef}
+              className="p-4 space-y-1 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:[mask-image:none]"
+            >
               <div className="min-w-[520px]">
                 <div
                   className="grid gap-2 px-3 pb-2"
@@ -198,10 +209,10 @@ export function DiscoveryMapSection() {
               </div>
             </div>
 
-            <div className="border-t border-surface-border px-4 py-3 flex items-center gap-6">
+            <div className="border-t border-surface-border px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="text-center">
                 <p className="type-overline-mono text-muted-foreground">lookup</p>
-                <p className="text-sm font-semibold font-display text-violet-300 mt-0.5">
+                <p className="text-sm font-semibold font-display text-foreground mt-0.5">
                   serviceMap()
                 </p>
               </div>
@@ -215,7 +226,7 @@ export function DiscoveryMapSection() {
               <div className="w-px h-8 bg-surface-border" />
               <div className="text-center">
                 <p className="type-overline-mono text-muted-foreground">stream</p>
-                <p className="text-sm font-semibold font-display text-blue-300 mt-0.5">push</p>
+                <p className="text-sm font-semibold font-display text-foreground mt-0.5">push</p>
               </div>
             </div>
           </CodePanel>
@@ -226,15 +237,15 @@ export function DiscoveryMapSection() {
           <FeatureCard
             variant="compact"
             icon={Zap}
-            title="auto transport"
-            description="sb.rpc.call resolves the callee from the live snapshot: direct caller→callee mTLS when the endpoint is known, proxied through the runtime otherwise."
-            iconClassName="text-yellow-400"
+            title="Auto transport"
+            description="Resolves the callee from the snapshot: direct mTLS when the endpoint is known, proxied through the runtime otherwise."
+            iconClassName="text-emerald-400"
           />
           <FeatureCard
             variant="compact"
             icon={Activity}
             title="Live presence"
-            description="Each worker holds the RegisterAndWatch stream open. Drop the stream and the control plane marks its instances disconnected, removing them from the snapshot."
+            description="Each worker holds the RegisterAndWatch stream open. Drop it and its instances are marked disconnected and removed from the snapshot."
             iconClassName="text-emerald-400"
           />
           <FeatureCard
@@ -242,13 +253,13 @@ export function DiscoveryMapSection() {
             icon={Network}
             title="gRPC load balancing"
             description="Multiple instances of a service register the same methods. Direct calls spread across the alive replicas, scaling with instance count."
-            iconClassName="text-cyan-400"
+            iconClassName="text-violet-400"
           />
           <FeatureCard
             variant="compact"
             icon={RefreshCcw}
             title="Pushed snapshot"
-            description="RegisterAndWatch pushes registry updates — instances, event subscriptions, outgoing calls, policy — so serviceMap() stays current without polling."
+            description="RegisterAndWatch pushes every registry update — instances, subscriptions, calls, policy — so serviceMap() stays current without polling."
             iconClassName="text-violet-400"
           />
         </>

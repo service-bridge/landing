@@ -1,6 +1,7 @@
 import { motion, useInView } from "framer-motion";
 import {
   Activity,
+  ArrowRight,
   Ban,
   CalendarClock,
   CheckCircle2,
@@ -17,6 +18,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { CodePanel } from "../ui/CodePanel";
 import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
@@ -447,6 +449,7 @@ const TRACE_TABS = [
     totalMs: "187ms",
     spanCount: 8,
     color: "text-indigo-400",
+    traceId: "a1b2c3d4e5f6",
     data: HTTP_SPANS,
   },
   {
@@ -456,6 +459,7 @@ const TRACE_TABS = [
     totalMs: "243ms",
     spanCount: 6,
     color: "text-blue-400",
+    traceId: "7f3e9a1c8b04",
     data: RPC_SPANS,
   },
   {
@@ -465,6 +469,7 @@ const TRACE_TABS = [
     totalMs: "312ms",
     spanCount: 8,
     color: "text-emerald-400",
+    traceId: "2d6c0f9e44a7",
     data: EVENT_SPANS,
   },
   {
@@ -474,6 +479,7 @@ const TRACE_TABS = [
     totalMs: "~24h",
     spanCount: 7,
     color: "text-fuchsia-400",
+    traceId: "b5081a7d3c2e",
     data: WORKFLOW_SPANS,
   },
 ] as const;
@@ -503,7 +509,7 @@ function SpanRow({ span, index, revealed }: { span: Span; index: number; reveale
   const StatusIndicator = () => {
     if (span.status === "error") return <XCircle className="w-3 h-3 text-red-400 shrink-0" />;
     if (span.status === "pending")
-      return <Clock3 className="w-3 h-3 text-amber-400 animate-pulse shrink-0" />;
+      return <Clock3 className="w-3 h-3 text-amber-400 shrink-0" />;
     return <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />;
   };
 
@@ -544,10 +550,18 @@ function SpanRow({ span, index, revealed }: { span: Span; index: number; reveale
           className="flex items-center gap-1.5 py-1.5 pr-2 border-r border-surface-border"
           style={{ paddingLeft: `${10 + span.depth * 16}px` }}
         >
+          {span.depth > 0 && (
+            <span
+              aria-hidden
+              className="-ml-2 h-2.5 w-2 shrink-0 rounded-bl border-b border-l border-surface-border"
+            />
+          )}
           <span className={cn("rounded p-0.5 shrink-0", cfg.bg)}>
             <Icon className={cn("w-2.5 h-2.5", cfg.color)} />
           </span>
-          <span className={cn("type-body-sm truncate flex-1", nameColor)}>{span.name}</span>
+          <span className={cn("type-body-sm truncate flex-1", nameColor)} title={span.name}>
+            {span.name}
+          </span>
           <Badge tone={cn(cfg.bg, cfg.color)}>{span.service}</Badge>
         </div>
 
@@ -595,13 +609,13 @@ export function TracingSection() {
   const tab = TRACE_TABS.find((t) => t.id === activeTab) ?? TRACE_TABS[0];
 
   useEffect(() => {
-    setRevealCount(0);
-    if (!isInView) return;
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReduced) {
       setRevealCount(tab.data.length);
       return;
     }
+    setRevealCount(0);
+    if (!isInView) return;
     let i = 0;
     const interval = setInterval(() => {
       i++;
@@ -616,7 +630,7 @@ export function TracingSection() {
       <SectionHeader
         eyebrow="Unified Tracing"
         title="Every primitive, one waterfall."
-        subtitle="HTTP, RPC, events, workflows, retries — all traced automatically. The same format used in the real dashboard, right here."
+        subtitle="HTTP, RPC, events, workflows, retries — traced automatically, no manual instrumentation. No Jaeger, no OTel collector: spans live in the same PostgreSQL. The exact dashboard view, live below."
       />
 
       <div ref={sectionRef}>
@@ -628,12 +642,9 @@ export function TracingSection() {
           className="mb-4"
         />
 
-        <CodePanel title="ServiceBridge — Trace Waterfall">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border">
-            <div className="flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="type-body-sm text-muted-foreground">{tab.desc}</span>
-            </div>
+        <CodePanel
+          title="ServiceBridge — Trace Waterfall"
+          headerActions={
             <div className="flex items-center gap-2">
               <span className="type-overline-mono text-muted-foreground/60 bg-surface px-2 py-0.5 rounded-xl">
                 {tab.spanCount} spans
@@ -642,6 +653,11 @@ export function TracingSection() {
                 {tab.totalMs}
               </span>
             </div>
+          }
+        >
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-surface-border">
+            <Activity className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="type-body-sm text-muted-foreground truncate">{tab.desc}</span>
           </div>
 
           <div className="overflow-x-auto">
@@ -665,7 +681,7 @@ export function TracingSection() {
 
           <div className="border-t border-surface-border px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 type-overline-mono text-muted-foreground/60 bg-code-chrome">
             <span>
-              trace_id: <span className={cn("font-semibold", tab.color)}>a1b2c3d4e5f6</span>
+              trace_id: <span className={cn("font-semibold", tab.color)}>{tab.traceId}</span>
             </span>
             <div className="flex items-center gap-4">
               <span>
@@ -684,23 +700,32 @@ export function TracingSection() {
           variant="compact"
           icon={Activity}
           title="Cross-service waterfall"
-          description="HTTP, RPC, events, workflows, retries — full execution path in one interactive view."
+          description="Full execution path — HTTP, RPC, events, workflows — in one view."
           iconClassName="text-cyan-400"
         />
         <FeatureCard
           variant="compact"
           icon={RefreshCcw}
           title="Retry group visualization"
-          description="Retry chains show attempt count, recovered errors, and delivery stats inline."
+          description="Retry chains show attempts, recovered errors, and delivery stats inline."
           iconClassName="text-orange-400"
         />
         <FeatureCard
           variant="compact"
           icon={Eye}
           title="Live span updates"
-          description="Open spans animate in real-time. Status changes stream to the dashboard over SSE instantly."
+          description="Open spans animate live — status changes stream over SSE instantly."
           iconClassName="text-emerald-400"
         />
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <Button asChild variant="link" size="sm" className="h-auto px-0 text-emerald-300">
+          <a href="#docs">
+            Read the tracing guide
+            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+          </a>
+        </Button>
       </div>
     </Section>
   );

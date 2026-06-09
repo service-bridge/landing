@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { AlarmClock, Bell, GitMerge, Radio, Waves, Zap } from "lucide-react";
+import { AlarmClock, ArrowRight, Bell, GitMerge, Radio, Waves, Zap } from "lucide-react";
 import type { ElementType, ReactNode } from "react";
 import { useState } from "react";
 import { fadeInUp } from "../components/animations";
 import { BrandMark } from "../components/BrandMark";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
@@ -291,62 +292,30 @@ function EventFanOutDiagram() {
 
 function StreamDiagram() {
   const tokens = [
-    "Building",
-    "distributed",
-    "systems",
-    "at",
-    "scale",
-    "demands",
-    "reliable",
-    "communication.",
-    "ServiceBridge",
-    "handles",
-    "events",
-    "with",
-    "at-least-once",
-    "delivery,",
-    "direct",
-    "gRPC",
-    "calls",
-    "with",
-    "zero",
-    "proxy",
-    "hops,",
+    "A",
+    "saga",
+    "workflow",
+    "runs",
+    "each",
+    "step",
+    "in",
+    "order,",
+    "retries",
+    "on",
+    "failure,",
     "and",
-    "real-time",
-    "streaming",
-    "for",
-    "any",
-    "handler",
-    "output.",
-    "Every",
-    "message",
-    "is",
-    "backed",
-    "by",
-    "PostgreSQL",
-    "—",
-    "replayable,",
-    "durable,",
-    "inspectable.",
-    "Dead-letter",
-    "queues",
-    "catch",
-    "failures",
-    "automatically.",
-    "Retry",
-    "policies,",
-    "exponential",
-    "backoff,",
-    "and",
+    "rolls",
+    "back",
+    "completed",
+    "steps",
+    "with",
     "compensation",
     "handlers",
-    "built",
-    "in.",
-    "One",
-    "binary.",
-    "Every",
-    "pattern.",
+    "if",
+    "a",
+    "later",
+    "step",
+    "fails.",
     "✓",
   ];
   const tokenEntries = tokens.reduce<Array<{ key: string; token: string; delay: number }>>(
@@ -355,7 +324,7 @@ function StreamDiagram() {
       acc.push({
         key: `token-${token}-${duplicates}`,
         token,
-        delay: acc.length * 0.07,
+        delay: acc.length * 0.03,
       });
       return acc;
     },
@@ -450,7 +419,7 @@ function WorkflowDiagram() {
         </div>
         {stepSequence}
         <HArrow dotColor="bg-emerald-400" lineColor="border-emerald-500/30" delay={1.5} />
-        <div className="w-14 h-10 rounded-full border border-emerald-500/30 bg-emerald-500/[0.06] flex items-center justify-center shrink-0">
+        <div className="h-10 px-3 rounded-full border border-emerald-500/30 bg-emerald-500/[0.06] flex items-center justify-center shrink-0">
           <span className="text-3xs font-mono text-emerald-400 font-bold">success</span>
         </div>
       </div>
@@ -635,7 +604,7 @@ const USE_CASES: UseCaseItem[] = [
   {
     id: "rpc",
     label: "Direct RPC",
-    desc: "Zero-hop gRPC calls between services. ServiceBridge handles discovery, mTLS cert identity, and load balancing — without touching the data path.",
+    desc: "Zero-hop gRPC between services. Discovery, mTLS identity and balancing — runtime never touches the data path.",
     icon: Zap,
     iconBg: "bg-yellow-500/10",
     iconColor: "text-yellow-400",
@@ -653,7 +622,7 @@ const USE_CASES: UseCaseItem[] = [
   {
     id: "streams",
     label: "LLM Streaming",
-    desc: "Stream tokens from any worker to a subscriber in real-time over direct gRPC. Zero proxy hops; breaking the loop cancels the stream end-to-end.",
+    desc: "Real-time token streaming over direct gRPC. Zero proxy hops; dropping the loop cancels end-to-end.",
     icon: Waves,
     iconBg: "bg-sky-500/10",
     iconColor: "text-sky-400",
@@ -671,7 +640,7 @@ const USE_CASES: UseCaseItem[] = [
   {
     id: "jobs",
     label: "Scheduled Jobs",
-    desc: "Distributed cron and one-shot delayed jobs. Catchup policy for missed runs and round-robin dispatch to all available workers.",
+    desc: "Distributed cron and one-shot jobs. Catchup for missed runs, round-robin dispatch across workers.",
     icon: AlarmClock,
     iconBg: "bg-amber-500/10",
     iconColor: "text-amber-400",
@@ -680,7 +649,7 @@ const USE_CASES: UseCaseItem[] = [
   {
     id: "alerts",
     label: "Smart Alerts",
-    desc: "Rule-based alerts for DLQ spikes, error rates, and offline services. Delivered to Telegram, webhooks, and in-app with cooldown protection.",
+    desc: "Rule-based alerts for DLQ spikes, error rates and outages. Telegram, webhook and in-app delivery with cooldown.",
     icon: Bell,
     iconBg: "bg-red-500/10",
     iconColor: "text-red-400",
@@ -781,6 +750,19 @@ export function UseCasesSection() {
               <active.Diagram />
             </motion.div>
           </AnimatePresence>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 px-6 py-4 border-t border-surface-border">
+            <a href="#docs">
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                See it in the docs <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </a>
+            <a href="#code">
+              <Button variant="outline" size="sm">
+                Try locally
+              </Button>
+            </a>
+          </div>
         </motion.div>
       </div>
     </Section>

@@ -1,7 +1,8 @@
 import { motion, useInView } from "framer-motion";
-import { Radio, Terminal, Zap } from "lucide-react";
+import { ArrowRight, Radio, Terminal, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CodeLangs } from "../lib/language-context";
+import { Button } from "../ui/button";
 import { Card } from "../ui/Card";
 import { MultiCodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
@@ -181,19 +182,18 @@ export function StreamsSection() {
     <FeatureSection
       id="streams"
       eyebrow="Realtime Streams"
-      title="Stream data as it happens"
-      subtitle="Register a server-streaming RPC handler that yields chunks while it runs. The caller receives every chunk the moment it's yielded — over direct mTLS gRPC, no proxy hop."
+      title="Server-streaming RPC over direct mTLS"
+      subtitle="A handler yields chunks while it runs and the caller gets each one the instant it's yielded — caller-to-callee over direct mTLS gRPC, no proxy hop, no sidecar. Built for LLM token streaming and incremental progress."
       content={
         <div className="space-y-4">
           <Card>
             <p className="type-overline-mono text-muted-foreground mb-2">how it works</p>
             <p className="type-body-sm">
-              A streaming handler registered with{" "}
-              <code className="font-mono text-emerald-400">sb.rpc.handleStream()</code> is an async
-              generator: each <code className="font-mono text-emerald-400">yield</code> pushes one
-              chunk to the caller. The caller consumes it with{" "}
+              <code className="font-mono text-emerald-400">handleStream()</code> is an async generator
+              — each <code className="font-mono text-emerald-400">yield</code> pushes one chunk. The
+              caller reads it via{" "}
               <code className="font-mono text-emerald-400">for await … of sb.stream()</code>; breaking
-              the loop cancels the underlying gRPC stream.
+              the loop cancels the gRPC stream.
             </p>
           </Card>
 
@@ -224,10 +224,13 @@ export function StreamsSection() {
           </p>
           <LiveTerminal />
           <p className="type-body-sm">
-            The caller iterates{" "}
-            <code className="font-mono text-emerald-400">sb.stream()</code> and reads each chunk as it
-            lands — decoded against the method's Protobuf schema.
+            Each chunk is decoded against the method's Protobuf schema.
           </p>
+          <a href="#docs" className="inline-block">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              Read the streaming guide <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </a>
         </div>
       }
       cards={
@@ -236,21 +239,21 @@ export function StreamsSection() {
             variant="compact"
             icon={Terminal}
             title="Async generators"
-            description="A streaming handler is just an async generator — each yield is one chunk. No callback or writer object to manage."
-            iconClassName="text-muted-foreground"
+            description="Just an async generator — each yield is one chunk. No callbacks, no writer object."
+            iconClassName="text-emerald-400"
           />
           <FeatureCard
             variant="compact"
             icon={Radio}
             title="Direct mTLS gRPC"
-            description="Chunks flow caller-to-callee over direct mTLS — no proxy hop, no sidecar. Same transport rules as a unary call."
+            description="Chunks flow caller-to-callee over direct mTLS — no proxy, no sidecar. Same transport as a unary call."
             iconClassName="text-emerald-400"
           />
           <FeatureCard
             variant="compact"
             icon={Zap}
             title="Schema-typed"
-            description="Each chunk is decoded against the method's Protobuf schema. Break the consume loop and the gRPC stream is cancelled."
+            description="Each chunk is decoded against the method's Protobuf schema."
             iconClassName="text-emerald-400"
           />
         </>

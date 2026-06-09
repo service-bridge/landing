@@ -23,6 +23,7 @@ import { Card } from "../ui/Card";
 import { Eyebrow } from "../ui/Eyebrow";
 import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
+import { Button } from "../ui/button";
 
 const REPLACES = [
   {
@@ -110,7 +111,7 @@ const MESH_COMPARE: MeshRow[] = [
     category: "Security",
     capability: "Access policies",
     mesh: "Cluster-wide RBAC via CRDs, coarse-grained",
-    sb: "Per-key policy: capability kill-switches + per-function, per-topic, per-caller allow-lists",
+    sb: "Per-key policy: kill-switches + per-function/topic/caller allow-lists",
     pain: "major",
   },
   // Observability
@@ -125,7 +126,7 @@ const MESH_COMPARE: MeshRow[] = [
     category: "Observability",
     capability: "Trace & log storage",
     mesh: "Requires Jaeger/Tempo + Loki + Promtail pipeline",
-    sb: "Built-in — PostgreSQL-backed, UI; Prometheus-compatible metrics, Loki-compatible logs",
+    sb: "Built-in — PostgreSQL-backed UI; Prometheus & Loki compatible",
     pain: "major",
   },
   {
@@ -140,7 +141,7 @@ const MESH_COMPARE: MeshRow[] = [
     category: "Missing Primitives",
     capability: "Durable events / message broker",
     mesh: "Not included — add Kafka or RabbitMQ",
-    sb: "Guaranteed delivery like RabbitMQ — offline consumers wait, not fail. DLQ, batch replay, zero broker.",
+    sb: "Guaranteed delivery — offline consumers wait, not fail. DLQ, batch replay, zero broker.",
     pain: "critical",
   },
   {
@@ -181,8 +182,7 @@ export function ReplacesSection() {
           Ten tools in. One platform out.
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Every inter-service primitive you need — service mesh, messaging, RPC, scheduling,
-          workflows, tracing, auth, alerting, metrics, and logs — unified under one binary.
+          Mesh, messaging, RPC, jobs, workflows, tracing, auth, alerts, metrics, logs — one binary.
         </p>
       </motion.div>
 
@@ -307,9 +307,9 @@ export function ReplacesSection() {
             The sidecar tax is real. ServiceBridge doesn't collect it.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Istio and Linkerd inject a proxy into every pod — adding memory overhead, latency hops,
-            and operational complexity with every service you deploy. And a mesh still leaves you
-            without Kafka, Temporal, Jaeger, and Alertmanager. ServiceBridge replaces all of it.
+            Istio and Linkerd inject a proxy into every pod — memory, latency hops, ops complexity.
+            And the mesh still has no Kafka, Temporal, Jaeger, or Alertmanager. ServiceBridge does
+            it all.
           </p>
         </div>
 
@@ -320,7 +320,7 @@ export function ReplacesSection() {
             title="250 MB"
             description="Envoy sidecar memory per pod"
             statLabel="= 250 GB RAM at 1,000 pods"
-            className="border-red-500/15 bg-red-500/[0.04]"
+            className="border-red-500/30 bg-red-500/[0.06] ring-1 ring-red-500/20"
           />
           <FeatureCard
             variant="stat"
@@ -341,69 +341,122 @@ export function ReplacesSection() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-code">
-          <div className="overflow-x-auto">
-            <div className="min-w-[640px]">
-              <div className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-b border-surface-border">
-                <div className="type-overline-mono px-4 py-2.5 text-muted-foreground/60">
-                  Capability
-                </div>
-                <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-red-500/60">
-                  Istio / Linkerd
-                </div>
-                <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-emerald-500/70">
-                  ServiceBridge
-                </div>
+          <div className="hidden min-w-0 md:block">
+            <div className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-b border-surface-border">
+              <div className="type-overline-mono px-4 py-2.5 text-muted-foreground/60">
+                Capability
               </div>
+              <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-red-500/60">
+                Istio / Linkerd
+              </div>
+              <div className="type-overline-mono border-l border-surface-border px-4 py-2.5 text-emerald-500/70">
+                ServiceBridge
+              </div>
+            </div>
 
-              {(() => {
-                const categories = [...new Set(MESH_COMPARE.map((r) => r.category))];
-                return categories.map((cat) => {
-                  const rows = MESH_COMPARE.filter((r) => r.category === cat);
-                  return (
-                    <div key={cat}>
-                      <div className="border-t border-surface-border bg-white/[0.01]">
-                        <div className="col-span-3 flex items-center gap-3 px-4 py-1.5">
-                          <span className="type-overline-mono shrink-0 text-muted-foreground/60">
-                            {cat}
+            {(() => {
+              const categories = [...new Set(MESH_COMPARE.map((r) => r.category))];
+              return categories.map((cat) => {
+                const rows = MESH_COMPARE.filter((r) => r.category === cat);
+                return (
+                  <div key={cat}>
+                    <div className="border-t border-surface-border bg-white/[0.01]">
+                      <div className="flex items-center gap-3 px-4 py-1.5">
+                        <span className="type-overline-mono shrink-0 text-muted-foreground/60">
+                          {cat}
+                        </span>
+                        <div className="h-px flex-1 bg-white/[0.04]" />
+                      </div>
+                    </div>
+                    {rows.map((row) => (
+                      <div
+                        key={row.capability}
+                        className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-t border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.015]"
+                      >
+                        <div className="type-body-sm flex items-center px-4 py-2 font-medium leading-snug text-muted-foreground">
+                          {row.capability}
+                        </div>
+                        <div className="flex items-center gap-2 border-l border-white/[0.04] px-4 py-2">
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 flex-shrink-0 rounded-full",
+                              row.pain === "critical"
+                                ? "bg-red-500"
+                                : row.pain === "major"
+                                  ? "bg-orange-400"
+                                  : "bg-yellow-500"
+                            )}
+                          />
+                          <span className="type-body-sm leading-snug text-muted-foreground/60">
+                            {row.mesh}
                           </span>
-                          <div className="h-px flex-1 bg-white/[0.04]" />
+                        </div>
+                        <div className="flex items-center border-l border-white/[0.04] px-4 py-2">
+                          <span className="type-body-sm font-semibold leading-snug text-emerald-400">
+                            {row.sb}
+                          </span>
                         </div>
                       </div>
-                      {rows.map((row) => (
-                        <div
-                          key={row.capability}
-                          className="grid grid-cols-[1.1fr_1.45fr_1.45fr] border-t border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.015]"
-                        >
-                          <div className="type-body-sm flex items-center px-4 py-2 font-medium leading-snug text-muted-foreground">
+                    ))}
+                  </div>
+                );
+              });
+            })()}
+          </div>
+
+          <div className="md:hidden">
+            {(() => {
+              const categories = [...new Set(MESH_COMPARE.map((r) => r.category))];
+              return categories.map((cat) => {
+                const rows = MESH_COMPARE.filter((r) => r.category === cat);
+                return (
+                  <div key={cat}>
+                    <div className="flex items-center gap-3 border-b border-surface-border bg-white/[0.01] px-4 py-1.5">
+                      <span className="type-overline-mono shrink-0 text-muted-foreground/60">
+                        {cat}
+                      </span>
+                      <div className="h-px flex-1 bg-white/[0.04]" />
+                    </div>
+                    {rows.map((row) => (
+                      <div
+                        key={row.capability}
+                        className="border-b border-white/[0.04] px-4 py-3 last:border-b-0"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 flex-shrink-0 rounded-full",
+                              row.pain === "critical"
+                                ? "bg-red-500"
+                                : row.pain === "major"
+                                  ? "bg-orange-400"
+                                  : "bg-yellow-500"
+                            )}
+                          />
+                          <span className="type-body-sm font-medium leading-snug text-foreground/80">
                             {row.capability}
-                          </div>
-                          <div className="flex items-center gap-2 border-l border-white/[0.04] px-4 py-2">
-                            <span
-                              className={cn(
-                                "h-1.5 w-1.5 flex-shrink-0 rounded-full",
-                                row.pain === "critical"
-                                  ? "bg-red-500"
-                                  : row.pain === "major"
-                                    ? "bg-orange-400"
-                                    : "bg-yellow-500"
-                              )}
-                            />
-                            <span className="type-body-sm font-mono leading-snug text-muted-foreground/60">
+                          </span>
+                        </div>
+                        <div className="mt-2 space-y-1.5 pl-3.5">
+                          <div className="flex gap-2">
+                            <span className="type-overline-mono shrink-0 text-red-500/60">Mesh</span>
+                            <span className="type-body-sm leading-snug text-muted-foreground/60">
                               {row.mesh}
                             </span>
                           </div>
-                          <div className="flex items-center border-l border-white/[0.04] px-4 py-2">
-                            <span className="type-body-sm font-mono font-semibold leading-snug text-emerald-400">
+                          <div className="flex gap-2">
+                            <span className="type-overline-mono shrink-0 text-emerald-500/70">SB</span>
+                            <span className="type-body-sm font-semibold leading-snug text-emerald-400">
                               {row.sb}
                             </span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  );
-                });
-              })()}
-            </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-surface-border px-4 py-2.5">
@@ -431,11 +484,24 @@ export function ReplacesSection() {
               10 infrastructure pieces consolidated into 1
             </p>
             <p className="type-body-sm mt-0.5 leading-relaxed">
-              Service mesh + broker + workflows + scheduler + tracing + auth + mTLS + alerts +
-              metrics + logs — one binary, one PostgreSQL, zero sidecar overhead.
+              Mesh, broker, workflows, scheduler, tracing, auth, mTLS, alerts, metrics, logs — one
+              binary, one PostgreSQL, zero sidecars.
             </p>
           </div>
         </Card>
+
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a href="#architecture">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              See the architecture <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </a>
+          <a href="#docs">
+            <Button variant="ghost" size="sm">
+              Read the docs
+            </Button>
+          </a>
+        </div>
       </motion.div>
     </Section>
   );

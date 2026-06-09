@@ -1,5 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import {
+  ArrowRight,
   Ban,
   CheckCircle2,
   Database,
@@ -18,6 +19,7 @@ import { fadeInUp } from "../components/animations";
 import type { CodeLangs } from "../lib/language-context";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { Card } from "../ui/Card";
 import { MultiCodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
@@ -191,7 +193,7 @@ export function DurableEventsSection() {
       id="durable-events"
       eyebrow="Durable Events"
       title="Publish once. Fan-out to every subscriber. Delivered even offline."
-      subtitle="Guaranteed at-least-once delivery — like RabbitMQ queues, without a broker. Publishes go through a local outbox, so they survive a runtime restart. Offline subscribers get their messages the moment they reconnect."
+      subtitle="At-least-once delivery, like RabbitMQ queues but without a broker. A local outbox keeps publishes alive across a runtime restart; offline subscribers receive everything the moment they reconnect."
       content={
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
@@ -200,19 +202,16 @@ export function DurableEventsSection() {
               Guaranteed delivery. Offline consumers wait, not fail.
             </h2>
             <p className="mt-3 type-body-sm">
-              Every subscriber gets its own independent delivery ledger. Each publish first lands in
-              a local{" "}
+              Every subscriber has its own delivery ledger. Each publish lands in a local{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 outbox
               </code>{" "}
-              and drains to the runtime in the background, so publishing survives a transient runtime
-              outage. If a subscriber is offline, its deliveries hold until it reconnects — then the
-              runtime delivers immediately. A failed handler{" "}
+              and drains in the background, surviving a runtime outage. Offline subscribers hold their
+              deliveries until they reconnect. A failing handler{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 Nack
               </code>
-              s; the runtime retries with backoff and routes to the DLQ after the attempt budget is
-              spent.
+              s — the runtime retries with backoff, then routes to the DLQ.
             </p>
             <div className="mt-4 space-y-1.5">
               <p className="type-overline-mono text-muted-foreground mb-2">PublishOpts</p>
@@ -222,10 +221,16 @@ export function DurableEventsSection() {
                   className="flex items-center gap-3 rounded-xl border border-surface-border bg-code px-3 py-1.5"
                 >
                   <code className="text-xs font-mono text-emerald-300">{field}</code>
-                  <span className="text-3xs text-muted-foreground/60 ml-auto">{desc}</span>
+                  <span className="text-2xs text-muted-foreground ml-auto">{desc}</span>
                 </div>
               ))}
             </div>
+            <Button asChild variant="link" size="sm" className="mt-3 h-auto px-0 text-emerald-300">
+              <a href="#docs">
+                Read the events API
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            </Button>
           </Card>
           <MultiCodeBlock
             code={EVENT_CODE}
@@ -237,13 +242,14 @@ export function DurableEventsSection() {
       }
       demo={
         <motion.div variants={fadeInUp}>
-          <CodePanel title="delivery pipeline · order.created">
-            <div className="absolute top-2.5 right-4">
+          <CodePanel
+            title="delivery pipeline · order.created"
+            headerActions={
               <Badge tone="border-emerald-400/20 bg-emerald-400/[0.08] text-emerald-400">
                 at-least-once
               </Badge>
-            </div>
-
+            }
+          >
             <div ref={pipelineRef} className="p-5 space-y-5">
               {/* Pipeline stages */}
               <div className="overflow-x-auto">
@@ -273,7 +279,7 @@ export function DurableEventsSection() {
                           >
                             {stage.label}
                           </p>
-                          <p className="text-3xs text-muted-foreground/60 mt-0.5">{stage.desc}</p>
+                          <p className="text-2xs text-muted-foreground/80 mt-0.5">{stage.desc}</p>
                         </motion.div>
                         {i < PIPELINE.length - 1 && (
                           <div className="flex-1 relative h-px bg-white/[0.06] min-w-[8px]">
@@ -288,7 +294,7 @@ export function DurableEventsSection() {
                                 transition={{
                                   duration: 1.2,
                                   ease: "linear",
-                                  repeat: Infinity,
+                                  repeat: 3,
                                   delay: i * 0.28,
                                 }}
                               />
@@ -334,7 +340,7 @@ export function DurableEventsSection() {
                         >
                           {sub.service}
                         </p>
-                        <p className="text-3xs font-mono text-muted-foreground/60 flex-1 truncate">
+                        <p className="text-2xs font-mono text-muted-foreground flex-1 truncate">
                           {sub.pattern}
                         </p>
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -343,13 +349,13 @@ export function DurableEventsSection() {
                             {outCfg.label}
                           </Badge>
                           {sub.attempts > 1 && (
-                            <span className="text-3xs font-mono text-muted-foreground/70">
+                            <span className="text-2xs font-mono text-muted-foreground">
                               <RefreshCcw className="w-2.5 h-2.5 inline" /> {sub.attempts}×
                             </span>
                           )}
                         </div>
                         {sub.note && (
-                          <p className="text-3xs font-mono text-muted-foreground/60 shrink-0">
+                          <p className="hidden max-w-[10rem] truncate text-2xs font-mono text-muted-foreground/80 shrink-0 sm:block">
                             {sub.note}
                           </p>
                         )}
@@ -362,7 +368,7 @@ export function DurableEventsSection() {
               <div className="h-px bg-white/[0.04]" />
 
               {/* Retry ledger */}
-              <div>
+              <div className="pt-1">
                 <div className="flex items-center gap-2 mb-2">
                   <RefreshCcw className="w-3.5 h-3.5 text-amber-400" />
                   <p className="type-overline-mono text-muted-foreground">
@@ -374,7 +380,7 @@ export function DurableEventsSection() {
                     <div
                       key={i}
                       className={cn(
-                        "flex items-center gap-2 rounded-xl border px-3 py-1.5 font-mono text-3xs",
+                        "flex items-center gap-2 rounded-xl border px-3 py-1.5 font-mono text-2xs",
                         row.stage === "error"
                           ? "border-red-500/15 bg-red-500/[0.04] text-red-400/80"
                           : row.stage === "dlq"
@@ -400,7 +406,7 @@ export function DurableEventsSection() {
             variant="compact"
             icon={Radio}
             title="Wildcard topics"
-            description="Subscribe with patterns like order.* and receive all matching events. Segment count must match exactly."
+            description="Subscribe with patterns like order.* to catch every matching event."
             iconClassName="text-blue-400"
           />
           <FeatureCard
@@ -414,7 +420,7 @@ export function DurableEventsSection() {
             variant="compact"
             icon={Fingerprint}
             title="Idempotency keys"
-            description="publish() returns an eventId. Re-publishing with the same idempotencyKey is deduped by the runtime — no double delivery, no double processing."
+            description="publish() returns an eventId. Re-publishing with the same idempotencyKey is deduped — no double delivery."
             iconClassName="text-violet-400"
           />
           <FeatureCard
@@ -435,7 +441,7 @@ export function DurableEventsSection() {
             variant="compact"
             icon={PauseCircle}
             title="Offline? Messages wait."
-            description="If a subscriber is offline, its deliveries hold until it reconnects — no progress lost. The moment it reconnects, the runtime delivers immediately."
+            description="Offline subscribers hold their deliveries until they reconnect — no progress lost."
             iconClassName="text-sky-400"
           />
         </>

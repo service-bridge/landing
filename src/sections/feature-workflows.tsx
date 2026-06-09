@@ -1,13 +1,12 @@
 import { motion, useInView } from "framer-motion";
 import {
-  CheckCircle2,
+  ArrowRight,
   Clock,
   GitBranch,
   GitMerge,
   Hourglass,
   Radio,
   RefreshCcw,
-  Workflow,
   Zap,
 } from "lucide-react";
 import { useRef } from "react";
@@ -15,6 +14,7 @@ import { fadeInUp } from "../components/animations";
 import type { CodeLangs } from "../lib/language-context";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { Card } from "../ui/Card";
 import { MultiCodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
@@ -155,8 +155,8 @@ export function WorkflowsSection() {
     <FeatureSection
       id="workflows"
       eyebrow="Workflows"
-      title="DAG orchestration. Parallel. Conditional. Checkpointed."
-      subtitle="Define steps as a dependency graph with waitFor. Independent branches run concurrently in execution waves. A when predicate skips branches based on prior step output. Sleep, wait_event and wait_signal suspend without holding threads."
+      title="Orchestrate steps as a DAG — the runtime parallels, checkpoints and retries."
+      subtitle="Durable workflows without Temporal or separate workers — the same Go binary. Define steps as a dependency graph with waitFor — independent branches run concurrently. A when predicate skips branches; sleep, wait_event and wait_signal suspend without holding threads."
       content={
         <div className="space-y-4">
           <Card>
@@ -164,24 +164,31 @@ export function WorkflowsSection() {
             <h2 className="mt-2 type-subsection-title">Declare deps. Runtime handles the rest.</h2>
             <p className="mt-3 type-body-sm">
               Steps with independent dependencies run in parallel automatically. Fan-in waits for
-              all branches. The{" "}
+              all branches. A false{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">when</code>{" "}
-              predicate skips a step when it evaluates false — and the skip cascades transitively
-              through all dependents. The runtime checkpoints each step: only the failed step
-              retries, not the whole workflow.
+              predicate skips the step and cascades to all dependents. Each step is checkpointed —
+              only the failed step retries, not the whole workflow.
             </p>
+            <Button asChild variant="link" size="sm" className="mt-3 h-auto px-0 text-violet-300">
+              <a href="#docs">
+                Read the workflow API
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            </Button>
           </Card>
           <MultiCodeBlock code={WORKFLOW_CODE} filename={{ ts: "merchant-onboarding.ts" }} />
         </div>
       }
       demo={
         <motion.div variants={fadeInUp}>
-          <CodePanel title="workflow run · merchant.onboarding">
-            <div className="absolute top-2.5 right-4">
+          <CodePanel
+            title="workflow run · merchant.onboarding"
+            headerActions={
               <Badge tone="border-fuchsia-500/20 bg-fuchsia-500/[0.08] text-fuchsia-300">
                 running
               </Badge>
-            </div>
+            }
+          >
             <div ref={vizRef} className="p-5 space-y-0">
               {WAVES.map((wave, i) => {
                 const isLast = i === WAVES.length - 1;
@@ -209,7 +216,7 @@ export function WorkflowsSection() {
                         </div>
                       ) : (
                         <div className="rounded-lg border border-surface-border bg-surface px-2 py-1 text-center w-full">
-                          <p className="text-3xs font-mono text-muted-foreground/60">step</p>
+                          <p className="text-2xs font-mono text-muted-foreground/80">step</p>
                         </div>
                       )}
                       {!isLast && <div className="w-px flex-1 min-h-[20px] bg-white/[0.05] mt-1" />}
@@ -220,7 +227,7 @@ export function WorkflowsSection() {
                       <div
                         className={cn(
                           "flex gap-2",
-                          wave.nodes.length > 1 ? "flex-row" : "flex-col"
+                          wave.nodes.length > 1 ? "flex-col sm:flex-row" : "flex-col"
                         )}
                       >
                         {wave.nodes.map((node) => {
@@ -266,7 +273,7 @@ export function WorkflowsSection() {
                         })}
                       </div>
                       {wave.note && (
-                        <p className="mt-1 text-3xs font-mono text-muted-foreground/60">
+                        <p className="mt-1 text-2xs font-mono text-muted-foreground/80">
                           {wave.note}
                         </p>
                       )}
@@ -291,14 +298,14 @@ export function WorkflowsSection() {
             variant="compact"
             icon={GitBranch}
             title="Conditional branching"
-            description="The when predicate matches on prior step output (equals, in, and, or, not). A false predicate marks the step skipped and cascades to all dependents."
+            description="when matches on prior step output (equals, in, and, or, not). A false predicate skips the step and cascades to dependents."
             iconClassName="text-amber-400"
           />
           <FeatureCard
             variant="compact"
             icon={Clock}
             title="Sleep & wait_event"
-            description="Suspend a run for seconds to days with a durable sleep. wait_event and wait_signal park the run until a matching event or external signal arrives — no thread held."
+            description="Durable sleep suspends a run for seconds to days. wait_event and wait_signal park it until a matching event or signal — no thread held."
             iconClassName="text-violet-400"
           />
           <FeatureCard

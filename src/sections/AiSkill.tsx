@@ -9,14 +9,14 @@ import { Section } from "../ui/Section";
 import { TabStrip } from "../ui/Tabs";
 
 const INSTALL_TABS = [
-  { id: "npm" as const, label: "with the SDK" },
+  { id: "npm" as const, label: "npm" },
   { id: "degit" as const, label: "degit" },
 ];
 
 type TabId = (typeof INSTALL_TABS)[number]["id"];
 
 const CMDS: Record<TabId, string> = {
-  npm: "npm i service-bridge && cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node",
+  npm: "npm i servicebridge && cp -r node_modules/servicebridge/skill .claude/skills/servicebridge-node",
   degit: "npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node",
 };
 
@@ -48,9 +48,8 @@ export function AiSkillSection() {
           Your agent already knows ServiceBridge
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          The official skill teaches Claude Code and other coding agents the real Node SDK — RPC,
-          durable events, workflows, jobs, and Express, Fastify, and Hono integration. Grounded in
-          the shipped API, not a guess.
+          Teaches Claude Code and other agents the real Node SDK — RPC, events, workflows, jobs,
+          HTTP integrations. Grounded in the shipped API, not a guess.
         </p>
       </motion.div>
 
@@ -65,8 +64,8 @@ export function AiSkillSection() {
           </pre>
           <div className="border-t border-surface-border px-4 py-2.5">
             <p className="type-caption text-muted-foreground/80">
-              Drops into your agent&apos;s skills directory — <code>.claude/skills/</code> for Claude
-              Code, or wherever your agent reads skills. Restart the agent to load it.
+              Drops into <code>.claude/skills/</code> (or wherever your agent reads skills). Restart
+              the agent to load it.
             </p>
           </div>
         </div>

@@ -1,19 +1,21 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import {
   AlarmClock,
+  AlertTriangle,
+  ArrowRight,
   CalendarClock,
   CheckCircle2,
   Clock,
   GitBranch,
   RefreshCcw,
   Timer,
-  Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fadeInUp } from "../components/animations";
 import type { CodeLangs, FilenameLangs } from "../lib/language-context";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
+import { Button } from "../ui/button";
 import { Card } from "../ui/Card";
 import { MultiCodeBlock } from "../ui/CodeBlock";
 import { CodePanel } from "../ui/CodePanel";
@@ -24,15 +26,15 @@ import { TabStrip } from "../ui/Tabs";
 type Trig = "cron" | "delayed" | "interval";
 type TraceStatus = "success" | "running" | "pending" | "dead_letter";
 
-const TRIG_ICON: Record<Trig, typeof Zap> = {
+const TRIG_ICON: Record<Trig, typeof Timer> = {
   cron: CalendarClock,
   delayed: AlarmClock,
   interval: Timer,
 };
 const TRIG_TONE: Record<Trig, string> = {
-  cron: "border-blue-500/20 bg-blue-500/[0.08] text-blue-300",
-  delayed: "border-amber-500/20 bg-amber-500/[0.08] text-amber-300",
-  interval: "border-fuchsia-500/20 bg-fuchsia-500/[0.08] text-fuchsia-300",
+  cron: "border-blue-500/30 bg-transparent text-blue-300/80",
+  delayed: "border-amber-500/30 bg-transparent text-amber-300/80",
+  interval: "border-fuchsia-500/30 bg-transparent text-fuchsia-300/80",
 };
 const STATUS_TONE: Record<TraceStatus, string> = {
   success: "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-300",
@@ -233,27 +235,37 @@ export function JobsSection() {
       id="jobs"
       eyebrow="Built-in Jobs"
       title="Cron, delayed, and interval — no daemon needed."
-      subtitle="Persistent scheduled executions backed by PostgreSQL. No external cron daemon, no separate queue worker. Each job is a handler that can call RPC, publish events, or start workflows — with catchup and overlap policies plus automatic lease-based recovery."
+      subtitle="Scheduled jobs backed by PostgreSQL — no cron daemon, no queue worker. Each job is a handler that calls RPC, publishes events, or starts workflows, with at-least-once recovery."
       content={
         <motion.div variants={fadeInUp} className="space-y-4">
           <Card>
             <p className="type-overline-mono text-muted-foreground">scheduler</p>
             <h2 className="mt-2 type-subsection-title">Declare a handler. Run it on schedule.</h2>
             <p className="mt-3 type-body-sm">
-              Jobs are stored in PostgreSQL and dispatched on a 1s poll. After downtime,{" "}
+              Jobs live in PostgreSQL, dispatched on a 1s poll. After downtime,{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
-                catchup: "fire_all"
+                fire_all
               </code>{" "}
-              replays every missed tick while{" "}
+              replays missed ticks,{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
-                "skip"
+                skip
               </code>{" "}
-              advances to the next slot. Lease-based locking plus{" "}
+              jumps to the next slot.{" "}
+              <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
+                Lease
+              </code>{" "}
+              locking +{" "}
               <code className="text-foreground/80 bg-white/[0.05] px-1 rounded text-xs">
                 overlap
               </code>{" "}
-              policy keep at most one active execution per job.
+              keep one active run per job.
             </p>
+            <Button asChild variant="link" size="sm" className="mt-3 h-auto px-0 text-emerald-300">
+              <a href="#docs">
+                Read the Jobs guide
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            </Button>
           </Card>
           <div className="rounded-2xl border border-surface-border overflow-hidden">
             <div className="border-b border-surface-border bg-code-chrome px-4 py-3">
@@ -279,12 +291,9 @@ export function JobsSection() {
             </div>
 
             <div ref={tableRef} className="p-4 space-y-2">
-              <div
-                className="grid gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-muted-foreground/60"
-                style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
-              >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 px-3 pb-1 text-3xs font-mono uppercase tracking-widest text-muted-foreground/60">
                 <span>job</span>
-                <span>trigger</span>
+                <span className="hidden sm:inline">trigger</span>
                 <span>status</span>
                 <span>next</span>
               </div>
@@ -297,16 +306,15 @@ export function JobsSection() {
                       : run.status === "success"
                         ? CheckCircle2
                         : run.status === "dead_letter"
-                          ? Zap
+                          ? AlertTriangle
                           : Clock;
                   return (
                     <motion.div
                       key={run.id}
-                      initial={{ opacity: 0, y: -8, backgroundColor: "rgba(52,211,153,0.08)" }}
+                      initial={{ opacity: 0, y: -8, backgroundColor: "rgba(255,255,255,0.08)" }}
                       animate={{ opacity: 1, y: 0, backgroundColor: "rgba(255,255,255,0)" }}
                       transition={{ duration: 0.4 }}
-                      className="grid gap-3 items-center rounded-xl border border-surface-border bg-surface px-4 py-3"
-                      style={{ gridTemplateColumns: "minmax(0,1fr) auto auto auto" }}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] sm:grid-cols-[minmax(0,1fr)_auto_auto_auto] gap-3 items-center rounded-xl border border-surface-border bg-surface px-4 py-3"
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold font-display text-zinc-200">
@@ -316,7 +324,9 @@ export function JobsSection() {
                           {run.schedule}
                         </p>
                       </div>
-                      <TrigIcon trig={run.trig} />
+                      <span className="hidden sm:inline-flex">
+                        <TrigIcon trig={run.trig} />
+                      </span>
                       <Badge
                         tone={cn(
                           STATUS_TONE[run.status],
@@ -343,6 +353,13 @@ export function JobsSection() {
         <>
           <FeatureCard
             variant="compact"
+            icon={GitBranch}
+            title="Call anything"
+            description="The handler is plain code with a ctx — call an RPC, publish a durable event, or start a workflow. Declared deps gate what the job body may reach."
+            iconClassName="text-fuchsia-400"
+          />
+          <FeatureCard
+            variant="compact"
             icon={AlarmClock}
             title="Cron, delayed, interval"
             description="5-field cron with timezone, one-shot delayed jobs at an exact instant, or fixed millisecond intervals."
@@ -352,21 +369,14 @@ export function JobsSection() {
             variant="compact"
             icon={CalendarClock}
             title="Catchup + overlap"
-            description="fire_all or fire_once replays ticks missed during downtime; skip drops the backlog. overlap controls whether a tick can start while the previous run is busy."
+            description="fire_all / fire_once replay missed ticks; skip drops the backlog. overlap gates a new tick while the previous run is busy."
             iconClassName="text-blue-400"
-          />
-          <FeatureCard
-            variant="compact"
-            icon={GitBranch}
-            title="Call anything"
-            description="The handler is plain code with a ctx — call an RPC, publish a durable event, or start a workflow. Declared deps gate what the job body may reach."
-            iconClassName="text-fuchsia-400"
           />
           <FeatureCard
             variant="compact"
             icon={Timer}
             title="Lease-based recovery"
-            description="At most one active execution per job. If a node dies, lease expiry lets the runtime reclaim and re-dispatch — delivered at-least-once, idempotent by ctx.idempotencyKey."
+            description="One active run per job. If a node dies, lease expiry lets the runtime reclaim and re-dispatch — at-least-once, idempotent by ctx.idempotencyKey."
             iconClassName="text-cyan-400"
           />
         </>
