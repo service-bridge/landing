@@ -3,6 +3,8 @@
 // a stale deploy. The above-the-fold sections (Hero, Replaces, Features) stay
 // in the main bundle so first paint never waits on a chunk fetch.
 import { TraceFlowSection } from "../components/RunFlow";
+import { Button } from "../ui/button";
+import { ClusterHeading } from "../ui/ClusterHeading";
 import { AiSkillSection } from "./AiSkill";
 import { ArchitectureSection } from "./Architecture";
 import { CodeSection } from "./Code";
@@ -19,6 +21,30 @@ import { WorkflowsSection } from "./feature-workflows";
 import { GetStartedSection } from "./GetStarted";
 import { UseCasesSection } from "./UseCases";
 
+function MidCta({ onDocs }: { onDocs: () => void }) {
+  return (
+    <div className="border-t border-border">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-center gap-4 py-12 text-center sm:flex-row sm:gap-6">
+          <p className="text-base text-muted-foreground">
+            One Go binary plus Postgres — no sidecars, no extra infra.
+          </p>
+          <div className="flex items-center gap-3">
+            <a href="#start">
+              <Button size="sm" className="cursor-pointer">
+                Get started
+              </Button>
+            </a>
+            <Button size="sm" variant="ghost" className="cursor-pointer" onClick={onDocs}>
+              Read the docs
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function HomeBelowFold({ onDocs }: { onDocs: () => void }) {
   return (
     <>
@@ -27,16 +53,25 @@ export function HomeBelowFold({ onDocs }: { onDocs: () => void }) {
       <CodeSection />
       <AiSkillSection />
       <ArchitectureSection />
+
+      <MidCta onDocs={onDocs} />
+
+      <ClusterHeading label="Communication" title="Direct, durable, and real-time messaging" />
       <DirectRpcSection />
       <HttpSection />
       <DurableEventsSection />
       <StreamsSection />
+      <DiscoveryMapSection />
+
+      <ClusterHeading label="Orchestration" title="Coordinate work across services" />
       <WorkflowsSection />
       <JobsSection />
-      <DiscoveryMapSection />
+
+      <ClusterHeading label="Observability & Reliability" title="See everything, recover from anything" />
       <TracingSection />
       <ObservabilitySection />
       <AlertsSection />
+
       <GetStartedSection onDocs={onDocs} />
     </>
   );

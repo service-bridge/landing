@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.audit-shots/
 .env
 .DS_Store
 
