@@ -12,14 +12,14 @@ const T = {
     whatTitle: "What it is",
     whatP:
       "A self-contained skill (a SKILL.md plus per-domain reference files) that teaches an agent the exact ServiceBridge Node SDK: the two-phase lifecycle (declare handlers and dependencies, then start, then act), RPC, durable events, workflows, jobs, and the Express, Fastify, and Hono integrations. Every signature and snippet is taken from the shipped SDK and was type-checked and run against a live runtime.",
-    livesP: "It lives in the public SDK repo at",
+    livesP: "It ships inside the Node SDK at",
     livesPAfter: "and loads like any other agent skill.",
 
     installTitle: "Install",
     installP:
-      "Copy the skill folder into your agent's skills directory. For Claude Code that is .claude/skills/ in your project (or ~/.claude/skills/ for all projects). The degit one-liner pulls just the skill subfolder:",
+      "The skill comes with the npm package. Install the SDK, then copy the skill into your agent's skills directory — .claude/skills/ for Claude Code, or ~/.claude/skills/ for all projects:",
     installCaption:
-      "Restart the agent after installing so it picks up the new skill. No degit? Use git clone and copy the folder by hand:",
+      "Not installed yet? Pull it straight from the repo with degit (or git clone). Restart the agent afterwards so it picks up the skill:",
 
     coversTitle: "What the agent learns",
     coversP:
@@ -43,14 +43,14 @@ const T = {
     whatTitle: "Что это",
     whatP:
       "Самодостаточный навык (SKILL.md плюс reference-файлы по доменам), который обучает агента точному Node SDK ServiceBridge: жизненному циклу из двух фаз (объявить хендлеры и зависимости, затем start, затем вызовы), RPC, надёжным событиям, воркфлоу, джобам и интеграциям с Express, Fastify и Hono. Каждая сигнатура и сниппет взяты из реального SDK, проверены типами и прогоны против живого рантайма.",
-    livesP: "Навык лежит в публичном репозитории SDK по пути",
+    livesP: "Навык лежит внутри Node SDK по пути",
     livesPAfter: "и загружается как любой другой навык агента.",
 
     installTitle: "Установка",
     installP:
-      "Скопируйте папку навыка в директорию навыков вашего агента. Для Claude Code это .claude/skills/ в проекте (или ~/.claude/skills/ для всех проектов). Однострочник degit тянет только подпапку навыка:",
+      "Навык едет вместе с npm-пакетом. Установите SDK и скопируйте навык в директорию навыков агента — .claude/skills/ для Claude Code или ~/.claude/skills/ для всех проектов:",
     installCaption:
-      "После установки перезапустите агента, чтобы он подхватил навык. Нет degit? Склонируйте через git и скопируйте папку вручную:",
+      "Ещё не установили SDK? Заберите навык прямо из репозитория через degit (или git clone). После — перезапустите агента, чтобы он подхватил навык:",
 
     coversTitle: "Чему учится агент",
     coversP:
@@ -78,20 +78,25 @@ export function PageAiSkill() {
       <H2 id="what">{t.whatTitle}</H2>
       <P>{t.whatP}</P>
       <P>
-        {t.livesP} <Mono>service-bridge/skills/servicebridge-node/</Mono> {t.livesPAfter}
+        {t.livesP} <Mono>service-bridge/node/skill/</Mono> {t.livesPAfter}
       </P>
 
       <H2 id="install">{t.installTitle}</H2>
       <P>{t.installP}</P>
       <DocCodeBlock
         lang="bash"
-        code={`npx degit service-bridge/sdk/skills/servicebridge-node .claude/skills/servicebridge-node`}
+        code={`npm i service-bridge
+cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node`}
       />
       <Callout type="info">{t.installCaption}</Callout>
       <DocCodeBlock
         lang="bash"
-        code={`git clone --depth 1 https://github.com/service-bridge/sdk
-cp -r sdk/skills/servicebridge-node .claude/skills/`}
+        code={`# degit — pulls just the skill folder
+npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node
+
+# or git clone
+git clone --depth 1 https://github.com/service-bridge/sdk
+cp -r sdk/node/skill .claude/skills/servicebridge-node`}
       />
 
       <H2 id="covers">{t.coversTitle}</H2>
@@ -103,7 +108,7 @@ cp -r sdk/skills/servicebridge-node .claude/skills/`}
       </ul>
       <P>
         <a
-          href="https://github.com/service-bridge/sdk/tree/main/skills/servicebridge-node"
+          href="https://github.com/service-bridge/sdk/tree/main/node/skill"
           target="_blank"
           rel="noreferrer"
           className="text-primary hover:underline font-medium"

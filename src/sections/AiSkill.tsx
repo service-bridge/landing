@@ -9,15 +9,15 @@ import { Section } from "../ui/Section";
 import { TabStrip } from "../ui/Tabs";
 
 const INSTALL_TABS = [
+  { id: "npm" as const, label: "with the SDK" },
   { id: "degit" as const, label: "degit" },
-  { id: "git" as const, label: "git clone" },
 ];
 
 type TabId = (typeof INSTALL_TABS)[number]["id"];
 
 const CMDS: Record<TabId, string> = {
-  degit: "npx degit service-bridge/sdk/skills/servicebridge-node .claude/skills/servicebridge-node",
-  git: "git clone --depth 1 https://github.com/service-bridge/sdk && cp -r sdk/skills/servicebridge-node .claude/skills/",
+  npm: "npm i service-bridge && cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node",
+  degit: "npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node",
 };
 
 const PAYOFF = [
@@ -26,10 +26,10 @@ const PAYOFF = [
   "Idiomatic proto schemas, the way the SDK expects them",
 ];
 
-const SKILL_URL = "https://github.com/service-bridge/sdk/tree/main/skills/servicebridge-node";
+const SKILL_URL = "https://github.com/service-bridge/sdk/tree/main/node/skill";
 
 export function AiSkillSection() {
-  const [tab, setTab] = useState<TabId>("degit");
+  const [tab, setTab] = useState<TabId>("npm");
   const cmd = CMDS[tab];
 
   return (
