@@ -254,6 +254,18 @@ export const NAV: NavGroup[] = [
         ],
       },
       {
+        id: "cli",
+        label: "sb CLI",
+        ru: "CLI sb",
+        toc: [
+          { id: "run", label: "Run it", ru: "Запуск" },
+          { id: "login", label: "Log in", ru: "Вход" },
+          { id: "output", label: "Output format", ru: "Формат вывода" },
+          { id: "commands", label: "Command overview", ru: "Обзор команд" },
+          { id: "trace-tree", label: "Reading a trace", ru: "Чтение трейса" },
+        ],
+      },
+      {
         id: "tls-mtls",
         label: "TLS / mTLS",
         ru: "TLS / mTLS",

@@ -14,6 +14,7 @@ import { PageAlertsOverview } from "./docs/PageAlertsOverview";
 import { PageAlertsRules } from "./docs/PageAlertsRules";
 import { PageAlertsTelegram } from "./docs/PageAlertsTelegram";
 import { PageAiSkill } from "./docs/PageAiSkill";
+import { PageCli } from "./docs/PageCli";
 import { PageConfigPush } from "./docs/PageConfigPush";
 import { PageDlqReplay } from "./docs/PageDlqReplay";
 import { PageEndToEnd } from "./docs/PageEndToEnd";
@@ -61,6 +62,7 @@ const PAGES: Record<string, () => React.ReactNode> = {
   "sdk-options": PageSdkOptions,
   "server-config": PageServerConfig,
   "service-keys": PageServiceKeys,
+  cli: PageCli,
   "tls-mtls": PageTlsMtls,
   reliability: PageReliability,
   "offline-queue": PageOfflineQueue,
