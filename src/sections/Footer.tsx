@@ -28,7 +28,7 @@ export function FooterSection() {
               Documentation
             </a>
             <a
-              href="https://www.npmjs.com/package/servicebridge"
+              href="https://www.npmjs.com/package/service-bridge"
               target="_blank"
               rel="noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"

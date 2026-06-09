@@ -89,8 +89,8 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
           <div className="pb-8 flex-1 min-w-0">
             <h3 className="type-subsection-title mb-1">Install the runtime</h3>
             <p className="type-body-sm mb-4">
-              One command runs ServiceBridge + PostgreSQL via Docker Compose, opens the console for
-              your admin account, and writes the CA to <code>~/.servicebridge/ca.crt</code>.
+              One command runs ServiceBridge + PostgreSQL via Docker Compose and opens the dashboard
+              console for your admin account.
             </p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5 flex items-center justify-between">

@@ -18,7 +18,7 @@ set -euo pipefail
 # ── Config (overridable via env, never prompted) ───────────────────────────────
 SB_REGISTRY="${SB_REGISTRY:-ghcr.io}"
 SB_OWNER="${SB_OWNER:-service-bridge}"
-SB_REPO="${SB_REGISTRY}/${SB_OWNER}/servicebridge"
+SB_REPO="${SB_REGISTRY}/${SB_OWNER}/service-bridge"
 SB_DIR="${SB_DIR:-${HOME}/servicebridge}"
 
 # Newest published version = the moving `edge` tag, unless a version is pinned
@@ -84,7 +84,7 @@ wait_until_ready() {
     tries=$((tries - 1))
   done
 
-  warn "Runtime did not report ready yet — check: docker compose logs -f servicebridge"
+  warn "Runtime did not report ready yet — check: docker compose logs -f service-bridge"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -107,20 +107,20 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: servicebridge
+      POSTGRES_DB: service-bridge
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - servicebridge-pg:/var/lib/postgresql
+      - service-bridge-pg:/var/lib/postgresql
     networks:
-      - servicebridge-internal
+      - service-bridge-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d servicebridge"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d service-bridge"]
       interval: 10s
       timeout: 3s
       retries: 10
 
-  servicebridge:
+  service-bridge:
     image: ${SB_IMAGE}
     restart: unless-stopped
     depends_on:
@@ -130,17 +130,17 @@ services:
       - "${SB_HTTP_PORT}:14444"
       - "${SB_GRPC_PORT}:14445"
     networks:
-      - servicebridge-internal
-      - servicebridge-external
+      - service-bridge-internal
+      - service-bridge-external
 
 networks:
-  servicebridge-internal:
+  service-bridge-internal:
     driver: bridge
-  servicebridge-external:
+  service-bridge-external:
     driver: bridge
 
 volumes:
-  servicebridge-pg:
+  service-bridge-pg:
 COMPOSE
   ok "Created docker-compose.yml"
 
@@ -169,8 +169,8 @@ COMPOSE
   echo
   echo "Commands:"
   echo "    cd ${SB_DIR}"
-  echo "    docker compose logs -f servicebridge"
-  echo "    docker compose restart servicebridge"
+  echo "    docker compose logs -f service-bridge"
+  echo "    docker compose restart service-bridge"
   echo "    docker compose pull && docker compose up -d   # update"
   echo "    docker compose down                           # stop"
   echo

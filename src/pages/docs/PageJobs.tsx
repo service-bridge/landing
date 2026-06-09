@@ -83,7 +83,7 @@ const T = {
 
     cName: "cron / delayed / interval",
     cDesc:
-      "The trigger. Exactly one key. cron: { cron, tz? } (5-field). delayed: { delayed: { at } } where at is a Date, unix-ms number, or ISO string. interval: { interval } in milliseconds.",
+      'The trigger. Exactly one key. { cron: string, tz?: string } for 5-field cron (e.g. "0 9 * * *"). { delayed: { at } } where at is a Date, unix-ms number, or ISO string. { interval: number } in milliseconds.',
     catchupDesc:
       '"skip" | "fire_once" | "fire_all" — how to handle ticks missed during a runtime outage.',
     overlapDesc:
@@ -181,7 +181,7 @@ const T = {
 
     cName: "cron / delayed / interval",
     cDesc:
-      "Триггер. Ровно один ключ. cron: { cron, tz? } (5 полей). delayed: { delayed: { at } }, где at — Date, число unix-ms или ISO-строка. interval: { interval } в миллисекундах.",
+      'Триггер. Ровно один ключ. { cron: string, tz?: string } для 5-полевого cron (напр. "0 9 * * *"). { delayed: { at } }, где at — Date, число unix-ms или ISO-строка. { interval: number } в миллисекундах.',
     catchupDesc:
       '"skip" | "fire_once" | "fire_all" — как обрабатывать тики, пропущенные во время простоя runtime.',
     overlapDesc:

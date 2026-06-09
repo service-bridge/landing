@@ -16,7 +16,7 @@ const INSTALL_TABS = [
 type TabId = (typeof INSTALL_TABS)[number]["id"];
 
 const CMDS: Record<TabId, string> = {
-  npm: "npm i servicebridge && cp -r node_modules/servicebridge/skill .claude/skills/servicebridge-node",
+  npm: "npm i service-bridge && cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node",
   degit: "npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node",
 };
 

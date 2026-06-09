@@ -76,7 +76,7 @@ sb.on("disconnected", ({ reason }) => {
   reconnectAttempts: 0,      // 0 = retry forever, never auto-stop
 });`,
     backoffNote:
-      "Certificate rotation is a separate, scheduled path (RefreshCert ~30 min before expiry) and does add random jitter to spread thousands of clients across a window. That jitter applies to cert refresh, not to the reconnect loop.",
+      "Certificate rotation is a separate, scheduled path: the SDK runs RefreshCert ~30 min before the leaf expires (certRefreshLeadMs, 1_800_000 ms default) and adds random jitter of up to ±5 min (certRefreshJitterMs, 300_000 ms default) to spread renewals across clients. That jitter applies to cert refresh, not to the reconnect loop — reconnect stays a fixed-interval retry.",
 
     positionTitle: "Where progress is tracked",
     positionP1:
@@ -158,7 +158,7 @@ sb.on("disconnected", ({ reason }) => {
   reconnectAttempts: 0,      // 0 = повторять вечно, без авто-остановки
 });`,
     backoffNote:
-      "Ротация сертификата — это отдельный плановый путь (RefreshCert примерно за 30 минут до истечения), и он действительно добавляет случайный jitter, чтобы размазать тысячи клиентов по окну. Этот jitter относится к ротации cert'а, а не к циклу переподключения.",
+      "Ротация сертификата — это отдельный плановый путь: SDK запускает RefreshCert примерно за 30 минут до истечения leaf (certRefreshLeadMs, по умолчанию 1_800_000 ms) и добавляет случайный jitter до ±5 минут (certRefreshJitterMs, по умолчанию 300_000 ms), чтобы размазать обновления по клиентам. Этот jitter относится к ротации cert'а, а не к циклу переподключения — переподключение остаётся повтором с фиксированным интервалом.",
 
     positionTitle: "Где отслеживается прогресс",
     positionP1:

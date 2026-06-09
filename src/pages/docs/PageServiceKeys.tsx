@@ -1,7 +1,6 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
 import {
   Callout,
-  DocCodeBlock,
   H2,
   H3,
   P,
@@ -17,19 +16,19 @@ const T = {
     description:
       "Every service authenticates with a bootstrap key and gets a per-service access policy: seven capability flags plus optional egress/acceptance rules. The runtime enforces them; the SDK surfaces violations.",
     intro:
-      "You mint a service key with the sbkey-gen CLI and pass it to the ServiceBridge constructor. The runtime is the only authority: it owns the policy in Postgres and gates every register, call, publish, and run.",
+      "You create a service key in the runtime dashboard and pass it to the ServiceBridge constructor. The runtime is the only authority: it owns the policy in Postgres and gates every register, call, publish, and run.",
 
     keyTitle: "Bootstrap key",
     keyP1:
-      "A key is a single string of the form sb.<base64url>. It encodes the key id, a secret, and the CA cert, so the SDK can build an mTLS channel without a separate trust step. Generate one with sbkey-gen against the runtime's Postgres:",
+      "A key is a single string of the form sb.<base64url>. It encodes the key id, a secret, and the CA cert, so the SDK can build an mTLS channel without a separate trust step. Create one in the dashboard at http://localhost:14444 under Services → Create service, then copy the sb.… string:",
     keyP2:
-      "stdout is exactly the key line, nothing else, so you can pipe it straight into your secret store. Pass the runtime url and the key to the constructor:",
+      "Store the key in your secret store. Pass the runtime url and the key to the constructor:",
     keyCallout:
       "Keys start with the sb. prefix. There are no header-based keys: the SDK presents the key over mTLS during the gRPC handshake, never as an HTTP header.",
 
     capsTitle: "Capabilities",
     capsP1:
-      "Each service carries seven boolean capability flags. They are coarse kill-switches: a disabled flag denies that operation regardless of any finer rule. Four are acceptance-side (registering a handler of that type), three are egress-side (sending at all). All default to on after sbkey-gen. The Type column below shows the side.",
+      "Each service carries seven boolean capability flags. They are coarse kill-switches: a disabled flag denies that operation regardless of any finer rule. Four are acceptance-side (registering a handler of that type), three are egress-side (sending at all). All default to on for a new key. The Type column below shows the side.",
     capRows: [
       { name: "rpc.handle", side: "acceptance", desc: "Register RPC handlers (sb.rpc.handle)" },
       { name: "event.handle", side: "acceptance", desc: "Subscribe to events (sb.event.handle)" },
@@ -41,7 +40,7 @@ const T = {
     ],
 
     capsDisable:
-      "Disable acceptance capabilities at key-creation time with -no-cap (comma-separated). Only the four *.handle flags can be disabled this way:",
+      "Disable acceptance capabilities when you create the key in the dashboard. Only the four *.handle flags can be disabled this way.",
 
     policyTitle: "Granular policy",
     policyP1:
@@ -78,11 +77,11 @@ const T = {
 
     exampleTitle: "Example: locked-down payments key",
     exampleP1:
-      "Create a payments service that may only be called by analytics, may publish only payments.* events, and may not register workflows or jobs:",
+      "Create a payments service that may only be called by analytics, may publish only payments.* events, and may not register workflows or jobs.",
     exampleP2:
       "This key keeps rpc.handle and event.handle on, disables workflow.handle and job.handle, restricts publishing to the payments.* pattern, and accepts RPC only from analytics on the charge method. Everything else is denied at the runtime.",
     exampleEditP:
-      "Policy is editable live with the sb-policy CLI; changes apply in under a second via Postgres NOTIFY, no restart needed:",
+      "Policy is editable live in the dashboard under Services; changes apply in under a second via Postgres NOTIFY, no restart needed.",
   },
   ru: {
     badge: "Production",
@@ -90,19 +89,19 @@ const T = {
     description:
       "Каждый сервис аутентифицируется bootstrap-ключом и получает свою политику доступа: семь capability-флагов плюс опциональные egress/acceptance-правила. Применяет их runtime; SDK показывает нарушения.",
     intro:
-      "Ключ сервиса вы создаёте утилитой sbkey-gen и передаёте в конструктор ServiceBridge. Единственный авторитет — runtime: он держит политику в Postgres и гейтит каждую регистрацию, вызов, публикацию и запуск.",
+      "Ключ сервиса вы создаёте в дашборде рантайма и передаёте в конструктор ServiceBridge. Единственный авторитет — runtime: он держит политику в Postgres и гейтит каждую регистрацию, вызов, публикацию и запуск.",
 
     keyTitle: "Bootstrap-ключ",
     keyP1:
-      "Ключ — одна строка вида sb.<base64url>. В ней закодированы id ключа, секрет и CA-сертификат, поэтому SDK строит mTLS-канал без отдельного шага доверия. Сгенерируйте ключ через sbkey-gen в Postgres рантайма:",
+      "Ключ — одна строка вида sb.<base64url>. В ней закодированы id ключа, секрет и CA-сертификат, поэтому SDK строит mTLS-канал без отдельного шага доверия. Создайте ключ в дашборде на http://localhost:14444 в разделе Services → Create service и скопируйте строку sb.…:",
     keyP2:
-      "В stdout уходит ровно строка ключа и ничего больше, поэтому её можно сразу положить в ваш secret store. Передайте url рантайма и ключ в конструктор:",
+      "Сохраните ключ в ваш secret store. Передайте url рантайма и ключ в конструктор:",
     keyCallout:
       "Ключи начинаются с префикса sb. Ключей через HTTP-заголовок нет: SDK предъявляет ключ по mTLS во время gRPC-рукопожатия, а не как HTTP-заголовок.",
 
     capsTitle: "Возможности",
     capsP1:
-      "У каждого сервиса семь булевых capability-флагов. Это грубые kill-switch: выключенный флаг денит операцию независимо от любых тонких правил. Четыре — acceptance-сторона (регистрация хендлера этого типа), три — egress-сторона (отправка в принципе). После sbkey-gen все включены. В колонке Type ниже указана сторона.",
+      "У каждого сервиса семь булевых capability-флагов. Это грубые kill-switch: выключенный флаг денит операцию независимо от любых тонких правил. Четыре — acceptance-сторона (регистрация хендлера этого типа), три — egress-сторона (отправка в принципе). У нового ключа все включены. В колонке Type ниже указана сторона.",
     capRows: [
       { name: "rpc.handle", side: "acceptance", desc: "Регистрация RPC-хендлеров (sb.rpc.handle)" },
       { name: "event.handle", side: "acceptance", desc: "Подписка на события (sb.event.handle)" },
@@ -114,7 +113,7 @@ const T = {
     ],
 
     capsDisable:
-      "Acceptance-возможности отключаются при создании ключа флагом -no-cap (через запятую). Так отключаются только четыре *.handle-флага:",
+      "Acceptance-возможности отключаются при создании ключа в дашборде. Так отключаются только четыре *.handle-флага.",
 
     policyTitle: "Гранулярная политика",
     policyP1:
@@ -151,33 +150,21 @@ const T = {
 
     exampleTitle: "Пример: ключ payments с ограничениями",
     exampleP1:
-      "Создадим сервис payments, который может вызывать только analytics, публиковать только события payments.* и не может регистрировать воркфлоу и задачи:",
+      "Создадим сервис payments, который может вызывать только analytics, публиковать только события payments.* и не может регистрировать воркфлоу и задачи.",
     exampleP2:
       "Этот ключ оставляет rpc.handle и event.handle включёнными, отключает workflow.handle и job.handle, ограничивает публикацию паттерном payments.* и принимает RPC только от analytics на метод charge. Всё остальное денится в рантайме.",
     exampleEditP:
-      "Политика редактируется на лету через CLI sb-policy; изменения вступают в силу меньше чем за секунду через Postgres NOTIFY, без перезапуска:",
+      "Политика редактируется на лету в дашборде в разделе Services; изменения вступают в силу меньше чем за секунду через Postgres NOTIFY, без перезапуска.",
   },
 };
-
-const KEY_GEN = `go run ./cmd/sbkey-gen \\
-  -name=payments \\
-  -ca-cert=./certs/ca.crt \\
-  -ca-key=./certs/ca.key \\
-  -dsn="postgres://servicebridge:servicebridge@localhost:5433/servicebridge"`;
 
 const KEY_CONSTRUCT = `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445", // gRPC control plane
-  serviceKey,        // the sb.<...> string from sbkey-gen
+  serviceKey,        // the sb.<...> string from the dashboard
 );
 await sb.start();`;
-
-const NO_CAP = `go run ./cmd/sbkey-gen \\
-  -name=payments \\
-  -ca-cert=./certs/ca.crt -ca-key=./certs/ca.key \\
-  -dsn="postgres://..." \\
-  -no-cap=workflow.handle,job.handle`;
 
 const POLICY_VIOLATION = `sb.on("policy_violation", ({ declaration, value, denySide, reason }) => {
   // declaration: "rpc.call" | "rpc.handle" | "event.publish"
@@ -201,25 +188,6 @@ sb.on("disconnected", ({ reason, error }) => {
 
 await sb.start();`;
 
-const EXAMPLE_GEN = `go run ./cmd/sbkey-gen \\
-  -name=payments \\
-  -ca-cert=./certs/ca.crt -ca-key=./certs/ca.key \\
-  -dsn="postgres://..." \\
-  -no-cap=workflow.handle,job.handle \\
-  -allow-action='event.publish:payments.*' \\
-  -allow-acceptance='rpc.handle:analytics/charge'`;
-
-const SB_POLICY = `# inspect current policy
-sb-policy show --dsn=... --service=payments
-
-# add an egress rule (this service may call analytics/track)
-sb-policy action add --dsn=... --service=payments \\
-  --kind=rpc.call --target=analytics/track
-
-# add an acceptance rule (api-gateway may call my charge method)
-sb-policy acceptance add --dsn=... --service=payments \\
-  --kind=rpc.handle --caller=api-gateway --method=charge`;
-
 export function PageServiceKeys() {
   const { locale } = useDocLocale();
   const t = T[locale];
@@ -234,7 +202,6 @@ export function PageServiceKeys() {
 
       <H3 id="bootstrap-key">{t.keyTitle}</H3>
       <P>{t.keyP1}</P>
-      <DocCodeBlock code={KEY_GEN} lang="bash" />
       <P>{t.keyP2}</P>
       <MultiCodeBlock code={{ ts: KEY_CONSTRUCT }} />
       <Callout type="info">{t.keyCallout}</Callout>
@@ -245,7 +212,6 @@ export function PageServiceKeys() {
         rows={t.capRows.map((r) => ({ name: r.name, type: r.side, desc: r.desc }))}
       />
       <P>{t.capsDisable}</P>
-      <DocCodeBlock code={NO_CAP} lang="bash" />
 
       <H2 id="policy">{t.policyTitle}</H2>
       <P>{t.policyP1}</P>
@@ -269,10 +235,8 @@ export function PageServiceKeys() {
 
       <H2 id="key-example">{t.exampleTitle}</H2>
       <P>{t.exampleP1}</P>
-      <DocCodeBlock code={EXAMPLE_GEN} lang="bash" />
       <P>{t.exampleP2}</P>
       <P>{t.exampleEditP}</P>
-      <DocCodeBlock code={SB_POLICY} lang="bash" />
     </div>
   );
 }

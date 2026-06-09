@@ -25,10 +25,10 @@ const T = {
     requiredP:
       "The runtime cannot store the address of its own database inside that same database, so the DSN is the one value that comes from outside. It is baked into the binary as a default that points at the bundled Postgres. Override it with the -pg-url flag when you run your own database. PostgreSQL 18 or newer is required.",
     requiredFlagExample: `# default DSN baked into the binary — run as-is for the bundled Postgres
-servicebridge
+service-bridge
 
 # point at your own database
-servicebridge -pg-url "postgres://sb:secret@db.internal:5432/servicebridge?sslmode=require"`,
+service-bridge -pg-url "postgres://sb:secret@db.internal:5432/service-bridge?sslmode=require"`,
     requiredFlag: [
       {
         name: "-pg-url",
@@ -115,10 +115,10 @@ servicebridge -pg-url "postgres://sb:secret@db.internal:5432/servicebridge?sslmo
     requiredP:
       "Runtime не может хранить адрес своей базы внутри этой же базы, поэтому DSN — единственное значение извне. Он вшит в бинарь как дефолт, указывающий на встроенный Postgres. Перекройте его флагом -pg-url, когда поднимаете собственную базу. Требуется PostgreSQL 18 или новее.",
     requiredFlagExample: `# дефолтный DSN вшит в бинарь — для встроенного Postgres запускайте как есть
-servicebridge
+service-bridge
 
 # указать собственную базу
-servicebridge -pg-url "postgres://sb:secret@db.internal:5432/servicebridge?sslmode=require"`,
+service-bridge -pg-url "postgres://sb:secret@db.internal:5432/service-bridge?sslmode=require"`,
     requiredFlag: [
       {
         name: "-pg-url",

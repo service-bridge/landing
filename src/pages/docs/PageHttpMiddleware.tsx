@@ -38,7 +38,7 @@ const T = {
     onlyThreeCallout:
       "Three integrations exist today: Express, Fastify, and Hono, all on Node. FastAPI, Flask, and Go web frameworks are roadmap, not shipped.",
     pkgCallout:
-      "The package is published as servicebridge. HTTP integrations are subpath exports: servicebridge/express, servicebridge/fastify, servicebridge/hono.",
+      "The package is published as service-bridge. HTTP integrations are subpath exports: service-bridge/express, service-bridge/fastify, service-bridge/hono.",
     beforeStartCallout:
       "Attach before sb.start(). The endpoint and routes land in the registry and ship in the first registration. It is safe to attach before the worker connects.",
 
@@ -89,7 +89,7 @@ const T = {
     onlyThreeCallout:
       "Существует ровно три интеграции: Express, Fastify и Hono — все на Node. FastAPI, Flask и Go-фреймворки — это дорожная карта, а не готовый код.",
     pkgCallout:
-      "Пакет публикуется как servicebridge. HTTP-интеграции — subpath-экспорты: servicebridge/express, servicebridge/fastify, servicebridge/hono.",
+      "Пакет публикуется как service-bridge. HTTP-интеграции — subpath-экспорты: service-bridge/express, service-bridge/fastify, service-bridge/hono.",
     beforeStartCallout:
       "Подключайте до sb.start(). Endpoint и роуты оседают в реестре и уходят в первой регистрации. Подключение до подключения воркера безопасно.",
 
@@ -149,13 +149,13 @@ export function PageHttpMiddleware() {
 
       {/* ── Express ──────────────────────────────────────────────── */}
       <H2 id="express">{t.expressTitle}</H2>
-      <DocCodeBlock lang="bash" code={`bun add express servicebridge`} />
+      <DocCodeBlock lang="bash" code={`bun add express service-bridge`} />
       <P>{t.expressP}</P>
       <MultiCodeBlock
         code={{
           ts: `import express from "express";
 import { ServiceBridge } from "service-bridge";
-import { attachExpress } from "servicebridge/express";
+import { attachExpress } from "service-bridge/express";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);
 const app = express();
@@ -185,13 +185,13 @@ await sb.start();`,
 
       {/* ── Fastify ──────────────────────────────────────────────── */}
       <H2 id="fastify">{t.fastifyTitle}</H2>
-      <DocCodeBlock lang="bash" code={`bun add fastify servicebridge`} />
+      <DocCodeBlock lang="bash" code={`bun add fastify service-bridge`} />
       <P>{t.fastifyP}</P>
       <MultiCodeBlock
         code={{
           ts: `import Fastify from "fastify";
 import { ServiceBridge } from "service-bridge";
-import { sbFastify } from "servicebridge/fastify";
+import { sbFastify } from "service-bridge/fastify";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);
 const app = Fastify();
@@ -217,13 +217,13 @@ await sb.start();`,
 
       {/* ── Hono ─────────────────────────────────────────────────── */}
       <H2 id="hono">{t.honoTitle}</H2>
-      <DocCodeBlock lang="bash" code={`bun add hono servicebridge`} />
+      <DocCodeBlock lang="bash" code={`bun add hono service-bridge`} />
       <P>{t.honoP}</P>
       <MultiCodeBlock
         code={{
           ts: `import { Hono } from "hono";
 import { ServiceBridge } from "service-bridge";
-import { attachHono } from "servicebridge/hono";
+import { attachHono } from "service-bridge/hono";
 
 const sb = new ServiceBridge("localhost:14445", process.env.SERVICE_KEY!);
 const app = new Hono();

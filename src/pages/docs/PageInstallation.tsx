@@ -125,7 +125,7 @@ export function PageInstallation() {
       <DocCodeBlock
         lang="bash"
         code={`SB_VERSION=2.0.0-alpha bash <(curl -fsSL https://servicebridge.dev/install.sh)   # pin an exact version
-SB_IMAGE=ghcr.io/service-bridge/servicebridge:edge bash <(curl -fsSL https://servicebridge.dev/install.sh)   # full override`}
+SB_IMAGE=ghcr.io/service-bridge/service-bridge:edge bash <(curl -fsSL https://servicebridge.dev/install.sh)   # full override`}
       />
       <Callout type="info">{t.channelOverrideCallout}</Callout>
 
@@ -151,21 +151,21 @@ SB_IMAGE=ghcr.io/service-bridge/servicebridge:edge bash <(curl -fsSL https://ser
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: servicebridge
+      POSTGRES_DB: service-bridge
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
-      - servicebridge-pg:/var/lib/postgresql
+      - service-bridge-pg:/var/lib/postgresql
     networks:
-      - servicebridge-internal
+      - service-bridge-internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d servicebridge"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d service-bridge"]
       interval: 10s
       timeout: 3s
       retries: 10
 
-  servicebridge:
-    image: ghcr.io/service-bridge/servicebridge:alpha
+  service-bridge:
+    image: ghcr.io/service-bridge/service-bridge:alpha
     restart: unless-stopped
     depends_on:
       postgres:
@@ -174,17 +174,17 @@ SB_IMAGE=ghcr.io/service-bridge/servicebridge:edge bash <(curl -fsSL https://ser
       - "14444:14444"
       - "14445:14445"
     networks:
-      - servicebridge-internal
-      - servicebridge-external
+      - service-bridge-internal
+      - service-bridge-external
 
 networks:
-  servicebridge-internal:
+  service-bridge-internal:
     driver: bridge
-  servicebridge-external:
+  service-bridge-external:
     driver: bridge
 
 volumes:
-  servicebridge-pg:`}
+  service-bridge-pg:`}
       />
       <Callout type="info">
         {t.pgCallout}
@@ -203,8 +203,8 @@ volumes:
       <DocCodeBlock
         lang="bash"
         code={`cd ~/servicebridge
-docker compose logs -f servicebridge          # follow logs
-docker compose restart servicebridge          # restart
+docker compose logs -f service-bridge          # follow logs
+docker compose restart service-bridge          # restart
 docker compose pull && docker compose up -d   # update
 docker compose down                           # stop`}
       />

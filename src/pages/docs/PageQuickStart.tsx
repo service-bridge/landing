@@ -1,4 +1,4 @@
-// keywords: servicebridge quick-start getting-started bun add service-bridge npm i servicebridge RPC gRPC microservices Node.js TypeScript SDK distributed-tracing mTLS service-mesh zero-sidecar proto schema sb.rpc.handle sb.rpc.call sb.client
+// keywords: servicebridge quick-start getting-started bun add service-bridge npm i service-bridge RPC gRPC microservices Node.js TypeScript SDK distributed-tracing mTLS service-mesh zero-sidecar proto schema sb.rpc.handle sb.rpc.call sb.client
 
 import { MultiCodeBlock } from "../../ui/CodeBlock";
 import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader } from "../../ui/DocComponents";
@@ -93,7 +93,7 @@ export function PageQuickStart() {
         code={{
           ts: `bun add service-bridge
 # or
-npm i servicebridge`,
+npm i service-bridge`,
         }}
       />
       <Callout type="info">{t.installNote}</Callout>
