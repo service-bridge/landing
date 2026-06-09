@@ -21,7 +21,6 @@ import { BrandMark } from "./components/BrandMark";
 import { DocLocaleProvider } from "./lib/locale-context";
 import { LanguageProvider } from "./lib/language-context";
 import { cn } from "./lib/utils";
-import DocsPage from "./pages/DocsPage";
 import { FeaturesSection } from "./sections/Features";
 import { FooterSection } from "./sections/Footer";
 import { FEATURE_MENU_ITEMS } from "./sections/feature-menu-items";
@@ -29,51 +28,11 @@ import { HeroSection } from "./sections/Hero";
 import { ReplacesSection } from "./sections/Replaces";
 import { Button } from "./ui/button";
 
-const UseCasesSection = lazy(() =>
-  import("./sections/UseCases").then((m) => ({ default: m.UseCasesSection }))
-);
-const TraceFlowSection = lazy(() =>
-  import("./components/RunFlow").then((m) => ({ default: m.TraceFlowSection }))
-);
-const CodeSection = lazy(() => import("./sections/Code").then((m) => ({ default: m.CodeSection })));
-const AiSkillSection = lazy(() =>
-  import("./sections/AiSkill").then((m) => ({ default: m.AiSkillSection }))
-);
-const ArchitectureSection = lazy(() =>
-  import("./sections/Architecture").then((m) => ({ default: m.ArchitectureSection }))
-);
-const DirectRpcSection = lazy(() =>
-  import("./sections/feature-direct-rpc").then((m) => ({ default: m.DirectRpcSection }))
-);
-const HttpSection = lazy(() =>
-  import("./sections/feature-http").then((m) => ({ default: m.HttpSection }))
-);
-const DurableEventsSection = lazy(() =>
-  import("./sections/feature-durable-events").then((m) => ({ default: m.DurableEventsSection }))
-);
-const StreamsSection = lazy(() =>
-  import("./sections/feature-streams").then((m) => ({ default: m.StreamsSection }))
-);
-const WorkflowsSection = lazy(() =>
-  import("./sections/feature-workflows").then((m) => ({ default: m.WorkflowsSection }))
-);
-const JobsSection = lazy(() =>
-  import("./sections/feature-jobs").then((m) => ({ default: m.JobsSection }))
-);
-const DiscoveryMapSection = lazy(() =>
-  import("./sections/feature-discovery-map").then((m) => ({ default: m.DiscoveryMapSection }))
-);
-const TracingSection = lazy(() =>
-  import("./sections/feature-tracing").then((m) => ({ default: m.TracingSection }))
-);
-const ObservabilitySection = lazy(() =>
-  import("./sections/feature-observability").then((m) => ({ default: m.ObservabilitySection }))
-);
-const AlertsSection = lazy(() =>
-  import("./sections/feature-alerts").then((m) => ({ default: m.AlertsSection }))
-);
-const GetStartedSection = lazy(() =>
-  import("./sections/GetStarted").then((m) => ({ default: m.GetStartedSection }))
+// Docs is a separate route — defer the whole thing (30+ pages) until visited.
+const DocsPage = lazy(() => import("./pages/DocsPage"));
+// All below-the-fold home sections in one deferred chunk (see HomeBelowFold).
+const HomeBelowFold = lazy(() =>
+  import("./sections/HomeBelowFold").then((m) => ({ default: m.HomeBelowFold }))
 );
 
 const NAV_LINKS = [
@@ -240,7 +199,9 @@ export default function App() {
     return (
       <LanguageProvider>
         <DocLocaleProvider>
-          <DocsPage onBack={() => navigateTo("landing")} />
+          <Suspense fallback={<div className="min-h-dvh bg-background" />}>
+            <DocsPage onBack={() => navigateTo("landing")} />
+          </Suspense>
         </DocLocaleProvider>
       </LanguageProvider>
     );
@@ -444,22 +405,7 @@ export default function App() {
           <ReplacesSection />
           <FeaturesSection />
           <Suspense fallback={null}>
-            <UseCasesSection />
-            <TraceFlowSection />
-            <CodeSection />
-            <AiSkillSection />
-            <ArchitectureSection />
-            <DirectRpcSection />
-            <HttpSection />
-            <DurableEventsSection />
-            <StreamsSection />
-            <WorkflowsSection />
-            <JobsSection />
-            <DiscoveryMapSection />
-            <TracingSection />
-            <ObservabilitySection />
-            <AlertsSection />
-            <GetStartedSection onDocs={() => navigateTo("docs")} />
+            <HomeBelowFold onDocs={() => navigateTo("docs")} />
           </Suspense>
         </main>
 
