@@ -62,6 +62,11 @@ const T = {
       { name: "version", type: "—", desc: "Print the sb build version" },
     ],
 
+    grpApply: "apply",
+    grpApplyRows: [
+      { name: "apply -f <file>", type: "—", desc: "Apply a ServiceSet manifest atomically. --dry-run previews, --prune soft-revokes absent services, --keys-out saves new API keys to a JSON file for CI." },
+    ],
+
     grpService: "service",
     grpServiceRows: [
       { name: "ls / get", type: "—", desc: "List services / show one" },
@@ -70,6 +75,8 @@ const T = {
       { name: "activate / revoke", type: "—", desc: "Activate a revoked service / revoke an active one" },
       { name: "stats / metrics / activity", type: "—", desc: "Service counts / per-channel metrics / activity series" },
       { name: "policy show / set", type: "—", desc: "Show or set capabilities and allow-lists" },
+      { name: "export", type: "—", desc: "Export all active services as a ServiceSet manifest (stdout or --out file)." },
+      { name: "key rotate <name>", type: "—", desc: "Rotate the API key for a service by name. New key shown once — UUID and policy unchanged." },
     ],
 
     grpObs: "Traces, logs, metrics, map",
@@ -156,6 +163,11 @@ const T = {
       { name: "version", type: "—", desc: "Напечатать build-версию sb" },
     ],
 
+    grpApply: "apply",
+    grpApplyRows: [
+      { name: "apply -f <file>", type: "—", desc: "Применить манифест ServiceSet атомарно. --dry-run показывает diff, --prune soft-revoke отсутствующих сервисов, --keys-out сохраняет новые API-ключи в JSON-файл для CI." },
+    ],
+
     grpService: "service",
     grpServiceRows: [
       { name: "ls / get", type: "—", desc: "Список сервисов / показать один" },
@@ -164,6 +176,8 @@ const T = {
       { name: "activate / revoke", type: "—", desc: "Активировать отозванный сервис / отозвать активный" },
       { name: "stats / metrics / activity", type: "—", desc: "Счётчики сервисов / per-channel метрики / ряды активности" },
       { name: "policy show / set", type: "—", desc: "Показать или задать возможности и allow-листы" },
+      { name: "export", type: "—", desc: "Экспортировать все активные сервисы как манифест ServiceSet (stdout или --out файл)." },
+      { name: "key rotate <name>", type: "—", desc: "Ротировать API-ключ сервиса по имени. Новый ключ показывается один раз — UUID и политика не меняются." },
     ],
 
     grpObs: "Трейсы, логи, метрики, карта",
@@ -283,6 +297,9 @@ export function PageCli() {
 
       <H3 id="auth-util">{t.grpAuth}</H3>
       <ParamTable rows={t.grpAuthRows} />
+
+      <H3 id="apply">{t.grpApply}</H3>
+      <ParamTable rows={t.grpApplyRows} />
 
       <H3 id="service">{t.grpService}</H3>
       <P>
