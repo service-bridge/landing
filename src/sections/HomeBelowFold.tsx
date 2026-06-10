@@ -4,7 +4,6 @@
 // in the main bundle so first paint never waits on a chunk fetch.
 import { TraceFlowSection } from "../components/RunFlow";
 import { Button } from "../ui/button";
-import { ClusterHeading } from "../ui/ClusterHeading";
 import { AiSkillSection } from "./AiSkill";
 import { ArchitectureSection } from "./Architecture";
 import { CodeSection } from "./Code";
@@ -56,18 +55,15 @@ export function HomeBelowFold({ onDocs }: { onDocs: () => void }) {
 
       <MidCta onDocs={onDocs} />
 
-      <ClusterHeading label="Communication" title="Direct, durable, and real-time messaging" />
       <DirectRpcSection />
       <HttpSection />
       <DurableEventsSection />
       <StreamsSection />
       <DiscoveryMapSection />
 
-      <ClusterHeading label="Orchestration" title="Coordinate work across services" />
       <WorkflowsSection />
       <JobsSection />
 
-      <ClusterHeading label="Observability & Reliability" title="See everything, recover from anything" />
       <TracingSection />
       <ObservabilitySection />
       <AlertsSection />
