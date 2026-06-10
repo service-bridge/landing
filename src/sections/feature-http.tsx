@@ -88,7 +88,7 @@ const TRACE_HEADERS = [
   {
     label: "X-SB-Trace",
     desc: "Incoming header → request joins the existing trace",
-    tone: "text-indigo-400 border-indigo-500/25 bg-indigo-500/10",
+    tone: "text-violet-400 border-violet-500/25 bg-violet-500/10",
     priority: "join",
   },
   {
@@ -115,8 +115,8 @@ const REQUEST_PATH = [
   {
     label: "integration",
     sub: "HTTP.HANDLE op · X-SB-Trace parsed",
-    color: "bg-indigo-400",
-    tone: "text-indigo-300 bg-indigo-500/[0.06] border-indigo-500/20",
+    color: "bg-violet-400",
+    tone: "text-violet-300 bg-violet-500/[0.06] border-violet-500/20",
   },
   {
     label: "handler",
@@ -261,8 +261,8 @@ export function HttpSection() {
             </div>
 
             <div className="mt-5 flex items-center gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2.5">
-              <div className="rounded-xl bg-indigo-500/10 p-1.5 shrink-0">
-                <Route className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="rounded-xl bg-violet-500/10 p-1.5 shrink-0">
+                <Route className="w-3.5 h-3.5 text-violet-400" />
               </div>
               <p className="type-body-sm">
                 Routes appear in the <span className="text-zinc-200">Service Map</span> and{" "}
@@ -286,7 +286,7 @@ export function HttpSection() {
             icon={Globe}
             title="Express, Fastify, Hono"
             description="One integration API across the three Node frameworks. Same behavior, same trace format."
-            iconClassName="text-indigo-400"
+            iconClassName="text-violet-400"
           />
           <FeatureCard
             variant="compact"

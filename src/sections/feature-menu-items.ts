@@ -12,8 +12,8 @@ export const FEATURE_MENU_ITEMS = [
     href: "#http",
     desc: "Express, Fastify, Hono auto-trace",
     iconName: "Globe",
-    iconColor: "text-indigo-400",
-    iconBg: "bg-indigo-500/10",
+    iconColor: "text-violet-400",
+    iconBg: "bg-violet-500/10",
   },
   {
     label: "Durable Events",
