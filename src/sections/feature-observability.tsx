@@ -74,8 +74,8 @@ export function ObservabilitySection() {
     <FeatureSection
       id="observability"
       eyebrow="Metrics & Logs"
-      title={<>Drop Prometheus, Loki, and Jaeger. Telemetry ships with the runtime.</>}
-      subtitle="Every SDK call emits logs, metrics, and traces into PostgreSQL — explored in the built-in console at :14444. No exporters, no sidecars, no time-series DB."
+      title={<>Telemetry ships with the runtime. Prometheus, Loki & OTLP export built in.</>}
+      subtitle="Every SDK call emits logs, metrics, and traces into PostgreSQL — explored in the built-in console at :14444. When you need your existing Prometheus, Loki, or Jaeger stack, enable the export in Settings — no restart, no sidecar."
       content={
         <div className="space-y-4">
           <CodePanel
@@ -206,8 +206,8 @@ export function ObservabilitySection() {
           <FeatureCard
             variant="compact"
             icon={Database}
-            title="One data store"
-            description="Ops, logs, metrics — all in PostgreSQL. Standard backups, no time-series DB."
+            title="Export to your stack"
+            description="Prometheus pull :14446/metrics, Loki push, OTLP traces push — all optional, all enabled in Settings."
             iconClassName="text-emerald-400"
           />
         </>

@@ -66,7 +66,7 @@ export const FEATURE_MENU_ITEMS = [
   {
     label: "Metrics & Logs",
     href: "#observability",
-    desc: "metrics & logs in the built-in dashboard, all in PostgreSQL",
+    desc: "dashboard + Prometheus, Loki & OTLP export",
     iconName: "BarChart2",
     iconColor: "text-orange-400",
     iconBg: "bg-orange-500/10",

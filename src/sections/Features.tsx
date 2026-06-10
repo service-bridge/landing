@@ -149,7 +149,7 @@ const FEATURE_GROUPS: FeatureGroup[] = [
     features: [
       {
         title: "Granular Access Policy",
-        desc: "Each service gets a scoped key: which topics, methods, and services it may touch. Policy is enforced as gates at registration, rpc.call, event.publish, and workflow.run — control plane to worker.",
+        desc: "Each service gets a scoped key: which topics, methods, and services it may touch. Policy enforced gate-by-gate at registration, rpc.call, event.publish, and workflow.run. GitOps via sb apply.",
         icon: KeySquare,
         iconBg: "bg-violet-500/10",
         iconColor: "text-violet-400",
@@ -182,11 +182,11 @@ const FEATURE_GROUPS: FeatureGroup[] = [
       },
       {
         title: "Logs & Metrics",
-        desc: "Structured logs and counter / gauge / histogram metrics, auto-tagged with the active trace and op id. Expand any span in the waterfall to read its log lines inline. No exporter sidecar.",
+        desc: "Structured logs and counter / gauge / histogram metrics, auto-tagged with the active trace and op id. Expand any span in the waterfall to read its log lines inline. Prometheus, Loki & OTLP export built in.",
         icon: BarChart2,
         iconBg: "bg-orange-500/10",
         iconColor: "text-orange-400",
-        badge: "trace-correlated",
+        badge: "Prometheus, Loki, OTLP",
         badgeTone: "text-orange-400 bg-orange-400/10 border-orange-400/20",
       },
       {
