@@ -87,6 +87,33 @@ wait_until_ready() {
   warn "Runtime did not report ready yet — check: docker compose logs -f service-bridge"
 }
 
+# Extract the sb CLI from the image onto the host PATH, so its version always
+# matches the runtime that was just pulled. No sudo: falls back to SB_DIR/bin
+# when /usr/local/bin is not writable.
+install_cli() {
+  local dest dir cid
+  if [ -w /usr/local/bin ]; then
+    dir=/usr/local/bin
+  else
+    dir="${SB_DIR}/bin"
+    mkdir -p "$dir"
+  fi
+  dest="${dir}/sb"
+
+  cid="$(docker create "$SB_IMAGE" 2>/dev/null)" || { warn "Could not stage sb CLI"; return 0; }
+  if docker cp "${cid}:/usr/local/bin/sb" "$dest" 2>/dev/null; then
+    chmod +x "$dest"
+    ok "Installed CLI: ${dest}"
+    case ":${PATH}:" in
+      *":${dir}:"*) ;;
+      *) info "Add to PATH:  export PATH=\"${dir}:\$PATH\"" ;;
+    esac
+  else
+    warn "This image has no sb CLI (older version) — skipping"
+  fi
+  docker rm -f "$cid" >/dev/null 2>&1 || true
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 main() {
   echo
@@ -156,6 +183,7 @@ COMPOSE
 
   compose up -d
   wait_until_ready
+  install_cli
 
   echo
   log "Installation completed"
@@ -168,6 +196,8 @@ COMPOSE
   echo -e "  ${BOLD}Open ${SB_URL} to create your admin account.${NC}"
   echo
   echo "Commands:"
+  echo "    sb version                                    # CLI (ships with the runtime)"
+  echo "    sb login -u admin                             # then drive the runtime from the terminal"
   echo "    cd ${SB_DIR}"
   echo "    docker compose logs -f service-bridge"
   echo "    docker compose restart service-bridge"
