@@ -25,9 +25,10 @@ SB_DIR="${SB_DIR:-${HOME}/servicebridge}"
 # or the image is fully overridden.
 SB_IMAGE="${SB_IMAGE:-${SB_REPO}:${SB_VERSION:-edge}}"
 
-# Fixed ports — the runtime listens on these and reads no env to configure them.
-SB_HTTP_PORT=14444
-SB_GRPC_PORT=14445
+# Host-published ports. The runtime always listens on 14444/14445 inside the
+# container; these only remap the host side, so several instances can coexist.
+SB_HTTP_PORT="${SB_HTTP_PORT:-14444}"
+SB_GRPC_PORT="${SB_GRPC_PORT:-14445}"
 SB_URL="http://localhost:${SB_HTTP_PORT}"
 
 # ── Colors ────────────────────────────────────────────────────────────────────
@@ -87,9 +88,11 @@ wait_until_ready() {
   warn "Runtime did not report ready yet — check: docker compose logs -f service-bridge"
 }
 
-# Extract the sb CLI from the image onto the host PATH, so its version always
-# matches the runtime that was just pulled. No sudo: falls back to SB_DIR/bin
-# when /usr/local/bin is not writable.
+# Put the sb CLI on the host PATH, version-matched to the runtime just pulled.
+# On a Linux host the in-image binary runs natively, so we copy it. On macOS /
+# Windows (Docker Desktop) the Linux binary can't run on the host, so we install
+# a tiny wrapper that runs sb inside the container instead — same binary, always
+# consistent. No sudo: falls back to SB_DIR/bin when /usr/local/bin isn't writable.
 install_cli() {
   local dest dir cid
   if [ -w /usr/local/bin ]; then
@@ -101,17 +104,34 @@ install_cli() {
   dest="${dir}/sb"
 
   cid="$(docker create "$SB_IMAGE" 2>/dev/null)" || { warn "Could not stage sb CLI"; return 0; }
+  local copied=""
   if docker cp "${cid}:/usr/local/bin/sb" "$dest" 2>/dev/null; then
     chmod +x "$dest"
-    ok "Installed CLI: ${dest}"
-    case ":${PATH}:" in
-      *":${dir}:"*) ;;
-      *) info "Add to PATH:  export PATH=\"${dir}:\$PATH\"" ;;
-    esac
-  else
-    warn "This image has no sb CLI (older version) — skipping"
+    copied=1
   fi
   docker rm -f "$cid" >/dev/null 2>&1 || true
+
+  if [ -z "$copied" ]; then
+    warn "This image has no sb CLI (older version) — skipping"
+    return 0
+  fi
+
+  # If the copied binary can't run on this host (different OS/arch), replace it
+  # with a wrapper that execs sb inside the running container.
+  if ! "$dest" version >/dev/null 2>&1; then
+    cat > "$dest" <<WRAPPER
+#!/usr/bin/env sh
+# sb CLI wrapper: runs the in-container binary, always version-matched.
+exec docker compose -f "${SB_DIR}/docker-compose.yml" exec -T service-bridge /usr/local/bin/sb "\$@"
+WRAPPER
+    chmod +x "$dest"
+  fi
+
+  ok "Installed CLI: ${dest}"
+  case ":${PATH}:" in
+    *":${dir}:"*) ;;
+    *) info "Add to PATH:  export PATH=\"${dir}:\$PATH\"" ;;
+  esac
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
