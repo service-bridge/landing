@@ -98,7 +98,30 @@ service-bridge -pg-url "postgres://sb:secret@db.internal:5432/service-bridge?ssl
       { name: "GET /api/sse", type: "stream", default: "", desc: "Server-Sent Events feed that powers the live console (dashboard, service map)." },
     ],
     endpointsNote:
-      "Metrics and logs arrive over the SDK control plane (Prometheus-compatible metrics, Loki-compatible structured logs) and the console renders them. The runtime is not a Prometheus scrape target on a /metrics path.",
+      "Metrics and logs arrive over the SDK control plane and the console renders them. When obsexport.prometheus.enable is on, the runtime also exposes a Prometheus scrape endpoint at :14446/metrics on a dedicated port.",
+
+    obsexportTitle: "Observability export",
+    obsexportP:
+      "Optional push/pull channels to external monitoring stacks. All exporters are disabled by default and can be enabled live in the dashboard under /settings without a runtime restart (except network.obsexport_port, which rebinds a socket).",
+    obsexport: [
+      { name: "network.obsexport_port", type: "int", default: "14446", desc: "TCP port for the obsexport HTTP listener (:14446/metrics). Restart." },
+      { name: "obsexport.prometheus.enable", type: "bool", default: "false", desc: "Enable Prometheus pull endpoint at :14446/metrics." },
+      { name: "obsexport.metrics_bearer_token", type: "string", default: '""', desc: "Optional Bearer token protecting the /metrics scrape endpoint." },
+      { name: "obsexport.metrics_window_ms", type: "int64 ms", default: "60000", desc: "Lookback window for latest metric sample per series. Default 60 s." },
+      { name: "obsexport.metrics_series_cap", type: "int", default: "100000", desc: "Maximum series per scrape response." },
+      { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Enable Loki push (logs). Requires obsexport.loki.endpoint." },
+      { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "Loki push API URL (POST /loki/api/v1/push)." },
+      { name: "obsexport.loki.bearer_token", type: "string", default: '""', desc: "Bearer token for Loki authentication." },
+      { name: "obsexport.loki.instance_label_enabled", type: "bool", default: "false", desc: "Add instance stream label to Loki log entries." },
+      { name: "obsexport.loki.push_interval_ms", type: "int64 ms", default: "10000", desc: "Loki push cycle interval. Default 10 s." },
+      { name: "obsexport.loki.buffer_max_batches", type: "int", default: "1000", desc: "Max buffered batches; drop-oldest on overflow." },
+      { name: "obsexport.otlp.enable", type: "bool", default: "false", desc: "Enable OTLP push (traces). Requires obsexport.otlp.endpoint." },
+      { name: "obsexport.otlp.endpoint", type: "string", default: '""', desc: "OTel Collector / Tempo / Jaeger endpoint." },
+      { name: "obsexport.otlp.protocol", type: "string", default: '"grpc"', desc: "grpc or http." },
+      { name: "obsexport.otlp.push_interval_ms", type: "int64 ms", default: "10000", desc: "OTLP push cycle interval. Default 10 s." },
+      { name: "obsexport.otlp.headers", type: "string", default: '""', desc: "Extra headers as key=value,key=value pairs." },
+      { name: "obsexport.otlp.buffer_max_batches", type: "int", default: "1000", desc: "Max buffered batches; drop-oldest on overflow." },
+    ],
   },
   ru: {
     badge: "Конфигурация",
@@ -188,7 +211,30 @@ service-bridge -pg-url "postgres://sb:secret@db.internal:5432/service-bridge?ssl
       { name: "GET /api/sse", type: "stream", default: "", desc: "Поток Server-Sent Events для живой консоли (дашборд, карта сервисов)." },
     ],
     endpointsNote:
-      "Метрики и логи приходят по control plane SDK (метрики, совместимые с Prometheus; структурированные логи, совместимые с Loki), и консоль их рисует. Runtime не является Prometheus scrape-целью на пути /metrics.",
+      "Метрики и логи приходят по control plane SDK, консоль их рисует. При включении obsexport.prometheus.enable рантайм также открывает Prometheus scrape-эндпоинт на :14446/metrics на отдельном порту.",
+
+    obsexportTitle: "Экспорт observability",
+    obsexportP:
+      "Опциональные push/pull-каналы во внешние стеки мониторинга. Все экспортёры выключены по умолчанию и включаются вживую в дашборде на /settings без рестарта рантайма (кроме network.obsexport_port, который перепривязывает сокет).",
+    obsexport: [
+      { name: "network.obsexport_port", type: "int", default: "14446", desc: "TCP-порт HTTP-слушателя obsexport (:14446/metrics). Рестарт." },
+      { name: "obsexport.prometheus.enable", type: "bool", default: "false", desc: "Включить Prometheus pull-эндпоинт на :14446/metrics." },
+      { name: "obsexport.metrics_bearer_token", type: "string", default: '""', desc: "Опциональный Bearer-токен для защиты /metrics scrape." },
+      { name: "obsexport.metrics_window_ms", type: "int64 ms", default: "60000", desc: "Окно последнего сэмпла на серию. По умолчанию 60 с." },
+      { name: "obsexport.metrics_series_cap", type: "int", default: "100000", desc: "Максимум серий в одном scrape-ответе." },
+      { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Включить Loki push (логи). Требует obsexport.loki.endpoint." },
+      { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "URL Loki push API (POST /loki/api/v1/push)." },
+      { name: "obsexport.loki.bearer_token", type: "string", default: '""', desc: "Bearer-токен для аутентификации в Loki." },
+      { name: "obsexport.loki.instance_label_enabled", type: "bool", default: "false", desc: "Добавлять stream-метку instance в Loki-записи." },
+      { name: "obsexport.loki.push_interval_ms", type: "int64 ms", default: "10000", desc: "Интервал push-цикла Loki. По умолчанию 10 с." },
+      { name: "obsexport.loki.buffer_max_batches", type: "int", default: "1000", desc: "Максимум батчей в буфере; drop-oldest при переполнении." },
+      { name: "obsexport.otlp.enable", type: "bool", default: "false", desc: "Включить OTLP push (трейсы). Требует obsexport.otlp.endpoint." },
+      { name: "obsexport.otlp.endpoint", type: "string", default: '""', desc: "Endpoint OTel Collector / Tempo / Jaeger." },
+      { name: "obsexport.otlp.protocol", type: "string", default: '"grpc"', desc: "grpc или http." },
+      { name: "obsexport.otlp.push_interval_ms", type: "int64 ms", default: "10000", desc: "Интервал push-цикла OTLP. По умолчанию 10 с." },
+      { name: "obsexport.otlp.headers", type: "string", default: '""', desc: "Дополнительные заголовки в формате key=value,key=value." },
+      { name: "obsexport.otlp.buffer_max_batches", type: "int", default: "1000", desc: "Максимум батчей в буфере; drop-oldest при переполнении." },
+    ],
   },
 };
 
@@ -234,6 +280,10 @@ export function PageServerConfig() {
       </P>
       <ParamTable rows={t.endpoints} />
       <Callout type="info">{t.endpointsNote}</Callout>
+
+      <H2 id="obsexport">{t.obsexportTitle}</H2>
+      <P>{t.obsexportP}</P>
+      <ParamTable rows={t.obsexport} />
     </div>
   );
 }

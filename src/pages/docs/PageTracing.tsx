@@ -1,5 +1,5 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader } from "../../ui/DocComponents";
+import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
 import { useDocLocale } from "../../lib/locale-context";
 
 const T = {
@@ -60,16 +60,27 @@ const T = {
     traceContextDesc1link: "Manual Spans",
     traceContextDesc1end3: ".",
 
-    grafanaTitle: "Grafana / Loki",
+    grafanaTitle: "Grafana / Loki integration",
     grafanaDesc:
-      "Logs are captured in a Loki-compatible structured shape (service, level, trace id, and your structured fields), so the data model maps cleanly onto LogQL-style label queries inside the built-in dashboard. ServiceBridge does not run a Loki server or expose a LogQL HTTP endpoint; logs live in PostgreSQL and are browsed in the dashboard. The Loki compatibility is about the log shape, not a drop-in datasource.",
+      "Logs are captured in a Loki-compatible structured shape — service, level, trace_id, and your structured fields. When obsexport.loki.enable is on, the runtime pushes log batches to your existing Loki instance (POST /loki/api/v1/push). ServiceBridge does not run its own Loki server; it pushes to one you already operate. In Grafana, you can correlate log lines with traces because trace_id and op_id travel as Loki structured metadata.",
     grafanaLabelsTitle: "Log labels",
     grafanaLabelsNote:
-      "Captured labels on every log line: service, level, instance_id, trace_id. Your structured fields (the second argument to sb.telemetry.log.*) are stored as JSON alongside.",
+      "Stream labels on every pushed log: service, level, source. Optionally: instance (obsexport.loki.instance_label_enabled). trace_id and op_id are structured metadata. Your structured fields (the second argument to sb.telemetry.log.*) are stored in the log body as JSON.",
 
-    otlpTitle: "OTLP ingest",
+    otlpTitle: "OTLP export",
     otlpDesc:
-      "There is no external OTLP / Jaeger / Zipkin ingest endpoint. ServiceBridge is the trace store itself: the Node SDK emits operations directly over its gRPC control-plane connection (port 14445), the runtime persists them in PostgreSQL, and the dashboard (port 14444) renders the timeline. You point your services at the runtime, not at a collector.",
+      "When obsexport.otlp.enable is on, the runtime pushes completed traces to your own OTel Collector, Tempo, or Jaeger as OTLP spans. Only finished operations are exported — in-flight operations appear after they complete. The runtime does not expose an OTLP ingest endpoint; it is the source, not a collector.",
+    otlpMappingTitle: "ID mapping",
+    otlpMappingNote:
+      "Internally, trace_id is a 16-byte UUIDv7 and maps directly to the OTLP traceId wire field. op_id is a 16-byte UUID; the 8-byte OTLP spanId is derived by XOR-folding both halves of the UUID (op_id[i] XOR op_id[i+8]). This avoids the high-timestamp collision risk of a simple first-8-bytes truncation.",
+    otlpSettings: [
+      { name: "obsexport.otlp.enable", type: "bool", default: "false", desc: "Enable OTLP push. Requires obsexport.otlp.endpoint." },
+      { name: "obsexport.otlp.endpoint", type: "string", default: '""', desc: "gRPC or HTTP OTel endpoint, e.g. http://otelcol:4317." },
+      { name: "obsexport.otlp.protocol", type: "string", default: '"grpc"', desc: "grpc or http." },
+      { name: "obsexport.otlp.push_interval_ms", type: "int64 ms", default: "10000", desc: "Push cycle interval. Default 10 s." },
+      { name: "obsexport.otlp.headers", type: "string", default: '""', desc: "Extra headers as key=value,key=value pairs (for auth, tenant headers, etc.)." },
+      { name: "obsexport.otlp.buffer_max_batches", type: "int", default: "1000", desc: "Max queued batches; drop-oldest on overflow." },
+    ],
     calloutInfo2:
       "Trace and operation retention lives in the dashboard at /settings under telemetry.*, stored as DB-backed runtime settings, not environment variables. The one value the runtime reads outside the database is the PostgreSQL connection string, baked into the binary and overridable with the -pg-url flag.",
   },
@@ -130,16 +141,27 @@ const T = {
     traceContextDesc1link: "Ручные спаны",
     traceContextDesc1end3: ".",
 
-    grafanaTitle: "Grafana / Loki",
+    grafanaTitle: "Интеграция Grafana / Loki",
     grafanaDesc:
-      "Логи захватываются в Loki-совместимой структурной форме — service, level, trace id и ваши структурные поля — так что модель данных чисто ложится на LogQL-подобные запросы по меткам внутри встроенного дашборда. ServiceBridge не поднимает сервер Loki и не отдаёт LogQL HTTP-эндпоинт; логи лежат в PostgreSQL и просматриваются в дашборде. Loki-совместимость — про форму лога, а не про готовый datasource.",
+      "Логи захватываются в Loki-совместимой структурной форме — service, level, trace_id и ваши структурные поля. При включении obsexport.loki.enable рантайм пушит батчи логов в ваш существующий Loki (POST /loki/api/v1/push). ServiceBridge не поднимает собственный Loki-сервер — он пушит в тот, который уже есть у вас. В Grafana можно сопоставлять строки логов с трейсами, так как trace_id и op_id передаются как Loki structured metadata.",
     grafanaLabelsTitle: "Метки логов",
     grafanaLabelsNote:
-      "Метки на каждой строке лога: service, level, instance_id, trace_id. Ваши структурные поля (второй аргумент sb.telemetry.log.*) хранятся рядом как JSON.",
+      "Stream-метки на каждом пуше: service, level, source. Опционально: instance (obsexport.loki.instance_label_enabled). trace_id и op_id — structured metadata. Ваши структурные поля (второй аргумент sb.telemetry.log.*) хранятся в теле лога как JSON.",
 
-    otlpTitle: "Приём OTLP",
+    otlpTitle: "Экспорт OTLP",
     otlpDesc:
-      "Внешнего OTLP / Jaeger / Zipkin эндпоинта приёма нет. ServiceBridge сам является хранилищем трейсов: Node SDK эмитит операции прямо по своему gRPC-соединению control-plane (порт 14445), runtime сохраняет их в PostgreSQL, а дашборд (порт 14444) рисует таймлайн. Вы направляете сервисы на runtime, а не на коллектор.",
+      "При включении obsexport.otlp.enable рантайм пушит завершённые трейсы в ваш OTel Collector, Tempo или Jaeger как OTLP-спаны. Экспортируются только завершённые операции — операции в процессе выполнения появляются после завершения. Эндпоинта для приёма OTLP рантайм не открывает — он является источником, а не коллектором.",
+    otlpMappingTitle: "Маппинг идентификаторов",
+    otlpMappingNote:
+      "Внутри trace_id — 16-байтовый UUIDv7, напрямую маппируется в OTLP traceId. op_id — 16-байтовый UUID; 8-байтовый OTLP spanId получается XOR-сверткой обеих половин UUID (op_id[i] XOR op_id[i+8]). Это исключает риск коллизий при высокой пропускной способности, присущий простому усечению до первых 8 байт.",
+    otlpSettings: [
+      { name: "obsexport.otlp.enable", type: "bool", default: "false", desc: "Включить OTLP push. Требует obsexport.otlp.endpoint." },
+      { name: "obsexport.otlp.endpoint", type: "string", default: '""', desc: "gRPC или HTTP OTel endpoint, например http://otelcol:4317." },
+      { name: "obsexport.otlp.protocol", type: "string", default: '"grpc"', desc: "grpc или http." },
+      { name: "obsexport.otlp.push_interval_ms", type: "int64 ms", default: "10000", desc: "Интервал push-цикла. По умолчанию 10 с." },
+      { name: "obsexport.otlp.headers", type: "string", default: '""', desc: "Дополнительные заголовки в формате key=value,key=value (для auth, tenant-заголовков и т.п.)." },
+      { name: "obsexport.otlp.buffer_max_batches", type: "int", default: "1000", desc: "Максимум батчей в очереди; drop-oldest при переполнении." },
+    ],
     calloutInfo2:
       "Хранение трейсов и операций настраивается в дашборде на /settings, ключи telemetry.*. Это DB-backed настройки runtime, а не переменные окружения. Единственное значение, которое runtime читает вне базы, — строка подключения к PostgreSQL: она вшита в бинарь и переопределяется флагом -pg-url.",
   },
@@ -265,9 +287,12 @@ X-SB-Trace: 0190f3c1-7a2b-7c3d-8e4f-1a2b3c4d5e6f-0190f3c1-7a2b-7c3d-8e4f-aaaaaaa
       <H3 id="log-labels">{t.grafanaLabelsTitle}</H3>
       <P>{t.grafanaLabelsNote}</P>
 
-      {/* OTLP ingest */}
+      {/* OTLP export */}
       <H2 id="otlp">{t.otlpTitle}</H2>
       <P>{t.otlpDesc}</P>
+      <H3 id="otlp-id-mapping">{t.otlpMappingTitle}</H3>
+      <P>{t.otlpMappingNote}</P>
+      <ParamTable rows={t.otlpSettings} />
       <Callout type="info">{t.calloutInfo2}</Callout>
     </div>
   );

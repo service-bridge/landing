@@ -1,6 +1,7 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
 import {
   Callout,
+  DocCodeBlock,
   H2,
   H3,
   Mono,
@@ -51,7 +52,42 @@ const T = {
     logsLevelsTitle: "Levels",
     logsLevelsDesc: "debug, info, warn, error. All take (message, fields?).",
     logsCallout:
-      "No logging config to set up, no Prometheus or Loki endpoint to scrape. The SDK pushes metrics and logs over the same telemetry gRPC stream as traces, and you read them in the built-in dashboard. How long they stay is a runtime setting: tune the telemetry.* retention keys in the dashboard at /settings, never an environment variable.",
+      "No logging config to set up. The SDK pushes metrics and logs over the same telemetry gRPC stream as traces, and you read them in the built-in dashboard. How long they stay is a runtime setting: tune the telemetry.* retention keys in the dashboard at /settings, never an environment variable.",
+
+    prometheusTitle: "Prometheus export",
+    prometheusIntro:
+      "When enabled in the dashboard under Settings → obsexport.prometheus.enable, the runtime exposes a standard Prometheus text-format endpoint at :14446/metrics. A Prometheus server scrapes it on its own schedule — no push required.",
+    prometheusScrapeCfg: `scrape_configs:
+  - job_name: servicebridge
+    static_configs:
+      - targets: ["runtime.internal:14446"]
+    # optional bearer token — matches obsexport.metrics_bearer_token
+    authorization:
+      credentials: <token>`,
+    prometheusSettings: [
+      { name: "obsexport.prometheus.enable", type: "bool", default: "false", desc: "Enable the /metrics pull endpoint." },
+      { name: "network.obsexport_port", type: "int", default: "14446", desc: "TCP port for the obsexport listener. Restart required." },
+      { name: "obsexport.metrics_bearer_token", type: "string", default: '""', desc: "Optional Bearer token; when set, scrape requests without a matching Authorization header receive 401." },
+      { name: "obsexport.metrics_window_ms", type: "int64 ms", default: "60000", desc: "Lookback window for the latest metric sample per series. Default 60 s." },
+      { name: "obsexport.metrics_series_cap", type: "int", default: "100000", desc: "Maximum number of series emitted in one scrape response." },
+    ],
+    prometheusCallout:
+      "All exporters are disabled by default. Enable them live in the dashboard under /settings — no runtime restart needed (except network.obsexport_port, which rebinds a socket).",
+
+    lokiTitle: "Loki export",
+    lokiIntro:
+      "When obsexport.loki.enable is set to true (requires obsexport.loki.endpoint), the runtime pushes structured log batches to an existing Loki instance via POST /loki/api/v1/push. The runtime does not run its own Loki server.",
+    lokiLabels: "Each log stream carries three fixed labels: {service, level, source}. The instance label is added when obsexport.loki.instance_label_enabled is true. trace_id and op_id are emitted as structured metadata, so LogQL queries can correlate log lines with traces in Grafana.",
+    lokiAtLeastOnce:
+      "Delivery is at-least-once. A persistent cursor in the obsexport_cursors table tracks the last pushed position (unix-ms + tiebreak id); a runtime restart re-emits from the cursor, not from zero. A bounded in-memory buffer absorbs bursts — when the buffer is full and Loki is slow, the oldest batch is dropped and recorded in the obsexport_dropped_batches_total metric.",
+    lokiSettings: [
+      { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Enable Loki push. Requires obsexport.loki.endpoint." },
+      { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "Loki push API URL, e.g. http://loki:3100." },
+      { name: "obsexport.loki.bearer_token", type: "string", default: '""', desc: "Optional Bearer token for Loki authentication." },
+      { name: "obsexport.loki.instance_label_enabled", type: "bool", default: "false", desc: "Add instance label to each Loki stream." },
+      { name: "obsexport.loki.push_interval_ms", type: "int64 ms", default: "10000", desc: "Push cycle interval. Default 10 s." },
+      { name: "obsexport.loki.buffer_max_batches", type: "int", default: "1000", desc: "Max queued batches; drop-oldest on overflow." },
+    ],
   },
   ru: {
     badge: "Наблюдаемость",
@@ -93,7 +129,42 @@ const T = {
     logsLevelsTitle: "Уровни",
     logsLevelsDesc: "debug, info, warn, error. Все принимают (message, fields?).",
     logsCallout:
-      "Никакой настройки логирования и никакого Prometheus/Loki-эндпоинта для скрейпа нет. SDK шлёт метрики и логи по тому же gRPC-потоку телеметрии, что и трейсы, а читаете вы их во встроенном дашборде. Срок хранения — настройка рантайма: правьте ключи telemetry.* в дашборде на /settings, не переменную окружения.",
+      "Никакой настройки логирования нет. SDK шлёт метрики и логи по тому же gRPC-потоку телеметрии, что и трейсы, а читаете вы их во встроенном дашборде. Срок хранения — настройка рантайма: правьте ключи telemetry.* в дашборде на /settings, не переменную окружения.",
+
+    prometheusTitle: "Экспорт Prometheus",
+    prometheusIntro:
+      "При включении в дашборде (Settings → obsexport.prometheus.enable) рантайм открывает эндпоинт в стандартном text-формате Prometheus на :14446/metrics. Prometheus-сервер скрейпит его по своему расписанию — push не нужен.",
+    prometheusScrapeCfg: `scrape_configs:
+  - job_name: servicebridge
+    static_configs:
+      - targets: ["runtime.internal:14446"]
+    # опциональный bearer-токен — совпадает с obsexport.metrics_bearer_token
+    authorization:
+      credentials: <token>`,
+    prometheusSettings: [
+      { name: "obsexport.prometheus.enable", type: "bool", default: "false", desc: "Включить pull-эндпоинт /metrics." },
+      { name: "network.obsexport_port", type: "int", default: "14446", desc: "TCP-порт слушателя obsexport. Требуется рестарт." },
+      { name: "obsexport.metrics_bearer_token", type: "string", default: '""', desc: "Опциональный Bearer-токен; при установке запросы без совпадающего Authorization получают 401." },
+      { name: "obsexport.metrics_window_ms", type: "int64 ms", default: "60000", desc: "Окно последнего сэмпла на серию. По умолчанию 60 с." },
+      { name: "obsexport.metrics_series_cap", type: "int", default: "100000", desc: "Максимум серий в одном scrape-ответе." },
+    ],
+    prometheusCallout:
+      "Все экспортёры выключены по умолчанию. Включаются вживую в дашборде на /settings — рестарт рантайма не нужен (кроме network.obsexport_port, который перепривязывает сокет).",
+
+    lokiTitle: "Экспорт Loki",
+    lokiIntro:
+      "При включении obsexport.loki.enable=true (требует obsexport.loki.endpoint) рантайм пушит батчи структурированных логов в существующий Loki через POST /loki/api/v1/push. Собственного сервера Loki рантайм не поднимает.",
+    lokiLabels: "Каждый лог-стрим несёт три фиксированных метки: {service, level, source}. Метка instance добавляется при obsexport.loki.instance_label_enabled=true. trace_id и op_id передаются как structured metadata — LogQL-запросы могут сопоставлять строки логов с трейсами в Grafana.",
+    lokiAtLeastOnce:
+      "Доставка at-least-once. Постоянный курсор в таблице obsexport_cursors отслеживает последнюю отправленную позицию (unix-ms + tiebreak id); рестарт рантайма продолжает с курсора, а не с нуля. Ограниченный in-memory буфер поглощает всплески — при заполнении и медленном Loki старейший батч сбрасывается и фиксируется в метрике obsexport_dropped_batches_total.",
+    lokiSettings: [
+      { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Включить Loki push. Требует obsexport.loki.endpoint." },
+      { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "URL Loki push API, например http://loki:3100." },
+      { name: "obsexport.loki.bearer_token", type: "string", default: '""', desc: "Опциональный Bearer-токен для аутентификации в Loki." },
+      { name: "obsexport.loki.instance_label_enabled", type: "bool", default: "false", desc: "Добавлять метку instance к каждому Loki stream." },
+      { name: "obsexport.loki.push_interval_ms", type: "int64 ms", default: "10000", desc: "Интервал push-цикла. По умолчанию 10 с." },
+      { name: "obsexport.loki.buffer_max_batches", type: "int", default: "1000", desc: "Максимум батчей в очереди; drop-oldest при переполнении." },
+    ],
   },
 };
 
@@ -179,6 +250,18 @@ sb.logger.warn("retrying charge", { orderId, attempt: 2 });`,
       <P>{t.logsFieldsDesc}</P>
 
       <Callout type="info">{t.logsCallout}</Callout>
+
+      <H2 id="prometheus-export">{t.prometheusTitle}</H2>
+      <P>{t.prometheusIntro}</P>
+      <DocCodeBlock lang="yaml" code={t.prometheusScrapeCfg} />
+      <ParamTable rows={t.prometheusSettings} />
+      <Callout type="tip">{t.prometheusCallout}</Callout>
+
+      <H2 id="loki-export">{t.lokiTitle}</H2>
+      <P>{t.lokiIntro}</P>
+      <P>{t.lokiLabels}</P>
+      <P>{t.lokiAtLeastOnce}</P>
+      <ParamTable rows={t.lokiSettings} />
     </div>
   );
 }
