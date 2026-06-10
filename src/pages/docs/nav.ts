@@ -48,6 +48,18 @@ export const NAV: NavGroup[] = [
           { id: "workflow", label: "Orchestrate as workflow", ru: "Оркестрация как воркфлоу" },
         ],
       },
+      {
+        id: "cli",
+        label: "CLI",
+        ru: "CLI",
+        toc: [
+          { id: "run", label: "Run it", ru: "Запуск" },
+          { id: "login", label: "Log in", ru: "Вход" },
+          { id: "output", label: "Output format", ru: "Формат вывода" },
+          { id: "commands", label: "Command overview", ru: "Обзор команд" },
+          { id: "trace-tree", label: "Reading a trace", ru: "Чтение трейса" },
+        ],
+      },
     ],
   },
   {
@@ -251,18 +263,6 @@ export const NAV: NavGroup[] = [
           { id: "capabilities", label: "Capabilities", ru: "Возможности" },
           { id: "policy", label: "Granular policy", ru: "Гранулярная политика" },
           { id: "key-example", label: "Example", ru: "Пример" },
-        ],
-      },
-      {
-        id: "cli",
-        label: "sb CLI",
-        ru: "CLI sb",
-        toc: [
-          { id: "run", label: "Run it", ru: "Запуск" },
-          { id: "login", label: "Log in", ru: "Вход" },
-          { id: "output", label: "Output format", ru: "Формат вывода" },
-          { id: "commands", label: "Command overview", ru: "Обзор команд" },
-          { id: "trace-tree", label: "Reading a trace", ru: "Чтение трейса" },
         ],
       },
       {

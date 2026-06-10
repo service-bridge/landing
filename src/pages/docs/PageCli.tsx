@@ -12,8 +12,8 @@ import { useDocLocale } from "../../lib/locale-context";
 
 const T = {
   en: {
-    badge: "Production",
-    title: "sb CLI",
+    badge: "Getting Started",
+    title: "CLI",
     description:
       "sb is a command-line client for the runtime. It talks to the UI gateway API over the same port as the dashboard (14444), logs in once, and renders every result as a table or, with -o json, as machine-readable protojson for AI agents.",
     intro:
@@ -106,8 +106,8 @@ const T = {
       "Pass -o json to get the raw operations array instead of the tree — that is the form an agent should consume.",
   },
   ru: {
-    badge: "Production",
-    title: "CLI sb",
+    badge: "Getting Started",
+    title: "CLI",
     description:
       "sb — командный клиент рантайма. Ходит в API UI-gateway по тому же порту, что и дашборд (14444), логинится один раз и рендерит результат таблицей либо, с -o json, машиночитаемым protojson для AI-агентов.",
     intro:
