@@ -15,6 +15,7 @@ import { PageAlertsRules } from "./docs/PageAlertsRules";
 import { PageAlertsTelegram } from "./docs/PageAlertsTelegram";
 import { PageAiSkill } from "./docs/PageAiSkill";
 import { PageCli } from "./docs/PageCli";
+import { PageConsoleRoles } from "./docs/PageConsoleRoles";
 import { PageConfigPush } from "./docs/PageConfigPush";
 import { PageDlqReplay } from "./docs/PageDlqReplay";
 import { PageEndToEnd } from "./docs/PageEndToEnd";
@@ -36,6 +37,7 @@ import { PageServerConfig } from "./docs/PageServerConfig";
 import { PageServiceKeys } from "./docs/PageServiceKeys";
 import { PageSessionLifecycle } from "./docs/PageSessionLifecycle";
 import { PageStreaming } from "./docs/PageStreaming";
+import { PageTestingHandlers } from "./docs/PageTestingHandlers";
 import { PageTlsMtls } from "./docs/PageTlsMtls";
 import { PageTracing } from "./docs/PageTracing";
 import { PageTransportModes } from "./docs/PageTransportModes";
@@ -63,6 +65,7 @@ const PAGES: Record<string, () => React.ReactNode> = {
   workflows: PageWorkflows,
   streaming: PageStreaming,
   start: PageStart,
+  "testing-handlers": PageTestingHandlers,
   "http-middleware": PageHttpMiddleware,
   "manual-spans": PageManualSpans,
   tracing: PageTracing,
@@ -70,6 +73,7 @@ const PAGES: Record<string, () => React.ReactNode> = {
   "sdk-options": PageSdkOptions,
   "server-config": PageServerConfig,
   "service-keys": PageServiceKeys,
+  "console-roles": PageConsoleRoles,
   cli: PageCli,
   "tls-mtls": PageTlsMtls,
   reliability: PageReliability,
