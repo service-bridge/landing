@@ -42,7 +42,9 @@ import { PageTransportModes } from "./docs/PageTransportModes";
 import { PageWorkflows } from "./docs/PageWorkflows";
 import { PageZoneAware } from "./docs/PageZoneAware";
 import { PageAvailability } from "./docs/PageAvailability";
+import { PageBackupDr } from "./docs/PageBackupDr";
 import { PageDeclarativeServices } from "./docs/PageDeclarativeServices";
+import { PageCapacity } from "./docs/PageCapacity";
 
 // ── Pages registry ────────────────────────────────────────────────────────────
 
@@ -80,7 +82,9 @@ const PAGES: Record<string, () => React.ReactNode> = {
   "config-push": PageConfigPush,
   "zone-aware": PageZoneAware,
   availability: PageAvailability,
+  "backup-dr": PageBackupDr,
   "sb-apply": PageDeclarativeServices,
+  capacity: PageCapacity,
 };
 
 const ALL_PAGES: NavItem[] = NAV.flatMap((g) => g.items);
