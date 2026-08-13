@@ -45,6 +45,10 @@ import { PageAvailability } from "./docs/PageAvailability";
 import { PageBackupDr } from "./docs/PageBackupDr";
 import { PageDeclarativeServices } from "./docs/PageDeclarativeServices";
 import { PageCapacity } from "./docs/PageCapacity";
+import { PageMigrateBullmq } from "./docs/PageMigrateBullmq";
+import { PageMigrateRabbitmq } from "./docs/PageMigrateRabbitmq";
+import { PageMigrateTemporal } from "./docs/PageMigrateTemporal";
+import { PageCi } from "./docs/PageCi";
 
 // ── Pages registry ────────────────────────────────────────────────────────────
 
@@ -85,6 +89,10 @@ const PAGES: Record<string, () => React.ReactNode> = {
   "backup-dr": PageBackupDr,
   "sb-apply": PageDeclarativeServices,
   capacity: PageCapacity,
+  "migrate-bullmq": PageMigrateBullmq,
+  "migrate-rabbitmq": PageMigrateRabbitmq,
+  "migrate-temporal": PageMigrateTemporal,
+  ci: PageCi,
 };
 
 const ALL_PAGES: NavItem[] = NAV.flatMap((g) => g.items);

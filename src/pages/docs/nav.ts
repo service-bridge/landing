@@ -468,4 +468,62 @@ export const NAV: NavGroup[] = [
       },
     ],
   },
+  {
+    group: "Migration & CI",
+    ru: "Миграция и CI",
+    items: [
+      {
+        id: "migrate-bullmq",
+        label: "From BullMQ",
+        ru: "С BullMQ",
+        toc: [
+          { id: "overview", label: "Model differences", ru: "Отличия модели" },
+          { id: "mapping", label: "BullMQ → Jobs", ru: "BullMQ → Jobs" },
+          { id: "before-after", label: "Before / after", ru: "До / после" },
+          { id: "concurrency", label: "Concurrency & priorities", ru: "Конкурентность и приоритеты" },
+          { id: "retries-dlq", label: "Retries & DLQ", ru: "Повторы и DLQ" },
+          { id: "not-supported", label: "What's missing", ru: "Чего нет" },
+        ],
+      },
+      {
+        id: "migrate-rabbitmq",
+        label: "From RabbitMQ",
+        ru: "С RabbitMQ",
+        toc: [
+          { id: "overview", label: "Model differences", ru: "Отличия модели" },
+          { id: "mapping", label: "RabbitMQ → Events", ru: "RabbitMQ → Events" },
+          { id: "before-after", label: "Before / after", ru: "До / после" },
+          { id: "ack-nack", label: "Ack / nack", ru: "Ack / nack" },
+          { id: "dlq-replay", label: "Dead-letter & replay", ru: "DLQ и replay" },
+          { id: "prefetch", label: "Prefetch & ordering", ru: "Prefetch и порядок" },
+          { id: "not-supported", label: "What's missing", ru: "Чего нет" },
+        ],
+      },
+      {
+        id: "migrate-temporal",
+        label: "From Temporal",
+        ru: "С Temporal",
+        toc: [
+          { id: "overview", label: "Model differences", ru: "Отличия модели" },
+          { id: "mapping", label: "Temporal → Workflows", ru: "Temporal → Workflows" },
+          { id: "example", label: "Example", ru: "Пример" },
+          { id: "signals-timers", label: "Signals & timers", ru: "Сигналы и таймеры" },
+          { id: "compensation", label: "Compensation", ru: "Компенсация" },
+          { id: "determinism", label: "Determinism & replay", ru: "Детерминизм и replay" },
+          { id: "when-not", label: "When not to migrate", ru: "Когда не стоит переезжать" },
+        ],
+      },
+      {
+        id: "ci",
+        label: "CI Recipe",
+        ru: "Рецепт CI",
+        toc: [
+          { id: "overview", label: "What it does", ru: "Что делает" },
+          { id: "workflow-yaml", label: "GitHub Actions workflow", ru: "GitHub Actions workflow" },
+          { id: "provisioning", label: "Provisioning services", ru: "Провижининг сервисов" },
+          { id: "unit-tests", label: "Unit tests without a runtime", ru: "Юнит-тесты без рантайма" },
+        ],
+      },
+    ],
+  },
 ];
