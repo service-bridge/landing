@@ -79,7 +79,7 @@ const T = {
       "When obsexport.loki.enable is set to true (requires obsexport.loki.endpoint), the runtime pushes structured log batches to an existing Loki instance via POST /loki/api/v1/push. The runtime does not run its own Loki server.",
     lokiLabels: "Each log stream carries three fixed labels: {service, level, source}. The instance label is added when obsexport.loki.instance_label_enabled is true. trace_id and op_id are emitted as structured metadata, so LogQL queries can correlate log lines with traces in Grafana.",
     lokiAtLeastOnce:
-      "Delivery is at-least-once. A persistent cursor in the obsexport_cursors table tracks the last pushed position (unix-ms + tiebreak id); a runtime restart re-emits from the cursor, not from zero. A bounded in-memory buffer absorbs bursts — when the buffer is full and Loki is slow, the oldest batch is dropped and recorded in the obsexport_dropped_batches_total metric.",
+      "Delivery is at-least-once. A persistent cursor in the obsexport_cursors table tracks the last pushed position (unix-ms + tiebreak id); a runtime restart re-emits from the cursor, not from zero. A bounded in-memory buffer absorbs bursts — when the buffer is full and Loki is slow, the oldest batch is dropped to bound memory use. The drop count is tracked in-process only; it is not exposed as a metric.",
     lokiSettings: [
       { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Enable Loki push. Requires obsexport.loki.endpoint." },
       { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "Loki push API URL, e.g. http://loki:3100." },
@@ -156,7 +156,7 @@ const T = {
       "При включении obsexport.loki.enable=true (требует obsexport.loki.endpoint) рантайм пушит батчи структурированных логов в существующий Loki через POST /loki/api/v1/push. Собственного сервера Loki рантайм не поднимает.",
     lokiLabels: "Каждый лог-стрим несёт три фиксированных метки: {service, level, source}. Метка instance добавляется при obsexport.loki.instance_label_enabled=true. trace_id и op_id передаются как structured metadata — LogQL-запросы могут сопоставлять строки логов с трейсами в Grafana.",
     lokiAtLeastOnce:
-      "Доставка at-least-once. Постоянный курсор в таблице obsexport_cursors отслеживает последнюю отправленную позицию (unix-ms + tiebreak id); рестарт рантайма продолжает с курсора, а не с нуля. Ограниченный in-memory буфер поглощает всплески — при заполнении и медленном Loki старейший батч сбрасывается и фиксируется в метрике obsexport_dropped_batches_total.",
+      "Доставка at-least-once. Постоянный курсор в таблице obsexport_cursors отслеживает последнюю отправленную позицию (unix-ms + tiebreak id); рестарт рантайма продолжает с курсора, а не с нуля. Ограниченный in-memory буфер поглощает всплески — при заполнении и медленном Loki старейший батч сбрасывается, чтобы ограничить потребление памяти. Счётчик сбросов отслеживается только внутри процесса и не экспортируется как метрика.",
     lokiSettings: [
       { name: "obsexport.loki.enable", type: "bool", default: "false", desc: "Включить Loki push. Требует obsexport.loki.endpoint." },
       { name: "obsexport.loki.endpoint", type: "string", default: '""', desc: "URL Loki push API, например http://loki:3100." },
