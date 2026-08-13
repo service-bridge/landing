@@ -24,19 +24,22 @@ const T = {
     manifestCode: `apiVersion: servicebridge.io/v1
 kind: ServiceSet
 services:
+  - name: gateway
+    capabilities: [RPC_CALL]
+
   - name: payments
-    capabilities: ["rpc.handle", "event.publish"]
-    allow_rpc_from: ["orders"]
-    allow_event_topics: ["order.*"]
+    capabilities: [RPC_HANDLE, EVENTS_PUBLISH]
+    allow_caller_services: [orders]
+    allow_publish_topics: [order.*]
 
   - name: orders
-    capabilities: ["rpc.call", "rpc.handle", "event.subscribe"]
-    allow_rpc_from: ["gateway"]
-    allow_event_topics: ["order.*"]
+    capabilities: [RPC_CALL, RPC_HANDLE, EVENTS_HANDLE]
+    allow_caller_services: [gateway]
+    allow_subscribe_topics: [order.*]
 
   - name: notifications
-    capabilities: ["event.subscribe"]
-    allow_event_topics: ["order.paid", "order.failed"]`,
+    capabilities: [EVENTS_HANDLE]
+    allow_subscribe_topics: [order.paid, order.failed]`,
 
     semanticsTitle: "Apply semantics",
     semanticsDesc:
@@ -118,19 +121,22 @@ sb service export --service payments --service orders`,
     manifestCode: `apiVersion: servicebridge.io/v1
 kind: ServiceSet
 services:
+  - name: gateway
+    capabilities: [RPC_CALL]
+
   - name: payments
-    capabilities: ["rpc.handle", "event.publish"]
-    allow_rpc_from: ["orders"]
-    allow_event_topics: ["order.*"]
+    capabilities: [RPC_HANDLE, EVENTS_PUBLISH]
+    allow_caller_services: [orders]
+    allow_publish_topics: [order.*]
 
   - name: orders
-    capabilities: ["rpc.call", "rpc.handle", "event.subscribe"]
-    allow_rpc_from: ["gateway"]
-    allow_event_topics: ["order.*"]
+    capabilities: [RPC_CALL, RPC_HANDLE, EVENTS_HANDLE]
+    allow_caller_services: [gateway]
+    allow_subscribe_topics: [order.*]
 
   - name: notifications
-    capabilities: ["event.subscribe"]
-    allow_event_topics: ["order.paid", "order.failed"]`,
+    capabilities: [EVENTS_HANDLE]
+    allow_subscribe_topics: [order.paid, order.failed]`,
 
     semanticsTitle: "Семантика apply",
     semanticsDesc:
