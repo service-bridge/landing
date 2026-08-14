@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { fadeInUp } from "../components/animations";
 import { Button } from "../ui/button";
 import { CopyButton } from "../ui/CopyButton";
@@ -8,17 +9,28 @@ import { Eyebrow } from "../ui/Eyebrow";
 import { Section } from "../ui/Section";
 import { TabStrip } from "../ui/Tabs";
 
-const INSTALL_TABS = [
-  { id: "npm" as const, label: "npm" },
-  { id: "degit" as const, label: "degit" },
-];
+type TabId = "pkg" | "degit";
 
-type TabId = (typeof INSTALL_TABS)[number]["id"];
+// Each SDK ships its own skill, so both the package-manager path and the repo
+// path follow the language the reader picked.
+const TAB_LABEL: Record<SdkLang, string> = { ts: "npm", go: "go get", py: "pip" };
 
-const CMDS: Record<TabId, string> = {
-  npm: "npm i service-bridge && cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node",
-  degit: "npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node",
+const CMDS: Record<SdkLang, Record<TabId, string>> = {
+  ts: {
+    pkg: "npm i service-bridge && cp -r node_modules/service-bridge/skill .claude/skills/servicebridge-node",
+    degit: "npx degit service-bridge/sdk/node/skill .claude/skills/servicebridge-node",
+  },
+  go: {
+    pkg: 'go get github.com/service-bridge/sdk/go && cp -r "$(go env GOMODCACHE)"/github.com/service-bridge/sdk/go@*/skill .claude/skills/servicebridge-go',
+    degit: "npx degit service-bridge/sdk/go/skill .claude/skills/servicebridge-go",
+  },
+  py: {
+    pkg: "# The Python SDK is not released yet.",
+    degit: "# The Python SDK is not released yet.",
+  },
 };
+
+const SKILL_NAME: Record<SdkLang, string> = { ts: "Node SDK", go: "Go SDK", py: "Python SDK" };
 
 const PAYOFF = [
   "Fewer wrong API guesses",
@@ -26,11 +38,20 @@ const PAYOFF = [
   "Idiomatic proto schemas, the way the SDK expects them",
 ];
 
-const SKILL_URL = "https://github.com/service-bridge/sdk/tree/main/node/skill";
+const SKILL_URL: Record<SdkLang, string> = {
+  ts: "https://github.com/service-bridge/sdk/tree/main/node/skill",
+  go: "https://github.com/service-bridge/sdk/tree/main/go/skill",
+  py: "https://github.com/service-bridge/sdk",
+};
 
 export function AiSkillSection() {
-  const [tab, setTab] = useState<TabId>("npm");
-  const cmd = CMDS[tab];
+  const [tab, setTab] = useState<TabId>("pkg");
+  const { lang } = useSdkLang();
+  const cmd = (CMDS[lang] ?? CMDS.ts)[tab];
+  const tabs = [
+    { id: "pkg" as const, label: TAB_LABEL[lang] ?? TAB_LABEL.ts },
+    { id: "degit" as const, label: "degit" },
+  ];
 
   return (
     <Section id="ai-skill" maxWidth="3xl">
@@ -48,7 +69,7 @@ export function AiSkillSection() {
           Your agent already knows ServiceBridge
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-          Teaches Claude Code and other agents the real Node SDK — RPC, events, workflows, jobs,
+          Teaches Claude Code and other agents the real {SKILL_NAME[lang] ?? SKILL_NAME.ts} — RPC, events, workflows, jobs,
           HTTP integrations. Grounded in the shipped API, not a guess.
         </p>
       </motion.div>
@@ -56,7 +77,7 @@ export function AiSkillSection() {
       <motion.div variants={fadeInUp} className="mt-10 md:mt-12">
         <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
           <div className="border-b border-surface-border bg-code-chrome px-3 py-2 flex items-center justify-between">
-            <TabStrip size="sm" items={INSTALL_TABS} active={tab} onChange={setTab} />
+            <TabStrip size="sm" items={tabs} active={tab} onChange={setTab} />
             <CopyButton text={cmd} />
           </div>
           <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
@@ -84,7 +105,7 @@ export function AiSkillSection() {
       </motion.div>
 
       <motion.div variants={fadeInUp} className="mt-8 flex justify-center">
-        <a href={SKILL_URL} target="_blank" rel="noreferrer">
+        <a href={SKILL_URL[lang] ?? SKILL_URL.ts} target="_blank" rel="noreferrer">
           <Button
             variant="ghost"
             size="sm"

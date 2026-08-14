@@ -11,6 +11,12 @@ import { SectionHeader } from "../ui/SectionHeader";
 
 // ─── SDK example ──────────────────────────────────────────────────────────────
 
+const SDK_LABEL: Record<SdkLang, string> = {
+  ts: "Node SDK",
+  go: "Go SDK",
+  py: "Python SDK",
+};
+
 const LANG_TABS = [
   {
     id: "typescript",
@@ -270,6 +276,7 @@ function RegistryPanel() {
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 export function CodeSection() {
+  const { lang } = useSdkLang();
   const tab = LANG_TABS[0];
 
   const maxCodeLines = Math.max(...LANG_TABS.map((t) => t.code.trim().split("\n").length));
@@ -279,7 +286,7 @@ export function CodeSection() {
     <Section id="code" className="border-y">
       <SectionHeader
         eyebrow="Developer Experience"
-        title={<>One Node SDK. Zero manual instrumentation.</>}
+        title={<>One {SDK_LABEL[lang] ?? SDK_LABEL.ts}. Zero manual instrumentation.</>}
         subtitle="One facade for RPC, durable events, DAG workflows, and cron jobs — mTLS, traces, and metrics come for free on start()."
       />
 
@@ -289,7 +296,7 @@ export function CodeSection() {
             <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-4 py-2.5">
               <span className="text-xs font-mono text-muted-foreground">{tab.filename}</span>
               <span className="type-overline-mono rounded-md border border-surface-border bg-surface px-2 py-0.5 text-muted-foreground/70">
-                Node SDK
+                {SDK_LABEL[lang] ?? SDK_LABEL.ts}
               </span>
             </div>
             <pre

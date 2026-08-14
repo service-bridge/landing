@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Activity, ArrowRight, Check, Container, Copy, ShieldCheck, Zap } from "lucide-react";
 import { useState } from "react";
+import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
 import { Section } from "../ui/Section";
 
@@ -10,10 +11,25 @@ const HERO_STATS = [
   { icon: Activity, title: "Durable events", desc: "at-least-once, retries & DLQ" },
 ] as const;
 
-const SDK_INSTALL_CMD = "bun add service-bridge";
+// The install line follows the language the reader picked anywhere on the
+// site: showing a bun command to someone reading Go examples is the first
+// thing that tells them this SDK is not for them.
+const SDK_LABEL: Record<SdkLang, string> = {
+  ts: "Node SDK",
+  go: "Go SDK",
+  py: "Python SDK",
+};
+
+const SDK_INSTALL_CMD: Record<SdkLang, string> = {
+  ts: "bun add service-bridge",
+  go: "go get github.com/service-bridge/sdk/go",
+  py: "pip install service-bridge",
+};
 
 export function HeroSection({ onDocs }: { onDocs?: () => void }) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const { lang } = useSdkLang();
+  const installCmd = SDK_INSTALL_CMD[lang] ?? SDK_INSTALL_CMD.ts;
 
   const copyCmd = (text: string, idx: number) => {
     navigator.clipboard.writeText(text);
@@ -87,17 +103,19 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
 
           <div className="flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-surface-border bg-surface overflow-hidden">
             <div className="flex items-center justify-between border-b border-surface-border px-3 py-2">
-              <span className="type-caption font-mono text-muted-foreground">Node SDK</span>
+              <span className="type-caption font-mono text-muted-foreground">
+                {SDK_LABEL[lang] ?? SDK_LABEL.ts}
+              </span>
               <span className="type-caption text-muted-foreground/50">Install SDK</span>
             </div>
             <button
               type="button"
               aria-label="Copy SDK install command"
-              onClick={() => copyCmd(SDK_INSTALL_CMD, 1)}
+              onClick={() => copyCmd(installCmd, 1)}
               className="group flex w-full cursor-pointer items-center gap-3 px-5 py-3 font-mono text-sm transition-colors hover:bg-white/[0.02]"
             >
               <span className="shrink-0 text-muted-foreground">$</span>
-              <span className="min-w-0 flex-1 truncate text-left text-foreground">{SDK_INSTALL_CMD}</span>
+              <span className="min-w-0 flex-1 truncate text-left text-foreground">{installCmd}</span>
               {copiedIdx === 1 ? (
                 <Check className="h-4 w-4 shrink-0 text-emerald-400" />
               ) : (

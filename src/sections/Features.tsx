@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { fadeInUp } from "../components/animations";
+import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
 import { FeatureCard } from "../ui/FeatureCard";
 import { Section } from "../ui/Section";
@@ -47,6 +48,12 @@ type FeatureGroup = {
   label: string;
   wide: boolean; // true = 2 cards per row (col-span-3), false = 3 cards per row (col-span-2)
   features: FeatureDef[];
+};
+
+const SDK_LABEL: Record<SdkLang, string> = {
+  ts: "Node SDK",
+  go: "Go SDK",
+  py: "Python SDK",
 };
 
 const FEATURE_GROUPS: FeatureGroup[] = [
@@ -300,12 +307,13 @@ function CategoryDivider({ label }: { label: string }) {
 }
 
 export function FeaturesSection() {
+  const { lang } = useSdkLang();
   return (
     <Section id="features">
       <SectionHeader
         eyebrow="Features"
         title="Everything you need — built in, not bolted on"
-        subtitle="One Go binary + PostgreSQL. Everything from RPC and events to workflows, mTLS, and tracing — through one Node SDK."
+        subtitle={`One Go binary + PostgreSQL. Everything from RPC and events to workflows, mTLS, and tracing — through one ${SDK_LABEL[lang] ?? SDK_LABEL.ts}.`}
       />
 
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-6">
@@ -362,7 +370,9 @@ export function FeaturesSection() {
         variants={fadeInUp}
         className="mx-auto mt-12 flex max-w-5xl flex-col items-center gap-3 text-center"
       >
-        <p className="type-body-sm">Everything above ships in one Node SDK against one runtime.</p>
+        <p className="type-body-sm">
+          Everything above ships in one {SDK_LABEL[lang] ?? SDK_LABEL.ts} against one runtime.
+        </p>
         <Button asChild size="lg">
           <a href="#code">
             Read the quickstart

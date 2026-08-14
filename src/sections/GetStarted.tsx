@@ -2,20 +2,36 @@ import { motion } from "framer-motion";
 import { ArrowRight, Check, Copy } from "lucide-react";
 import { useState } from "react";
 import { fadeInUp } from "../components/animations";
-import type { SdkLang } from "../lib/language-context";
+import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
 import { highlightCode } from "../ui/CodeBlock";
 import { Section } from "../ui/Section";
 import { SectionHeader } from "../ui/SectionHeader";
 
-// ─── Node SDK snippets (steps 02 + 03) ────────────────────────────────────────
+// ─── SDK snippets (steps 02 + 03) ─────────────────────────────────────────────
 
-const INSTALL_CMD = "bun add service-bridge";
+// Install and first service follow the language the reader picked anywhere on
+// the site: handing a bun command to someone reading Go examples is the first
+// thing that tells them this SDK is not for them.
+const SDK_LABEL: Record<SdkLang, string> = {
+  ts: "Node SDK",
+  go: "Go SDK",
+  py: "Python SDK",
+};
 
-const CONNECT: { filename: string; lang: SdkLang; code: string } = {
-  filename: "my-service.ts",
-  lang: "ts",
-  code: `import { ServiceBridge } from "service-bridge";
+const INSTALL_CMD: Record<SdkLang, string> = {
+  ts: "bun add service-bridge",
+  go: "go get github.com/service-bridge/sdk/go",
+  py: "pip install service-bridge",
+};
+
+type Snippet = { filename: string; lang: SdkLang; code: string };
+
+const CONNECT: Record<SdkLang, Snippet> = {
+  ts: {
+    filename: "my-service.ts",
+    lang: "ts",
+    code: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
   "localhost:14445",
@@ -34,6 +50,51 @@ sb.event.handle("order.*", async (payload) => {
 });
 
 await sb.start(); // provisions a worker mTLS cert from the service key`,
+  },
+  go: {
+    filename: "main.go",
+    lang: "go",
+    code: `package main
+
+import (
+\t"context"
+\t"log/slog"
+
+\tsb "github.com/service-bridge/sdk/go"
+\thellopb "example.com/gen/hellopb"
+\torderpb "example.com/gen/orderpb"
+)
+
+func main() {
+\tctx := context.Background()
+
+\tc, err := sb.New("localhost:14445", serviceKey)
+\tif err != nil {
+\t\tpanic(err)
+\t}
+
+\tsb.Handle(c, "hello", func(ctx context.Context, req *hellopb.Request) (*hellopb.Reply, error) {
+\t\treturn &hellopb.Reply{Message: "Hello, " + req.GetName() + "!"}, nil
+\t})
+
+\tsb.DefineEvent[*orderpb.Placed](c, "order.placed")
+\tsb.SubscribeEvent(c, "order.*", func(ctx context.Context, e *orderpb.Placed) error {
+\t\tslog.Info("event received", "order", e.GetId())
+\t\treturn nil
+\t})
+
+\t// provisions a worker mTLS cert from the service key
+\tif err := c.Start(ctx); err != nil {
+\t\tpanic(err)
+\t}
+\tdefer c.Stop(context.Background())
+}`,
+  },
+  py: {
+    filename: "my_service.py",
+    lang: "py",
+    code: `# The Python SDK is not released yet.`,
+  },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -55,6 +116,9 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   const [copiedRuntime, setCopiedRuntime] = useState(false);
   const [copiedSdk, setCopiedSdk] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
+  const { lang } = useSdkLang();
+  const installCmd = INSTALL_CMD[lang] ?? INSTALL_CMD.ts;
+  const connect = CONNECT[lang] ?? CONNECT.ts;
 
   const copyRuntime = () => {
     navigator.clipboard.writeText("bash <(curl -fsSL https://servicebridge.dev/install.sh)");
@@ -63,13 +127,13 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
   };
 
   const copySdk = () => {
-    navigator.clipboard.writeText(INSTALL_CMD);
+    navigator.clipboard.writeText(installCmd);
     setCopiedSdk(true);
     setTimeout(() => setCopiedSdk(false), 2000);
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText(CONNECT.code.trim());
+    navigator.clipboard.writeText(connect.code.trim());
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
@@ -129,7 +193,9 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             <p className="type-body-sm mb-4">Add the SDK to your service.</p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5 flex items-center justify-between">
-                <span className="type-overline-mono text-muted-foreground">Node SDK</span>
+                <span className="type-overline-mono text-muted-foreground">
+                  {SDK_LABEL[lang] ?? SDK_LABEL.ts}
+                </span>
                 <button
                   type="button"
                   onClick={copySdk}
@@ -150,7 +216,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 </button>
               </div>
               <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">
-                <code>$ {INSTALL_CMD}</code>
+                <code>$ {installCmd}</code>
               </pre>
             </div>
           </div>
@@ -168,7 +234,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
             </p>
             <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
               <div className="border-b border-surface-border bg-code-chrome px-4 py-2.5 flex items-center justify-between">
-                <span className="type-overline-mono text-muted-foreground">{CONNECT.filename}</span>
+                <span className="type-overline-mono text-muted-foreground">{connect.filename}</span>
                 <button
                   type="button"
                   onClick={copyCode}
@@ -189,7 +255,7 @@ export function GetStartedSection({ onDocs }: { onDocs?: () => void }) {
                 </button>
               </div>
               <pre className="p-4 text-xs font-mono overflow-x-auto leading-relaxed">
-                <code>{highlightCode(CONNECT.code, CONNECT.lang)}</code>
+                <code>{highlightCode(connect.code, connect.lang)}</code>
               </pre>
             </div>
             <p className="type-caption mt-3 text-muted-foreground">

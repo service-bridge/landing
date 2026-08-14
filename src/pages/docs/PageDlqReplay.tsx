@@ -1,6 +1,6 @@
+import { MultiCodeBlock } from "../../ui/CodeBlock";
 import {
   Callout,
-  DocCodeBlock,
   H2,
   Mono,
   P,
@@ -161,13 +161,20 @@ export function PageDlqReplay() {
           {t.noteIdempotencyEnd}
         </li>
       </ul>
-      <DocCodeBlock
-        lang="ts"
-        code={`sb.event.handle("orders.created", async (payload) => {
+      <MultiCodeBlock
+        code={{
+          ts: `sb.event.handle("orders.created", async (payload) => {
   // throwing fails the delivery; the runtime retries it on the
   // backoff ladder, then dead-letters after events.max_attempts.
   await chargeCustomer(payload);
-});`}
+});`,
+          go: `sb.SubscribeEvent(c, "orders.created",
+	func(ctx context.Context, e *orderpb.Created) error {
+		// returning an error fails the delivery; the runtime retries it
+		// on the backoff ladder, then dead-letters after events.max_attempts.
+		return chargeCustomer(ctx, e)
+	})`,
+        }}
       />
     </div>
   );

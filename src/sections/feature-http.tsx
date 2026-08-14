@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Copy, Globe, Route, Zap } from "lucide-react";
 import { useState } from "react";
+import { useSdkLang } from "../lib/language-context";
 import { fadeInUp } from "../components/animations";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
@@ -11,7 +12,7 @@ import { FeatureCard } from "../ui/FeatureCard";
 import { FeatureSection } from "../ui/FeatureSection";
 import { TabStrip } from "../ui/Tabs";
 
-const FRAMEWORK_TABS = [
+const TS_TABS = [
   {
     id: "express",
     label: "Express",
@@ -82,7 +83,113 @@ Bun.serve({ port: 8080, fetch: app.fetch });`,
   },
 ] as const;
 
-type FrameworkId = (typeof FRAMEWORK_TABS)[number]["id"];
+const GO_TABS = [
+  {
+    id: "chi",
+    label: "chi",
+    lang: "go" as const,
+    filename: "main.go",
+    code: `package main
+
+import (
+	"context"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/sbhttp"
+)
+
+func main() {
+	c, _ := sb.New("localhost:14445", serviceKey)
+	integration, _ := sbhttp.New(c)
+
+	r := chi.NewRouter()
+	r.Use(integration.Middleware)
+
+	r.Post("/api/orders", func(w http.ResponseWriter, req *http.Request) {
+		order, err := sb.Call[*orderpb.NewOrder, *orderpb.Order](
+			req.Context(), c, "orders", "orders.create", decode(req))
+		write(w, order, err)
+	})
+
+	// Collects routes into the Service Map, installs X-SB-Trace propagation
+	_ = integration.PublishChi(r, sbhttp.Endpoint{Port: 8080})
+
+	_ = c.Start(context.Background())
+	_ = http.ListenAndServe(":8080", r)
+}`,
+  },
+  {
+    id: "nethttp",
+    label: "net/http",
+    lang: "go" as const,
+    filename: "main.go",
+    code: `package main
+
+import (
+	"context"
+	"net/http"
+
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/sbhttp"
+)
+
+func main() {
+	c, _ := sb.New("localhost:14445", serviceKey)
+	integration, _ := sbhttp.New(c)
+
+	// sbhttp.Mux records patterns as you register them —
+	// http.ServeMux has no way to enumerate its own routes.
+	mux := sbhttp.NewMux()
+	mux.HandleFunc("POST /api/orders", handleOrders)
+
+	_ = integration.PublishMux(mux, sbhttp.Endpoint{Port: 8080})
+
+	_ = c.Start(context.Background())
+	_ = http.ListenAndServe(":8080", integration.Middleware(mux))
+}`,
+  },
+  {
+    id: "gin",
+    label: "Gin",
+    lang: "go" as const,
+    filename: "main.go",
+    code: `package main
+
+import (
+	"context"
+
+	"github.com/gin-gonic/gin"
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/sbhttp"
+	"github.com/service-bridge/sdk/go/sbgin"
+)
+
+func main() {
+	c, _ := sb.New("localhost:14445", serviceKey)
+	integration, _ := sbhttp.New(c)
+
+	engine := gin.New()
+	engine.Use(sbgin.Middleware(integration)) // before the routes
+
+	engine.POST("/checkout", func(ctx *gin.Context) {
+		res, err := sb.Call[*payspb.Cart, *payspb.Receipt](
+			ctx.Request.Context(), c, "checkout", "checkout.process", decode(ctx))
+		respond(ctx, res, err)
+	})
+
+	_ = sbgin.Publish(integration, engine, sbhttp.Endpoint{Port: 8080})
+
+	_ = c.Start(context.Background())
+	_ = engine.Run(":8080")
+}`,
+  },
+] as const;
+
+type Framework = { id: string; label: string; lang: "ts" | "go"; filename: string; code: string };
+
+type FrameworkId = (typeof TS_TABS)[number]["id"] | (typeof GO_TABS)[number]["id"];
 
 const TRACE_HEADERS = [
   {
@@ -135,9 +242,14 @@ const REQUEST_PATH = [
 export function HttpSection() {
   const [activeTab, setActiveTab] = useState<FrameworkId>("express");
   const [copied, setCopied] = useState(false);
-  const tab = FRAMEWORK_TABS.find((t) => t.id === activeTab) ?? FRAMEWORK_TABS[0];
+  const { lang } = useSdkLang();
+  // The framework list itself is language-specific: Express has no meaning to a
+  // Go reader, and the tab that was active in the other language does not exist
+  // here, so fall back to the first one.
+  const frameworks: readonly Framework[] = lang === "go" ? GO_TABS : TS_TABS;
+  const tab = frameworks.find((t) => t.id === activeTab) ?? frameworks[0];
 
-  const maxFwLines = Math.max(...FRAMEWORK_TABS.map((t) => t.code.trim().split("\n").length));
+  const maxFwLines = Math.max(...frameworks.map((t) => t.code.trim().split("\n").length));
   const minFwCodeHeight = maxFwLines * 20 + 40;
 
   const copyCode = () => {
@@ -152,14 +264,14 @@ export function HttpSection() {
       stickyColumn="content"
       eyebrow="HTTP Integrations"
       title={<>Your HTTP server, traced. Automatically.</>}
-      subtitle="Attach one integration to your Express, Fastify, or Hono app. Every request gets a span, X-SB-Trace propagation, and Service Map routes — zero handler changes."
+      subtitle="Attach one integration to your HTTP app — Express, Fastify and Hono in Node, chi, net/http and Gin in Go. Every request gets a span, X-SB-Trace propagation, and Service Map routes — zero handler changes."
       content={
         <motion.div variants={fadeInUp}>
           <CodePanel>
             <div className="flex items-center justify-between gap-3 border-b border-surface-border bg-white/[0.02] px-3 py-2">
               <TabStrip
                 size="sm"
-                items={FRAMEWORK_TABS}
+                items={frameworks}
                 active={activeTab}
                 onChange={setActiveTab}
               />
@@ -201,9 +313,12 @@ export function HttpSection() {
             <p className="mt-2 type-body-sm">
               Each inbound request emits an HTTP.HANDLE op. Downstream{" "}
               <code className="text-foreground/80 bg-surface px-1 rounded">
-                sb.rpc.call()
+                {lang === "go" ? "sb.Call()" : "sb.rpc.call()"}
               </code>{" "}
-              and <code className="text-foreground/80 bg-surface px-1 rounded">sb.event.publish()</code>{" "}
+              and{" "}
+              <code className="text-foreground/80 bg-surface px-1 rounded">
+                {lang === "go" ? "sb.PublishEvent()" : "sb.event.publish()"}
+              </code>{" "}
               inherit the trace automatically.
             </p>
 
