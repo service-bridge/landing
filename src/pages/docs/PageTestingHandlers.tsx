@@ -116,12 +116,228 @@ harness.event.published(); // readonly PublishedEventRecord[]
 
 harness.reset(); // clears rpc + event`;
 
+const RPC_BASIC_GO = `package orders_test
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"example.com/orders/paymentpb"
+	"github.com/service-bridge/sdk/go/sbtest"
+)
+
+var errNonPositiveAmount = errors.New("amount must be positive")
+
+func chargeHandler(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+	if req.GetAmount() <= 0 {
+		return nil, errNonPositiveAmount
+	}
+	return &paymentpb.ChargeReply{TransactionId: "tx-" + req.GetUserId(), Ok: true}, nil
+}
+
+func TestCharge(t *testing.T) {
+	h := sbtest.New()
+	if err := sbtest.Handle(h.RPC, "Charge", chargeHandler); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		context.Background(), h.RPC, "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-1", Amount: 42})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.GetOk() || res.GetTransactionId() != "tx-u-1" {
+		t.Fatalf("unexpected reply: %+v", res)
+	}
+
+	// The handler's own error comes back unwrapped.
+	_, err = sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		context.Background(), h.RPC, "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-2", Amount: -1})
+	if !errors.Is(err, errNonPositiveAmount) {
+		t.Fatalf("want errNonPositiveAmount, got %v", err)
+	}
+}`;
+
+const RPC_MOCK_GO = `// A fixed answer for an outbound call...
+if err := sbtest.RespondWith(h.RPC, "fraud-svc", "Check",
+	&fraudpb.CheckReply{Blocked: false}); err != nil {
+	t.Fatal(err)
+}
+// ...or one computed from the request.
+if err := sbtest.Respond(h.RPC, "fraud-svc", "Check",
+	func(ctx context.Context, req *fraudpb.CheckRequest) (*fraudpb.CheckReply, error) {
+		return &fraudpb.CheckReply{Blocked: req.GetUserId() == "banned-user"}, nil
+	}); err != nil {
+	t.Fatal(err)
+}
+
+// ... the handler under test calls sbtest.Call(ctx, h.RPC, "fraud-svc", "Check", req)
+
+calls := h.RPC.Calls()
+if len(calls) != 1 || calls[0].Service != "fraud-svc" || calls[0].Method != "Check" {
+	t.Fatalf("unexpected calls: %+v", calls)
+}
+
+// An unarranged call is a refusal, not a zero value.
+_, err := sbtest.Call[*fraudpb.CheckRequest, *fraudpb.CheckReply](
+	ctx, h.RPC, "fraud-svc", "Score", &fraudpb.CheckRequest{})
+if !errors.Is(err, sbtest.ErrNoResponse) {
+	t.Fatalf("want ErrNoResponse, got %v", err)
+}`;
+
+const EVENT_BASIC_GO = `h := sbtest.New()
+
+// Define is mandatory before Publish.
+if err := sbtest.Define[*orderpb.PaymentCharged](h.Event, "payment.charged"); err != nil {
+	t.Fatal(err)
+}
+
+if err := sbtest.Subscribe(h.Event, "payment.charged",
+	func(ctx context.Context, e *orderpb.PaymentCharged) error {
+		// must be idempotent — delivery is at-least-once
+		return sendReceipt(ctx, e.GetTransactionId())
+	}); err != nil {
+	t.Fatal(err)
+}
+
+delivery, err := sbtest.Publish(ctx, h.Event, "payment.charged",
+	&orderpb.PaymentCharged{TransactionId: "tx-1"})
+if err != nil {
+	t.Fatal(err)
+}
+if !delivery.Acked {
+	t.Fatalf("delivery nacked: %v", delivery.Err)
+}`;
+
+const EVENT_RETRY_GO = `h := sbtest.New()
+if err := sbtest.Define[*orderpb.PaymentCharged](h.Event, "payment.charged"); err != nil {
+	t.Fatal(err)
+}
+
+dbDown := true
+errDBDown := errors.New("db unavailable")
+if err := sbtest.Subscribe(h.Event, "payment.charged",
+	func(ctx context.Context, e *orderpb.PaymentCharged) error {
+		if dbDown {
+			return errDBDown
+		}
+		return nil
+	}); err != nil {
+	t.Fatal(err)
+}
+
+first, err := sbtest.Publish(ctx, h.Event, "payment.charged", &orderpb.PaymentCharged{})
+if err != nil {
+	t.Fatal(err)
+}
+if first.Acked || !errors.Is(first.Err, errDBDown) {
+	t.Fatalf("want a nack carrying errDBDown, got %+v", first)
+}
+
+dbDown = false
+retried, err := sbtest.Publish(ctx, h.Event, "payment.charged", &orderpb.PaymentCharged{})
+if err != nil {
+	t.Fatal(err)
+}
+if !retried.Acked {
+	t.Fatalf("want an ack, got %+v", retried)
+}`;
+
+const EVENT_PUBLISH_GO = `// inside the handler: sbtest.Publish(ctx, h.Event, "payment.charged", charged)
+
+published := h.Event.Published()
+if len(published) != 1 || published[0].Name != "payment.charged" {
+	t.Fatalf("unexpected publications: %+v", published)
+}`;
+
+const FACTORY_PATTERN_GO = `type Ledger interface {
+	Debit(ctx context.Context, user string, amount int64) error
+}
+
+// The handler is a plain function over a narrow dependency, not a closure over
+// a global client — production and the test register the very same function.
+func NewChargeHandler(ledger Ledger) func(context.Context, *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+	return func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+		if err := ledger.Debit(ctx, req.GetUserId(), req.GetAmount()); err != nil {
+			return nil, err
+		}
+		return &paymentpb.ChargeReply{TransactionId: "tx-" + req.GetUserId(), Ok: true}, nil
+	}
+}
+
+// production
+func Register(c *sb.Client, ledger Ledger) error {
+	return sb.Handle(c, "Charge", NewChargeHandler(ledger))
+}
+
+// test
+type stubLedger struct{}
+
+func (stubLedger) Debit(ctx context.Context, user string, amount int64) error { return nil }
+
+func TestChargeAccepts(t *testing.T) {
+	h := sbtest.New()
+	if err := sbtest.Handle(h.RPC, "Charge", NewChargeHandler(stubLedger{})); err != nil {
+		t.Fatal(err)
+	}
+	res, err := sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		context.Background(), h.RPC, "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-1", Amount: 42})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.GetOk() {
+		t.Fatal("expected the charge to be accepted")
+	}
+}`;
+
+const CHEATSHEET_GO = `h := sbtest.New()
+
+// RPC
+if err := sbtest.Handle(h.RPC, "Charge", chargeHandler); err != nil {
+	t.Fatal(err)
+}
+res, err := sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, h.RPC, "Charge", &paymentpb.ChargeRequest{Amount: 1})
+if err != nil {
+	t.Fatal(err)
+}
+log.Println(res.GetOk())
+
+if err := sbtest.RespondWith(h.RPC, "other-svc", "Method",
+	&fraudpb.CheckReply{Blocked: false}); err != nil {
+	t.Fatal(err)
+}
+// ... the code under test calls sbtest.Call(...)
+log.Println(h.RPC.Calls()) // []sbtest.CallRecord
+
+// Events
+if err := sbtest.Define[*orderpb.PaymentCharged](h.Event, "payment.charged"); err != nil {
+	t.Fatal(err)
+}
+if err := sbtest.Subscribe(h.Event, "payment.charged", onCharged); err != nil {
+	t.Fatal(err)
+}
+delivery, err := sbtest.Publish(ctx, h.Event, "payment.charged",
+	&orderpb.PaymentCharged{TransactionId: "tx-1"})
+if err != nil {
+	t.Fatal(err)
+}
+log.Println(delivery.Acked, delivery.Err)
+
+log.Println(h.Event.Published()) // []sbtest.PublishRecord
+
+h.Reset() // clears rpc + event`;
+
 const T = {
   en: {
     badge: "SDK Reference",
     title: "Testing Handlers",
     description:
-      "service-bridge/testing gives you createTestHarness() — an in-memory double of sb.rpc and sb.event for unit-testing registered RPC and event handlers without a live runtime, network, or SQLite.",
+      "An in-memory double of the RPC and event surfaces, for unit-testing registered handlers without a live runtime, network, or local storage. createTestHarness() from service-bridge/testing in Node, sbtest.New() from the sbtest package in Go.",
 
     overviewTitle: "Why",
     overviewDesc:
@@ -130,48 +346,54 @@ const T = {
       "The harness works on decoded objects, not wire bytes. Protobuf encode/decode stays out of the handler test — that's the concern of the schema/CallServer path, not the handler's own logic.",
 
     installTitle: "Install & import",
-    installDesc: "The testing utilities ship in the main package under a subpath export.",
+    installDesc: "The testing utilities ship next to the SDK: a subpath export of the Node package, a sibling package of the Go module.",
 
     modelTitle: "Model",
     modelRows: [
-      { name: "harness.rpc", type: "TestRpcDomain", desc: "handle() / invoke() for inbound RPC; call() / mockResponse() for outbound RPC" },
-      { name: "harness.event", type: "TestEventDomain", desc: "handle() / deliver() for inbound events; publish() for outbound events" },
-      { name: "harness.reset()", type: "() => void", desc: "Clears all handlers, mocks, and recorded calls on both domains" },
+      { name: "harness.rpc · h.RPC", type: "TestRpcDomain · *sbtest.RPC", desc: "Register and invoke an inbound handler; arrange and record outbound calls" },
+      { name: "harness.event · h.Event", type: "TestEventDomain · *sbtest.Event", desc: "Register a subscriber and deliver to it; record outbound publications" },
+      { name: "harness.reset() · h.Reset()", type: "() => void", desc: "Clears all handlers, arrangements, and recorded calls on both doubles" },
     ] as { name: string; type: string; desc: string }[],
 
     rpcTitle: "RPC handler: register and call",
     rpcDesc:
-      "fn is the same RpcHandlerFn shape accepted by sb.rpc.handle(name, fn, opts) in production (opts.schema isn't needed here — the harness never encodes the payload). invoke() calls fn(req) directly and returns the result; if the handler throws, the error propagates unchanged.",
-    rpcErrorNote: "invoke() throws no RPC handler registered for \"...\" if nothing is registered under that name.",
+      "The handler is the exact function production registers — sb.rpc.handle(name, fn, opts) in Node, sb.Handle(c, name, fn) in Go. No schema is needed here: the double never encodes the payload. Invoking calls the handler directly and returns its result; a failure propagates unchanged, so the test asserts the business error it wrote.",
+    rpcErrorNote: "Invoking a name nothing is registered under fails loudly: no RPC handler registered for \"...\" in Node, sbtest.ErrNoHandler in Go. Go also refuses a duplicate registration with sbtest.ErrDuplicate, the way the runtime refuses a duplicate declaration.",
 
     rpcMockTitle: "Outbound RPC calls: mocks and recordings",
     rpcMockDesc:
       "A handler that itself calls rpc.call(...) is tested through the same harness.",
     rpcMockSig: "harness.rpc.mockResponse(serviceName, methodName, responder: Res | ((payload, opts?) => Res | Promise<Res>)): void",
     rpcMockSig2: "harness.rpc.calls(): readonly { serviceName; methodName; payload; opts? }[]",
+    rpcMockSigGo: "sbtest.RespondWith[Res](r *RPC, service, method string, res Res) error · sbtest.Respond[Req, Res](r *RPC, service, method string, fn Responder[Req, Res]) error",
+    rpcMockSigGo2: "func (r *RPC) Calls() []CallRecord{Service, Method, Input}",
     rpcMockCallout:
-      "Without a mockResponse(...) for a (serviceName, methodName) pair, call() throws — a forgotten mock fails the test loudly instead of resolving to undefined somewhere downstream.",
+      "With nothing arranged for a (service, method) pair the outbound call fails — a throw in Node, sbtest.ErrNoResponse in Go. A forgotten arrangement breaks the test loudly instead of turning into an undefined or a zero value somewhere downstream. Go also names a wrong-typed value with ErrTypeMismatch rather than coercing it.",
 
     eventsTitle: "Event handler: delivery and ack/nack",
     eventsSig1: "harness.event.handle(pattern: string, fn: (payload: unknown) => Promise<void> | void): void",
     eventsSig2: "harness.event.deliver(name: string, payload: unknown): Promise<{ outcome: \"ack\" } | { outcome: \"nack\"; reason: string }>",
+    eventsSigGo1: "sbtest.Define[T](e *Event, name string) error · sbtest.Subscribe[T](e *Event, name string, fn Subscriber[T]) error",
+    eventsSigGo2: "sbtest.Publish[T](ctx, e *Event, name string, payload T) (Delivery{Name, Acked, Err}, error)",
     eventsDesc:
-      "deliver() reproduces the production contract of Subscriber.handleDelivery: no handler registered under the exact name → ack (routing lives on the server); a handler throws → nack with String(error); every handler succeeds → ack. Multiple handlers on the same name run in registration order; the first throw stops delivery.",
+      "Delivering reproduces the production contract: no handler registered under the exact name → ack, because routing lives on the server; a handler fails → nack carrying that failure; every handler succeeds → ack. Multiple handlers on the same name run in registration order and the first failure stops the delivery. In Go a publish is the delivery, and declaring the name with Define first is mandatory — the runtime rejects a publish for an event that was never registered.",
     eventsRetryTitle: "Modeling a retry",
     eventsRetryDesc:
-      "The real EventHandlerFn contract doesn't receive an attempt number (sb.event.handle() has none either), so a test models \"second attempt\" as a second deliver() call and checks each outcome:",
+      "A subscriber never receives an attempt number — the real handler contract has none — so a test models the second attempt as a second delivery and checks each outcome:",
 
     publishTitle: "Outbound event publish",
     publishSig1: "harness.event.publish<T>(name: string, payload: T, opts?: PublishOpts): Promise<{ eventId: string }>",
     publishSig2: "harness.event.published(): readonly { name; payload; opts? }[]",
+    publishSigGo1: "sbtest.Publish[T](ctx, e *Event, name string, payload T) (Delivery, error)",
+    publishSigGo2: "func (e *Event) Published() []PublishRecord{Name, Payload} · func (e *Event) Deliveries() []Delivery",
     publishDesc:
-      "publish() only records the call and returns a fresh eventId — the event name isn't validated and the payload isn't encoded. It's an observation point for what the handler published, not a stand-in for the real Publisher (outbox, schema, gRPC).",
+      "Publishing on the double records the call and hands the payload to the local subscribers — nothing is encoded and no outbox is involved. It is an observation point for what the handler published, not a stand-in for the real publisher.",
 
     factoryTitle: "Pattern: a testable handler factory",
     factoryDesc:
-      "Handlers that need an outbound channel are written as a factory over a narrow dependency slice, not a closure over a global sb instance.",
+      "Handlers that need an outbound channel are written as a factory over a narrow dependency, not a closure over a global client. Production and the test then register the very same function.",
     factoryCallout:
-      "Pick<RpcDomain, \"call\"> and Pick<EventDomain, \"publish\"> are structural types: harness.rpc / harness.event satisfy them without a cast, because TestRpcDomain.call / TestEventDomain.publish share the exact same method signatures as the production domains.",
+      "In Node the dependency is a structural type — Pick<RpcDomain, \"call\"> and Pick<EventDomain, \"publish\"> — which harness.rpc and harness.event satisfy without a cast, because the doubles share the production method signatures. In Go the dependency is an interface of your own, and the compiler checks that production and the test both satisfy it.",
 
     boundariesTitle: "What the harness does not do",
     boundariesRows: [
@@ -189,7 +411,7 @@ const T = {
     badge: "Справочник SDK",
     title: "Тестирование хендлеров",
     description:
-      "service-bridge/testing даёт createTestHarness() — in-memory двойник sb.rpc и sb.event для юнит-тестирования зарегистрированных RPC- и event-хендлеров без живого рантайма, сети или SQLite.",
+      "In-memory двойник RPC- и event-поверхностей для юнит-тестирования зарегистрированных хендлеров без живого рантайма, сети и локального хранилища. createTestHarness() из service-bridge/testing в Node и sbtest.New() из пакета sbtest в Go.",
 
     overviewTitle: "Зачем",
     overviewDesc:
@@ -198,48 +420,54 @@ const T = {
       "Harness работает с декодированными объектами, не с wire-байтами. Protobuf encode/decode остаётся за рамками теста хендлера — это забота пути schema/CallServer, не логики самого хендлера.",
 
     installTitle: "Установка и импорт",
-    installDesc: "Утилиты тестирования поставляются в основном пакете через subpath-экспорт.",
+    installDesc: "Утилиты тестирования лежат рядом с SDK: subpath-экспорт в Node-пакете и соседний пакет в Go-модуле.",
 
     modelTitle: "Модель",
     modelRows: [
-      { name: "harness.rpc", type: "TestRpcDomain", desc: "handle() / invoke() для входящих RPC; call() / mockResponse() для исходящих RPC" },
-      { name: "harness.event", type: "TestEventDomain", desc: "handle() / deliver() для входящих событий; publish() для исходящих событий" },
-      { name: "harness.reset()", type: "() => void", desc: "Очищает все хендлеры, моки и записанные вызовы на обоих доменах" },
+      { name: "harness.rpc · h.RPC", type: "TestRpcDomain · *sbtest.RPC", desc: "Регистрация и вызов входящего хендлера; заготовка ответов и запись исходящих вызовов" },
+      { name: "harness.event · h.Event", type: "TestEventDomain · *sbtest.Event", desc: "Регистрация подписчика и доставка ему; запись исходящих публикаций" },
+      { name: "harness.reset() · h.Reset()", type: "() => void", desc: "Очищает все хендлеры, заготовки и записанные вызовы на обоих двойниках" },
     ] as { name: string; type: string; desc: string }[],
 
     rpcTitle: "RPC-хендлер: регистрация и вызов",
     rpcDesc:
-      "fn — та же форма RpcHandlerFn, что принимает sb.rpc.handle(name, fn, opts) в продакшене (opts.schema здесь не нужен — harness никогда не кодирует payload). invoke() зовёт fn(req) напрямую и возвращает результат; если хендлер бросает — ошибка пробрасывается без изменений.",
-    rpcErrorNote: "invoke() бросает no RPC handler registered for \"...\", если под этим именем ничего не зарегистрировано.",
+      "Хендлер — ровно та функция, которую регистрирует продакшен: sb.rpc.handle(name, fn, opts) в Node и sb.Handle(c, name, fn) в Go. Схема здесь не нужна — двойник не кодирует payload. Вызов зовёт хендлер напрямую и возвращает результат; сбой пробрасывается без изменений, так что тест проверяет ту бизнес-ошибку, которую вы написали.",
+    rpcErrorNote: "Вызов имени, под которым ничего не зарегистрировано, падает громко: no RPC handler registered for \"...\" в Node и sbtest.ErrNoHandler в Go. Go к тому же отвергает повторную регистрацию через sbtest.ErrDuplicate — так же, как рантайм отвергает дубликат декларации.",
 
     rpcMockTitle: "Исходящие RPC-вызовы: моки и записи",
     rpcMockDesc:
       "Хендлер, который сам зовёт rpc.call(...), тестируется через тот же harness.",
     rpcMockSig: "harness.rpc.mockResponse(serviceName, methodName, responder: Res | ((payload, opts?) => Res | Promise<Res>)): void",
     rpcMockSig2: "harness.rpc.calls(): readonly { serviceName; methodName; payload; opts? }[]",
+    rpcMockSigGo: "sbtest.RespondWith[Res](r *RPC, service, method string, res Res) error · sbtest.Respond[Req, Res](r *RPC, service, method string, fn Responder[Req, Res]) error",
+    rpcMockSigGo2: "func (r *RPC) Calls() []CallRecord{Service, Method, Input}",
     rpcMockCallout:
-      "Без mockResponse(...) для пары (serviceName, methodName) вызов call() бросает — забытый мок валит тест сразу, а не превращается где-то дальше по цепочке в undefined.",
+      "Если для пары (service, method) ничего не заготовлено, исходящий вызов падает: исключение в Node и sbtest.ErrNoResponse в Go. Забытая заготовка валит тест сразу, а не превращается где-то дальше по цепочке в undefined или нулевое значение. Go к тому же называет значение неверного типа через ErrTypeMismatch, а не приводит его молча.",
 
     eventsTitle: "Event-хендлер: доставка и ack/nack",
     eventsSig1: "harness.event.handle(pattern: string, fn: (payload: unknown) => Promise<void> | void): void",
     eventsSig2: "harness.event.deliver(name: string, payload: unknown): Promise<{ outcome: \"ack\" } | { outcome: \"nack\"; reason: string }>",
+    eventsSigGo1: "sbtest.Define[T](e *Event, name string) error · sbtest.Subscribe[T](e *Event, name string, fn Subscriber[T]) error",
+    eventsSigGo2: "sbtest.Publish[T](ctx, e *Event, name string, payload T) (Delivery{Name, Acked, Err}, error)",
     eventsDesc:
-      "deliver() воспроизводит продакшен-контракт Subscriber.handleDelivery: нет хендлера под точным именем → ack (маршрутизация — на сервере); хендлер бросает → nack с String(error); все хендлеры отработали успешно → ack. Несколько хендлеров на одно имя вызываются в порядке регистрации, первый throw останавливает доставку.",
+      "Доставка воспроизводит продакшен-контракт: нет хендлера под точным именем → ack, потому что маршрутизация живёт на сервере; хендлер упал → nack с этим сбоем; все хендлеры отработали успешно → ack. Несколько хендлеров на одно имя вызываются в порядке регистрации, первый сбой останавливает доставку. В Go доставкой является сама публикация, а объявление имени через Define обязательно: рантайм отвергает публикацию события, которое никогда не регистрировали.",
     eventsRetryTitle: "Моделирование повтора",
     eventsRetryDesc:
-      "Реальный контракт EventHandlerFn не получает номер попытки (его нет и в sb.event.handle()), поэтому тест моделирует «вторую попытку» вторым вызовом deliver() и проверяет каждый исход:",
+      "Подписчик никогда не получает номер попытки — его нет в реальном контракте хендлера, — поэтому тест моделирует «вторую попытку» второй доставкой и проверяет каждый исход:",
 
     publishTitle: "Исходящая публикация событий",
     publishSig1: "harness.event.publish<T>(name: string, payload: T, opts?: PublishOpts): Promise<{ eventId: string }>",
     publishSig2: "harness.event.published(): readonly { name; payload; opts? }[]",
+    publishSigGo1: "sbtest.Publish[T](ctx, e *Event, name string, payload T) (Delivery, error)",
+    publishSigGo2: "func (e *Event) Published() []PublishRecord{Name, Payload} · func (e *Event) Deliveries() []Delivery",
     publishDesc:
-      "publish() только записывает вызов и возвращает свежий eventId — имя события не валидируется, payload не кодируется. Это точка наблюдения «что хендлер опубликовал», не замена реального Publisher (outbox, schema, gRPC).",
+      "Публикация на двойнике записывает вызов и отдаёт payload локальным подписчикам — ничего не кодируется и outbox не участвует. Это точка наблюдения «что хендлер опубликовал», а не замена реального Publisher.",
 
     factoryTitle: "Паттерн: тестируемая фабрика хендлера",
     factoryDesc:
-      "Хендлеры, которым нужен исходящий канал, пишутся как фабрика от узкой зависимости, а не как замыкание над глобальным экземпляром sb.",
+      "Хендлеры, которым нужен исходящий канал, пишутся как фабрика от узкой зависимости, а не как замыкание над глобальным клиентом. Тогда продакшен и тест регистрируют одну и ту же функцию.",
     factoryCallout:
-      "Pick<RpcDomain, \"call\"> и Pick<EventDomain, \"publish\"> — структурные типы: harness.rpc / harness.event подходят под них без каста, потому что у TestRpcDomain.call / TestEventDomain.publish та же сигнатура метода, что и у продакшен-доменов.",
+      "В Node зависимость — структурный тип: Pick<RpcDomain, \"call\"> и Pick<EventDomain, \"publish\">, под которые harness.rpc и harness.event подходят без каста, потому что у двойников те же сигнатуры методов, что у продакшен-доменов. В Go зависимость — ваш собственный интерфейс, и компилятор проверяет, что и продакшен, и тест ему удовлетворяют.",
 
     boundariesTitle: "Чего harness не делает",
     boundariesRows: [
@@ -269,14 +497,19 @@ export function PageTestingHandlers() {
       <H2 id="install">{t.installTitle}</H2>
       <P>{t.installDesc}</P>
       <DocCodeBlock code="bun add service-bridge" lang="bash" />
-      <MultiCodeBlock code={{ ts: `import { createTestHarness } from "service-bridge/testing";` }} />
+      <MultiCodeBlock
+        code={{
+          ts: `import { createTestHarness } from "service-bridge/testing";`,
+          go: `import "github.com/service-bridge/sdk/go/sbtest"`,
+        }}
+      />
 
       <H3 id="model">{t.modelTitle}</H3>
       <ParamTable rows={t.modelRows} />
 
       <H2 id="rpc-handle">{t.rpcTitle}</H2>
       <P>{t.rpcDesc}</P>
-      <MultiCodeBlock code={{ ts: RPC_BASIC }} />
+      <MultiCodeBlock code={{ ts: RPC_BASIC, go: RPC_BASIC_GO }} />
       <P>{t.rpcErrorNote}</P>
 
       <H3 id="rpc-mock">{t.rpcMockTitle}</H3>
@@ -285,7 +518,11 @@ export function PageTestingHandlers() {
       <div className="mt-1.5">
         <Mono>{t.rpcMockSig2}</Mono>
       </div>
-      <MultiCodeBlock code={{ ts: RPC_MOCK }} />
+      <div className="mt-1.5">
+      </div>
+      <div className="mt-1.5">
+      </div>
+      <MultiCodeBlock code={{ ts: RPC_MOCK, go: RPC_MOCK_GO }} />
       <Callout type="warning">{t.rpcMockCallout}</Callout>
 
       <H2 id="event-handle">{t.eventsTitle}</H2>
@@ -293,24 +530,32 @@ export function PageTestingHandlers() {
       <div className="mt-1.5">
         <Mono>{t.eventsSig2}</Mono>
       </div>
+      <div className="mt-1.5">
+      </div>
+      <div className="mt-1.5">
+      </div>
       <P>{t.eventsDesc}</P>
-      <MultiCodeBlock code={{ ts: EVENT_BASIC }} />
+      <MultiCodeBlock code={{ ts: EVENT_BASIC, go: EVENT_BASIC_GO }} />
 
       <H3 id="event-retry">{t.eventsRetryTitle}</H3>
       <P>{t.eventsRetryDesc}</P>
-      <MultiCodeBlock code={{ ts: EVENT_RETRY }} />
+      <MultiCodeBlock code={{ ts: EVENT_RETRY, go: EVENT_RETRY_GO }} />
 
       <H2 id="event-publish">{t.publishTitle}</H2>
       <Mono>{t.publishSig1}</Mono>
       <div className="mt-1.5">
         <Mono>{t.publishSig2}</Mono>
       </div>
+      <div className="mt-1.5">
+      </div>
+      <div className="mt-1.5">
+      </div>
       <P>{t.publishDesc}</P>
-      <MultiCodeBlock code={{ ts: EVENT_PUBLISH }} />
+      <MultiCodeBlock code={{ ts: EVENT_PUBLISH, go: EVENT_PUBLISH_GO }} />
 
       <H2 id="factory-pattern">{t.factoryTitle}</H2>
       <P>{t.factoryDesc}</P>
-      <MultiCodeBlock code={{ ts: FACTORY_PATTERN }} />
+      <MultiCodeBlock code={{ ts: FACTORY_PATTERN, go: FACTORY_PATTERN_GO }} />
       <Callout type="tip">{t.factoryCallout}</Callout>
 
       <H2 id="boundaries">{t.boundariesTitle}</H2>
@@ -328,7 +573,7 @@ export function PageTestingHandlers() {
       </div>
 
       <H2 id="cheatsheet">{t.cheatsheetTitle}</H2>
-      <MultiCodeBlock code={{ ts: CHEATSHEET }} />
+      <MultiCodeBlock code={{ ts: CHEATSHEET, go: CHEATSHEET_GO }} />
     </div>
   );
 }

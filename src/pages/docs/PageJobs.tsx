@@ -22,11 +22,11 @@ const T = {
     howP2:
       "Run as many replicas of a service as you like — the runtime delivers each tick to exactly one live replica through a PostgreSQL lease plus a 5-second heartbeat. A job is a one-step tracker: one handler, one attempt plus retries. For multi-step durable flows use a workflow.",
     howCallout:
-      "A job handler receives no payload — only a context object. Pass nothing through the trigger; read what you need from the schedule moment (ctx.scheduledAt / ctx.localScheduledAt) or from your own storage.",
+      "A job handler receives no payload — only the execution record. Pass nothing through the trigger; read what you need from the schedule moment (scheduledAt / localScheduledAt) or from your own storage.",
 
     handleTitle: "sb.job.handle()",
     handleP:
-      "Declare a job before sb.start(). The signature is (name, opts, fn) — the same singular-namespace, handle-verb shape as sb.event.handle / sb.workflow.handle. A duplicate job name throws immediately at registration.",
+      "Declare a job before the client goes online. The shape is (name, spec, fn) in both SDKs — sb.job.handle in Node, c.Job.Handle in Go, where the trigger comes from job.Cron / job.Interval / job.At so a job carries exactly one by construction. A duplicate job name is refused right at registration.",
 
     optsTitle: "JobOpts",
     optsTrigger:
@@ -40,11 +40,11 @@ const T = {
 
     delayTitle: "Delayed trigger (one-shot)",
     delayP:
-      "Fire once at a specific moment. The at field accepts a Date, a unix-ms number, or an ISO date string. Useful for trial expirations, follow-ups, or reminders. The schedule survives a runtime restart — a delayed job set today for tomorrow still fires.",
+      "Fire once at a specific moment: an at field taking a Date, a unix-ms number or an ISO string in Node, job.At(time.Time) in Go. Useful for trial expirations, follow-ups, or reminders. The schedule survives a runtime restart — a delayed job set today for tomorrow still fires.",
 
     intervalTitle: "Interval trigger",
     intervalP:
-      "Fire every N milliseconds. Minimum is 100 ms (runtime-configurable). Use this for sub-minute schedules where cron cannot help.",
+      "Fire on a fixed interval — milliseconds in Node, a time.Duration in Go, whole milliseconds on the wire either way. Minimum is 100 ms (runtime-configurable). Use this for sub-minute schedules where cron cannot help.",
 
     policyTitle: "Catchup & overlap policy",
     catchupP:
@@ -65,17 +65,17 @@ const T = {
 
     retryTitle: "Retry policy",
     retryP:
-      "If a handler throws and the error is retryable (the default), the runtime retries up to maxAttempts with exponential backoff. When attempts are exhausted the execution moves to dead_letter. A successful run ends as success.",
+      "If a handler fails and the error is retryable (the default), the runtime retries up to maxAttempts with exponential backoff. When attempts are exhausted the execution moves to dead_letter. A successful run ends as success.",
     retryRetryP:
       "Tune the backoff with the retry option — initialMs, maxMs, multiplier, and jitter (a 0..1 fraction).",
     retryNonP:
-      "To send an error straight to the DLQ without retrying, mark it non-retryable:",
+      "To send a failure straight to the DLQ without retrying, mark it permanent — a retryable: false flag on the error in Node, a wrap in job.ErrPermanent in Go:",
     retryIdemCallout:
-      "Delivery is at-least-once. The same tick can arrive more than once after a lease expiry or a replica crash. Make the handler idempotent by ctx.idempotencyKey (stable per scheduled tick) — never by ctx.attempt, which is diagnostic only.",
+      "Delivery is at-least-once. The same tick can arrive more than once after a lease expiry or a replica crash. Make the handler idempotent by the idempotency key, which is stable across every attempt of one scheduled fire — never by the attempt counter, which changes on each retry and is diagnostic only.",
 
     ctxTitle: "JobHandlerCtx",
     ctxP:
-      "The handler receives a single ctx argument. There is no payload. Trace context is not on ctx — it is propagated automatically, so any sb.rpc.call / sb.event.publish / sb.workflow.start inside the handler inherits the incoming trace.",
+      "The handler receives the execution record and nothing else: one ctx object in Node, (ctx, job.Execution) in Go. There is no payload. Trace context is propagated automatically, so any call, publish or workflow start inside the handler inherits the incoming trace.",
     ctxFieldsTitle: "Fields",
     depsTitle: "Declared dependencies & access",
     depsP:
@@ -120,11 +120,11 @@ const T = {
     howP2:
       "Запускайте сколько угодно реплик сервиса — runtime доставляет каждый тик ровно одной живой реплике через аренду (lease) в PostgreSQL и heartbeat раз в 5 секунд. Задание — одношаговый трекер: один handler, одна попытка плюс повторы. Для многошаговых durable-процессов используйте workflow.",
     howCallout:
-      "Handler задания не получает payload — только объект контекста. Через триггер ничего не передаётся; берите нужное из момента расписания (ctx.scheduledAt / ctx.localScheduledAt) или из собственного хранилища.",
+      "Handler задания не получает payload — только запись о запуске. Через триггер ничего не передаётся; берите нужное из момента расписания (scheduledAt / localScheduledAt) или из собственного хранилища.",
 
     handleTitle: "sb.job.handle()",
     handleP:
-      "Объявите задание до sb.start(). Сигнатура — (name, opts, fn): та же форма с singular-неймспейсом и глаголом handle, что у sb.event.handle / sb.workflow.handle. Дубликат имени задания бросает исключение сразу при регистрации.",
+      "Объявите задание до подъёма клиента. Форма одинаковая — (name, spec, fn): sb.job.handle в Node, c.Job.Handle в Go, где триггер приходит из job.Cron / job.Interval / job.At, так что по построению у задания ровно один триггер. Дубликат имени отвергается сразу при регистрации.",
 
     optsTitle: "JobOpts",
     optsTrigger:
@@ -138,11 +138,11 @@ const T = {
 
     delayTitle: "Отложенный триггер (одноразовый)",
     delayP:
-      "Срабатывает один раз в конкретный момент. Поле at принимает Date, число unix-ms или ISO-строку даты. Полезно для истечения пробных периодов, напоминаний, follow-up. Расписание переживает перезапуск runtime — отложенное задание, заведённое сегодня на завтра, всё равно сработает.",
+      "Срабатывает один раз в конкретный момент: поле at принимает Date, число unix-ms или ISO-строку в Node, в Go это job.At(time.Time). Полезно для истечения пробных периодов, напоминаний, follow-up. Расписание переживает перезапуск runtime — отложенное задание, заведённое сегодня на завтра, всё равно сработает.",
 
     intervalTitle: "Интервальный триггер",
     intervalP:
-      "Срабатывает каждые N миллисекунд. Минимум — 100 мс (настраивается в runtime). Используйте для суб-минутных расписаний, где cron не помогает.",
+      "Срабатывает с фиксированным интервалом — миллисекунды в Node, time.Duration в Go, на проводе в обоих случаях целые миллисекунды. Минимум — 100 мс (настраивается в runtime). Используйте для суб-минутных расписаний, где cron не помогает.",
 
     policyTitle: "Политика catchup и overlap",
     catchupP:
@@ -163,17 +163,17 @@ const T = {
 
     retryTitle: "Политика повторов",
     retryP:
-      "Если handler бросает исключение и ошибка retryable (по умолчанию), runtime повторяет до maxAttempts с экспоненциальным backoff. Когда попытки исчерпаны, execution переходит в dead_letter. Успешный запуск завершается как success.",
+      "Если handler отработал неуспешно и ошибка retryable (по умолчанию), runtime повторяет до maxAttempts с экспоненциальным backoff. Когда попытки исчерпаны, execution переходит в dead_letter. Успешный запуск завершается как success.",
     retryRetryP:
       "Настройте backoff опцией retry — initialMs, maxMs, multiplier и jitter (доля 0..1).",
     retryNonP:
-      "Чтобы отправить ошибку сразу в DLQ без повторов, пометьте её как non-retryable:",
+      "Чтобы отправить сбой сразу в DLQ без повторов, пометьте его как окончательный — флагом retryable: false на ошибке в Node и обёрткой в job.ErrPermanent в Go:",
     retryIdemCallout:
-      "Доставка — at-least-once. Один и тот же тик может прийти несколько раз после истечения lease или краша реплики. Делайте handler идемпотентным по ctx.idempotencyKey (стабилен для каждого тика) — никогда по ctx.attempt, он только диагностический.",
+      "Доставка — at-least-once. Один и тот же тик может прийти несколько раз после истечения lease или краша реплики. Делайте handler идемпотентным по ключу идемпотентности: он одинаков для всех попыток одного запланированного срабатывания. Никогда — по счётчику попыток: он меняется на каждом повторе и нужен только для диагностики.",
 
     ctxTitle: "JobHandlerCtx",
     ctxP:
-      "Handler получает один аргумент ctx. Payload нет. Trace-контекст на ctx не приходит — он распространяется автоматически, поэтому любой sb.rpc.call / sb.event.publish / sb.workflow.start внутри handler-а наследует входящий trace.",
+      "Handler получает запись о запуске и ничего сверх: один объект ctx в Node и (ctx, job.Execution) в Go. Payload нет. Trace-контекст распространяется автоматически, поэтому любой вызов, публикация или запуск воркфлоу внутри handler-а наследует входящий trace.",
     ctxFieldsTitle: "Поля",
     depsTitle: "Объявленные зависимости и доступ",
     depsP:
@@ -246,6 +246,30 @@ sb.job.handle(
 );
 
 await sb.start();`,
+          go: `// Five fields, no seconds. Parsed here, so a typo fails where you wrote it.
+nightly, err := job.Cron("0 9 * * *", "Europe/Moscow")
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("daily-report",
+	job.NewSpec(nightly,
+		job.WithCatchup(job.CatchupFireOnce),
+		job.WithDeps(job.RPC("billing.GenerateReport")),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		_, err := sb.Call[*reportpb.ReportRequest, *reportpb.Progress](
+			ctx, c, "billing", "GenerateReport",
+			&reportpb.ReportRequest{AtUnixMs: exec.LocalScheduledAtUnixMs})
+		return err
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -278,6 +302,17 @@ sb.job.handle(
     await syncInventory(ctx.localScheduledAt);
   },
 );`,
+          go: `// Every 15 minutes, evaluated in the given timezone.
+quarterly, err := job.Cron("*/15 * * * *", "America/New_York")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("sync-inventory", job.NewSpec(quarterly),
+	func(ctx context.Context, exec job.Execution) error {
+		return syncInventory(ctx, exec.LocalScheduledAtUnixMs)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <Callout type="warning">{t.cronCallout}</Callout>
@@ -295,6 +330,19 @@ sb.job.handle(
     await sb.event.publish("reminders.sent", { at: ctx.scheduledAt });
   },
 );`,
+          go: `// Fire once, 24 hours from now.
+once, err := job.At(time.Now().Add(24 * time.Hour))
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("send-reminder", job.NewSpec(once),
+	func(ctx context.Context, exec job.Execution) error {
+		_, err := sb.PublishEvent(ctx, c, "reminders.sent",
+			&notifypb.ReminderSent{AtUnixMs: exec.ScheduledAtUnixMs})
+		return err
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -311,6 +359,17 @@ sb.job.handle(
     await probeHealth();
   },
 );`,
+          go: `// Every 5 seconds.
+beat, err := job.Interval(5 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("heartbeat-probe", job.NewSpec(beat),
+	func(ctx context.Context, exec job.Execution) error {
+		return probeHealth(ctx)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -342,6 +401,21 @@ sb.job.handle(
     await runEtl(ctx.scheduledAt);
   },
 );`,
+          go: `every, err := job.Interval(time.Minute)
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("heavy-etl",
+	job.NewSpec(every,
+		job.WithCatchup(job.CatchupFireAll),
+		job.WithOverlap(job.OverlapAllow),
+		job.WithMaxConcurrent(5),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		return runEtl(ctx, exec.ScheduledAtUnixMs)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -362,6 +436,25 @@ sb.job.handle(
     await chargeAllSubscriptions();
   },
 );`,
+          go: `hourly, err := job.Cron("0 * * * *", "UTC")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("billing-collect",
+	job.NewSpec(hourly,
+		job.WithMaxAttempts(5),
+		job.WithRetry(job.RetryPolicy{
+			InitialMs:  1_000,
+			MaxMs:      600_000,
+			Multiplier: 2,
+			Jitter:     0.25,
+		}),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		return chargeAllSubscriptions(ctx)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>{t.retryNonP}</P>
@@ -379,6 +472,20 @@ sb.job.handle(
     await importFeed();
   },
 );`,
+          go: `nightly, err := job.Cron("0 2 * * *", "UTC")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("import-feed", job.NewSpec(nightly),
+	func(ctx context.Context, exec job.Execution) error {
+		if feedIsMalformed(ctx) {
+			// Straight to the DLQ: do not spend the remaining attempts on it.
+			return fmt.Errorf("%w: malformed feed", job.ErrPermanent)
+		}
+		return importFeed(ctx)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <Callout type="warning">{t.retryIdemCallout}</Callout>
@@ -414,6 +521,25 @@ sb.job.handle(
     await processBatch(ctx.localScheduledAt, ctx.signal);
   },
 );`,
+          go: `every30, err := job.Interval(30 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("process-batch", job.NewSpec(every30),
+	func(ctx context.Context, exec job.Execution) error {
+		// Idempotent by exec.IdempotencyKey — the same tick may arrive twice.
+		// exec.Attempt changes on every retry, so it is diagnostic only.
+		fresh, err := insertIfAbsent(ctx, "batch:"+exec.IdempotencyKey)
+		if err != nil {
+			return err
+		}
+		if !fresh {
+			return nil // this scheduled fire already ran
+		}
+		return processBatch(ctx, exec.LocalScheduledAtUnixMs)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <H3 id="deps-access">{t.depsTitle}</H3>
@@ -434,6 +560,26 @@ sb.job.handle(
     await sb.rpc.call("notifications", "SendEmail", { batch: ctx.executionId });
   },
 );`,
+          go: `morning, err := job.Cron("0 8 * * *", "UTC")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Job.Handle("send-reminders",
+	job.NewSpec(morning,
+		job.WithDeps(
+			job.RPC("notifications.SendEmail"),
+			job.Event("reminders.sent"),
+			job.Workflow("send-reminder-flow"),
+		),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		_, err := sb.Call[*notifypb.SendEmailRequest, *notifypb.SendEmailReply](
+			ctx, c, "notifications", "SendEmail",
+			&notifypb.SendEmailRequest{Batch: exec.ID})
+		return err
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
     </div>

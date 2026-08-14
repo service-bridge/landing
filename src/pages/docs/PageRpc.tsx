@@ -21,7 +21,7 @@ const T = {
     callP1:
       "Call a unary handler registered on another service by its method name. You pass the target service, the method, and a JSON-serialisable payload. The SDK encodes the payload, picks a live instance, and returns the decoded response.",
     callP2:
-      "Before a method can be called, the caller must know its schema. Declare it once with sb.useSchema() (or use sb.client(), which loads schemas for you). All declarations happen before sb.start().",
+      "The caller has to know the method's contract first. In Node you declare it once with sb.useSchema(), or let sb.client() load it for you; in Go the generated request and response types are the contract, so declaring the method with sb.NewMethod is the whole step. Either way every declaration lands before the client goes online.",
     callSigTitle: "Signature",
     callExampleTitle: "Example",
     callInfo:
@@ -51,16 +51,16 @@ const T = {
 
     errorsTitle: "Error handling",
     errorsP1:
-      "A call rejects with a normal Error on transport failure or when the handler throws. If the runtime's policy denies the call, the SDK throws a typed RpcAccessDeniedError and emits a policy_violation event on the client.",
+      "A call fails on transport failure or when the handler answers with an error. A refusal by the runtime's policy is typed: Node throws RpcAccessDeniedError and emits a policy_violation event on the client, Go returns an error that matches sb.ErrAccessDenied.",
     errorsP2:
-      "Calling before sb.start() has connected throws \"rpc client not ready\". RPC is not buffered offline — unlike sb.event.publish(), a call fails fast when the target is unreachable. Use events or workflows for operations that must survive an outage.",
+      "Calling before the client is online fails immediately — \"rpc client not ready\" in Node, CodeState in Go. RPC is not buffered offline: unlike a published event, a call fails fast when the target is unreachable. Use events or workflows for operations that must survive an outage.",
 
     handleTitle: "sb.rpc.handle() — register a handler",
     handleP:
       "Register a unary handler. The handler receives the decoded request and returns (or resolves to) the response. The SDK runs an inbound mTLS gRPC server for incoming calls; only peers the runtime authorises can reach it. Register all handlers before sb.start().",
     handleSigTitle: "Signature",
     handleSchemaNote:
-      "schema is required: every RPC handler declares a schema (a .proto file or a .schema.json file) so the dispatcher can decode the request and the load balancer can route by contract hash.",
+      "Where the contract comes from differs by SDK. A Node handler declares a schema file (.proto or .schema.json) so the dispatcher can decode the request. A Go handler's request and response types already carry the protobuf descriptor, and the SDK derives the contract hash from it. Either way the load balancer routes by that hash.",
 
     handleOptsTitle: "Handler options",
     handleOptsP: "RpcHandlerOpts — the third argument to sb.rpc.handle() / sb.rpc.handleStream().",
@@ -71,9 +71,9 @@ const T = {
 
     streamTitle: "sb.stream() — server streaming",
     streamP1:
-      "A streaming handler is registered with sb.rpc.handleStream() and returns an async generator that yields chunks. The caller consumes them with sb.stream() and a for-await loop.",
+      "A streaming handler produces chunks one at a time: in Node it is an async generator registered with sb.rpc.handleStream(), in Go a function that pushes each chunk through a send callback. The caller reads them as they land — a for-await loop over sb.stream() in Node, a plain range over the iterator sb.Stream returns in Go.",
     streamP2:
-      "Streaming is single-pick by design: retries are not applied, because replaying mid-stream would re-deliver chunks the caller already received. Breaking the for-await loop cancels the underlying gRPC stream.",
+      "Streaming is single-pick by design: retries are not applied, because replaying mid-stream would re-deliver chunks the caller already received. Leaving the loop cancels the underlying gRPC stream.",
     streamHandlerTitle: "Handler side",
     streamCallerTitle: "Caller side",
 
@@ -87,25 +87,25 @@ const T = {
 
     protoTitle: "Protobuf schema",
     protoP1:
-      "Schemas come from a file, not from inline objects in code. Point a handler (and the caller) at the same .proto file. The SDK resolves the request and response messages from the service block by method name.",
+      "Where the schema lives depends on the SDK. Node reads a .proto file at runtime: point the handler and the caller at the same file, and the SDK resolves the request and response messages from the service block by method name. Go takes them from the structs protoc generated, so there is no schema file to ship next to the binary.",
     protoP2:
-      "A schema switches that method to binary Protobuf on the wire; the contract hash it produces is what the load balancer matches caller and callee on. The handler still works with plain JS objects — encode/decode is transparent.",
+      "Either way the method speaks binary Protobuf on the wire, and the contract hash it produces is what the load balancer matches caller and callee on. Handlers still work with ordinary values of their language — encode/decode is transparent.",
     protoFileTitle: "payment.proto",
     protoTip:
-      "Both sides reference the same .proto file. The caller declares the schema with sb.useSchema() (or sb.client(), which does it automatically); the handler declares it via the schema option.",
+      "Both sides have to agree on the same messages. In Node both reference the same .proto file — the caller through sb.useSchema() (or sb.client(), which does it automatically), the handler through the schema option. In Go both import the same generated package, and the compiler checks the match.",
 
     schemaHandlerTitle: "Schema: Handler",
     schemaHandlerP:
-      "Pass { protoFile } as the schema. With no explicit input/output, the SDK resolves them from rpc Charge(ChargeRequest) returns (ChargeResponse) in the service block.",
+      "In Node, pass { protoFile } as the schema; with no explicit input/output the SDK resolves them from rpc Charge(ChargeRequest) returns (ChargeResponse) in the service block. A Go handler takes no options at all — its parameter types are the declaration.",
     schemaCallerTitle: "Schema: Caller",
     schemaCallerP:
-      "The caller declares the same schema before start(). sb.client() reads the .proto once, registers every service-block method as an outgoing dependency, loads schemas, and returns a typed proxy.",
+      "The caller declares the same contract before going online. sb.client() reads the .proto once, registers every service-block method as an outgoing dependency, loads schemas, and returns a typed proxy. sb.NewMethod does that job per method in Go: one call registers the dependency and binds the schema from its type parameters.",
 
     contextTitle: "RpcContext",
     contextP1:
-      "A handler receives a single argument: the decoded request. There is no context object to thread through — RpcHandlerFn is (req) => Res | Promise<Res>.",
+      "A handler receives the decoded request and nothing else to thread through: (req) => Res | Promise<Res> in Node, func(ctx, req) (Resp, error) in Go, where ctx is the incoming call's context.",
     contextP2:
-      "Trace context is automatic. The inbound server runs your handler inside the caller's trace, so any nested sb.rpc.call(), sb.event.publish(), or sb.workflow.start() inherits the same trace with no manual plumbing. If a handler throws, the error is returned to the caller and recorded on the single RPC.CALL row owned by the caller SDK.",
+      "Trace context is automatic. The inbound server runs your handler inside the caller's trace, so any nested call, publish, or workflow start inherits the same trace with no manual plumbing. A handler that fails returns that failure to the caller, recorded on the single RPC.CALL row owned by the caller SDK.",
     contextInfo:
       "Need to emit your own spans or logs inside a handler? Use sb.telemetry — see the Manual Spans and Distributed Tracing pages.",
   },
@@ -119,7 +119,7 @@ const T = {
     callP1:
       "Вызывает unary-обработчик другого сервиса по имени метода. Передаёшь целевой сервис, метод и JSON-сериализуемый payload. SDK кодирует payload, выбирает живой инстанс и возвращает декодированный ответ.",
     callP2:
-      "Чтобы вызвать метод, вызывающий должен знать его схему. Объяви её один раз через sb.useSchema() (или используй sb.client(), который грузит схемы за тебя). Все объявления — до sb.start().",
+      "Вызывающий сначала должен знать контракт метода. В Node объяви его один раз через sb.useSchema() или дай sb.client() загрузить схемы за тебя; в Go контракт — это сгенерированные типы запроса и ответа, поэтому объявление метода через sb.NewMethod и есть весь шаг. В обоих случаях все объявления делаются до подъёма клиента.",
     callSigTitle: "Сигнатура",
     callExampleTitle: "Пример",
     callInfo:
@@ -149,16 +149,16 @@ const T = {
 
     errorsTitle: "Обработка ошибок",
     errorsP1:
-      "Вызов реджектится обычной Error при сбое транспорта или когда обработчик бросает ошибку. Если политика рантайма запрещает вызов, SDK бросает типизированную RpcAccessDeniedError и эмиттит событие policy_violation на клиенте.",
+      "Вызов падает при сбое транспорта или когда обработчик отвечает ошибкой. Запрет политикой рантайма типизирован: Node бросает RpcAccessDeniedError и эмиттит событие policy_violation на клиенте, Go возвращает ошибку, совпадающую с sb.ErrAccessDenied.",
     errorsP2:
-      "Вызов до того, как sb.start() подключился, бросает \"rpc client not ready\". RPC не буферизуется офлайн — в отличие от sb.event.publish(), вызов падает быстро, если цель недоступна. Для операций, которые должны переживать сбой, используй события или воркфлоу.",
+      "Вызов до того, как клиент поднялся, падает сразу — \"rpc client not ready\" в Node, CodeState в Go. RPC не буферизуется офлайн: в отличие от опубликованного события, вызов падает быстро, если цель недоступна. Для операций, которые должны переживать сбой, используй события или воркфлоу.",
 
     handleTitle: "sb.rpc.handle() — регистрация обработчика",
     handleP:
       "Регистрирует unary-обработчик. Обработчик получает декодированный запрос и возвращает (или резолвит) ответ. SDK поднимает входящий mTLS gRPC-сервер для вызовов; до него достучатся только пиры, которых авторизует рантайм. Все обработчики регистрируй до sb.start().",
     handleSigTitle: "Сигнатура",
     handleSchemaNote:
-      "schema обязательна: каждый RPC-обработчик объявляет схему (файл .proto или .schema.json), чтобы диспетчер декодировал запрос, а балансировщик маршрутизировал по contract hash.",
+      "Откуда берётся контракт — зависит от SDK. Обработчик в Node объявляет файл схемы (.proto или .schema.json), чтобы диспетчер декодировал запрос. У обработчика в Go типы запроса и ответа уже несут protobuf-дескриптор, и SDK выводит из него contract hash. В обоих случаях балансировщик маршрутизирует по этому хешу.",
 
     handleOptsTitle: "Параметры обработчика",
     handleOptsP: "RpcHandlerOpts — третий аргумент sb.rpc.handle() / sb.rpc.handleStream().",
@@ -169,9 +169,9 @@ const T = {
 
     streamTitle: "sb.stream() — серверный стриминг",
     streamP1:
-      "Стриминговый обработчик регистрируется через sb.rpc.handleStream() и возвращает async-генератор, отдающий чанки. Вызывающий потребляет их через sb.stream() и цикл for-await.",
+      "Стриминговый обработчик отдаёт чанки по одному: в Node это async-генератор, зарегистрированный через sb.rpc.handleStream(), в Go — функция, которая проталкивает каждый чанк через колбэк send. Вызывающий читает их по мере прихода: циклом for-await по sb.stream() в Node и обычным range по итератору, который возвращает sb.Stream в Go.",
     streamP2:
-      "Стриминг по дизайну single-pick: повторы не применяются, потому что переигрывание середины стрима ре-доставило бы уже полученные чанки. Выход из цикла for-await отменяет нижележащий gRPC-стрим.",
+      "Стриминг по дизайну single-pick: повторы не применяются, потому что переигрывание середины стрима ре-доставило бы уже полученные чанки. Выход из цикла отменяет нижележащий gRPC-стрим.",
     streamHandlerTitle: "Сторона обработчика",
     streamCallerTitle: "Сторона вызывающего",
 
@@ -185,25 +185,25 @@ const T = {
 
     protoTitle: "Protobuf-схема",
     protoP1:
-      "Схемы берутся из файла, а не из inline-объектов в коде. Укажи обработчику (и вызывающему) один и тот же файл .proto. SDK резолвит сообщения запроса и ответа из блока service по имени метода.",
+      "Где живёт схема — зависит от SDK. Node читает файл .proto в рантайме: укажи обработчику и вызывающему один и тот же файл, и SDK найдёт сообщения запроса и ответа в блоке service по имени метода. Go берёт их из структур, сгенерированных protoc, поэтому файла схемы рядом с бинарём не нужно.",
     protoP2:
-      "Схема переключает метод на бинарный Protobuf на проводе; полученный contract hash — это то, по чему балансировщик сопоставляет вызывающего и callee. Обработчик всё так же работает с обычными JS-объектами — кодирование/декодирование прозрачно.",
+      "В обоих случаях метод говорит бинарным Protobuf на проводе, а полученный contract hash — это то, по чему балансировщик сопоставляет вызывающего и callee. Обработчик всё так же работает с обычными значениями своего языка — кодирование/декодирование прозрачно.",
     protoFileTitle: "payment.proto",
     protoTip:
-      "Обе стороны ссылаются на один файл .proto. Вызывающий объявляет схему через sb.useSchema() (или sb.client(), который делает это автоматически); обработчик — через опцию schema.",
+      "Обе стороны должны сойтись на одних и тех же сообщениях. В Node обе ссылаются на один файл .proto: вызывающий через sb.useSchema() (или sb.client(), который делает это автоматически), обработчик — через опцию schema. В Go обе импортируют один сгенерированный пакет, и совпадение проверяет компилятор.",
 
     schemaHandlerTitle: "Схема: Обработчик",
     schemaHandlerP:
-      "Передай { protoFile } как schema. Без явных input/output SDK резолвит их из rpc Charge(ChargeRequest) returns (ChargeResponse) в блоке service.",
+      "В Node передай { protoFile } как schema: без явных input/output SDK найдёт их в rpc Charge(ChargeRequest) returns (ChargeResponse) в блоке service. Обработчику в Go опции не нужны вовсе — объявление это типы его параметров.",
     schemaCallerTitle: "Схема: Вызывающий",
     schemaCallerP:
-      "Вызывающий объявляет ту же схему до start(). sb.client() читает .proto один раз, регистрирует каждый метод service-блока как исходящую зависимость, грузит схемы и возвращает типизированный proxy.",
+      "Вызывающий объявляет тот же контракт до подъёма клиента. sb.client() читает .proto один раз, регистрирует каждый метод service-блока как исходящую зависимость, грузит схемы и возвращает типизированный proxy. В Go ту же работу на каждый метод делает sb.NewMethod: один вызов регистрирует зависимость и связывает схему из параметров типа.",
 
     contextTitle: "RpcContext",
     contextP1:
-      "Обработчик получает один аргумент — декодированный запрос. Прокидывать объект контекста не нужно: RpcHandlerFn — это (req) => Res | Promise<Res>.",
+      "Обработчик получает декодированный запрос и ничего лишнего: (req) => Res | Promise<Res> в Node и func(ctx, req) (Resp, error) в Go, где ctx — контекст входящего вызова.",
     contextP2:
-      "Контекст трассировки — автоматический. Входящий сервер запускает обработчик внутри трейса вызывающего, поэтому любой вложенный sb.rpc.call(), sb.event.publish() или sb.workflow.start() наследует тот же трейс без ручной возни. Если обработчик бросает ошибку, она возвращается вызывающему и записывается в единственную строку RPC.CALL, которой владеет SDK вызывающего.",
+      "Контекст трассировки — автоматический. Входящий сервер запускает обработчик внутри трейса вызывающего, поэтому любой вложенный вызов, публикация или запуск воркфлоу наследует тот же трейс без ручной возни. Если обработчик отвечает ошибкой, она возвращается вызывающему и записывается в единственную строку RPC.CALL, которой владеет SDK вызывающего.",
     contextInfo:
       "Нужно эмиттить собственные спаны или логи внутри обработчика? Используй sb.telemetry — см. страницы Ручные спаны и Распределённая трассировка.",
   },
@@ -231,6 +231,13 @@ export function PageRpc() {
   payload: Req,
   opts?: CallOpts,
 ): Promise<Res>`,
+          go: `func Call[Req, Resp proto.Message](
+	ctx context.Context,
+	c *sb.Client,
+	service, method string,
+	req Req,
+	opts ...sb.CallOption,
+) (Resp, error)`,
         }}
       />
 
@@ -262,6 +269,56 @@ const charged = await sb.rpc.call(
     retry: { maxAttempts: 1 },
   },
 );`,
+          go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"time"
+
+	"example.com/orders/paymentpb"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_KEY"), sb.WithCallerOnly())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Declaring the method IS declaring the dependency — before Start.
+	payments := sb.NewClient(c, "payments")
+	charge, err := sb.NewMethod[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](payments, "Charge")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = c.Stop(ctx) }()
+
+	// Basic call.
+	res, err := charge.Call(ctx, &paymentpb.ChargeRequest{UserId: "u-1", Amount: 4990})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(res.GetTransactionId(), res.GetOk())
+
+	// With options: 5s deadline plus an idempotency key.
+	charged, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		ctx, c, "payments", "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-1", Amount: 4990},
+		sb.WithTimeout(5*time.Second),
+		sb.WithIdempotencyKey("order-42"),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(charged.GetOk())
+}`,
         }}
       />
       <Callout type="info">{t.callInfo}</Callout>
@@ -315,6 +372,22 @@ try {
   }
   throw err;
 }`,
+          go: `_, err := charge.Call(ctx, &paymentpb.ChargeRequest{UserId: "u-1", Amount: 4990})
+
+// *sb.Error is the only error type the SDK returns, so one errors.As is exhaustive.
+var sbErr *sb.Error
+if errors.As(err, &sbErr) {
+	log.Printf("%s failed with %s: %s", sbErr.Op, sbErr.Code, sbErr.Msg)
+}
+
+switch {
+case errors.Is(err, sb.ErrAccessDenied):
+	// The access policy refuses this call.
+case errors.Is(err, sb.ErrNoLiveInstance):
+	// Nothing serves this contract right now.
+case errors.Is(err, sb.ErrHandler):
+	// The callee answered with a failure; errors.Unwrap(err) carries it.
+}`,
         }}
       />
       <P>{t.errorsP2}</P>
@@ -331,6 +404,11 @@ try {
   fn: (req: Req) => Res | Promise<Res>,
   opts: RpcHandlerOpts,   // { schema } — required
 ): void`,
+          go: `func Handle[Req, Resp proto.Message](
+	c *sb.Client,
+	name string,
+	fn func(ctx context.Context, req Req) (Resp, error),
+) error`,
         }}
       />
       <MultiCodeBlock
@@ -352,6 +430,40 @@ sb.rpc.handle<
 );
 
 await sb.start();`,
+          go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	"example.com/orders/paymentpb"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Both type parameters are inferred from the function you pass.
+	err = sb.Handle(c, "Charge",
+		func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+			return &paymentpb.ChargeReply{
+				TransactionId: "tx-" + req.GetUserId(),
+				Ok:            req.GetAmount() > 0,
+			}, nil
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+	select {}
+}`,
         }}
       />
       <Callout type="info">{t.handleSchemaNote}</Callout>
@@ -388,6 +500,20 @@ await sb.start();`,
   },
   { schema: { protoFile: "./payment.proto" } },
 );`,
+          go: `// The handler sends through a callback. send blocks while the caller is
+// behind — that is the backpressure — and fails once the caller is gone.
+err := sb.HandleStream(c, "Stream",
+	func(ctx context.Context, req *genpb.GenRequest, send func(*genpb.Token) error) error {
+		for i, word := range strings.Fields(req.GetPrompt()) {
+			if err := send(&genpb.Token{Text: word, Index: int32(i)}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -401,6 +527,16 @@ for await (const chunk of sb.stream<{ count: number }, { i: number }>(
   { count: 5 },
 )) {
   console.log(chunk.i);
+}`,
+          go: `// Consume chunks with a plain range. Leaving the loop tears the stream down.
+for tok, err := range sb.Stream[*genpb.GenRequest, *genpb.Token](
+	ctx, c, "provider", "Stream", &genpb.GenRequest{Prompt: "write a haiku"},
+) {
+	if err != nil {
+		log.Println("stream failed:", err)
+		break
+	}
+	fmt.Println(tok.GetText())
 }`,
         }}
       />
@@ -452,6 +588,19 @@ message ChargeResponse {
   // No input/output — resolved from the service block by method name.
   { schema: { protoFile: "./payment.proto" } },
 );`,
+          go: `// No schema file and no registration step: the request and response types
+// ARE the contract. The SDK reads the protobuf descriptor out of the
+// generated struct and derives the JSON Schema and the contract hash from it.
+err := sb.Handle(c, "Charge",
+	func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+		return &paymentpb.ChargeReply{
+			TransactionId: "tx-" + req.GetUserId(),
+			Ok:            req.GetAmount() > 0,
+		}, nil
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -473,6 +622,37 @@ const res = await payments.Charge({ userId: "u-1", amount: 4990 });
 for await (const chunk of payments.Stream({ count: 5 })) {
   console.log(chunk.i);
 }`,
+          go: `// NewMethod is the whole declaration: it registers the outgoing dependency
+// and binds the schema from its type parameters. Both before Start.
+payments := sb.NewClient(c, "payments")
+
+charge, err := sb.NewMethod[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](payments, "Charge")
+if err != nil {
+	log.Fatal(err)
+}
+generate, err := sb.NewMethod[*genpb.GenRequest, *genpb.Token](payments, "Stream")
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+res, err := charge.Call(ctx, &paymentpb.ChargeRequest{UserId: "u-1", Amount: 4990})
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(res.GetTransactionId())
+
+// A streaming method yields an iter.Seq2 — read it with a plain range.
+for tok, err := range generate.Stream(ctx, &genpb.GenRequest{Prompt: "hello"}) {
+	if err != nil {
+		log.Println(err)
+		break
+	}
+	fmt.Println(tok.GetText())
+}`,
         }}
       />
 
@@ -491,6 +671,21 @@ sb.rpc.handle(
   },
   { schema: { protoFile: "./payment.proto" } },
 );`,
+          go: `// The handler is (ctx, req) → (resp, error). Nested work inherits the
+// caller's trace through that ctx — there is nothing to thread by hand.
+err := sb.Handle(c, "Charge",
+	func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+		// This publish runs under the same trace as the incoming call.
+		_, err := sb.PublishEvent(ctx, c, "payment.charged",
+			&orderpb.PaymentCharged{UserId: req.GetUserId()})
+		if err != nil {
+			return nil, err
+		}
+		return &paymentpb.ChargeReply{TransactionId: "tx-" + req.GetUserId(), Ok: true}, nil
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>{t.contextP2}</P>

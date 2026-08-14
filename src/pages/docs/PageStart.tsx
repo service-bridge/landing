@@ -40,13 +40,13 @@ const T = {
     outgoingTip: "Loading schemas from a .proto file? sb.client(service, protoFile) already declares every method in the file as an outgoing rpc dependency, so you skip sb.service() for those methods.",
 
     startTitle: "sb.start()",
-    startP1: "start() takes no arguments. It parses the bootstrap key, provisions a leaf certificate over mTLS, opens the control stream, brings up the inbound Call RPC server (unless ",
-    startP2: " is ",
-    startP3: "), and opens the event / workflow / job subscribers. The promise resolves once the worker is registered and online.",
-    startNote: "The inbound RPC server address comes from the advertise option on the constructor, not from start(). There is no host argument.",
+    startP1:
+      "Starting the client parses the bootstrap key, provisions a leaf certificate over mTLS, opens the control stream, brings up the inbound Call RPC server (unless the client is declared caller-only), and opens the event / workflow / job subscribers. It returns once the worker is registered and online.",
+    startNote:
+      "The inbound RPC server address comes from the client's advertise setting, not from the startup call. There is no host argument.",
 
     optsTitle: "ServiceBridgeOptions",
-    optsP: "The third constructor argument tunes reconnect behavior, the inbound server address, and call defaults. Every field is optional, and the full table lives on the SDK Options page.",
+    optsP: "Construction tunes reconnect behavior, the inbound server address, and call defaults. Everything is optional — a plain options object in the Node SDK, functional options in Go. The full table lives on the SDK Options page.",
     optsRows: {
       reconnectIntervalMs: "Delay between reconnect attempts.",
       reconnectAttempts: "Max reconnect attempts before a disconnected{reason:'exhausted'} event and auto-stop. 0 = unlimited.",
@@ -56,11 +56,11 @@ const T = {
     },
 
     identityTitle: "Identity & instanceId",
-    identityP1: "Once the first Welcome lands, ",
-    identityP2: " returns the live session identity: ",
-    identityP3: ". Before the connection opens (and after stop()) it returns ",
-    identityP4: ".",
-    identityP5: " hands you just the 12-character Crockford-base32 instance id, the same value the dashboard shows per replica, or an empty string before the first Welcome.",
+    identityP1: "Once the first Welcome lands, the client reports the live session identity — ",
+    identityP3:
+      ". Before the connection opens, and after shutdown, it carries nothing: the Node SDK hands back null, the Go client a zero-valued struct.",
+    identityP5:
+      "instanceId is the 12-character Crockford-base32 replica id the dashboard shows. Read the identity per use instead of caching it — every certificate rotation mints a fresh one.",
     identityNote: "The runtime generates instanceId on each session, you never set it. The SDK gets a fresh one on every reconnect and cert rotation.",
 
     tlsTitle: "TLS / mTLS",
@@ -75,15 +75,15 @@ const T = {
     tlsRotateP2: ".",
     tlsWarn1: "Set ",
     tlsWarn2: " to a routable address when running in Docker or Kubernetes. The default ",
-    tlsWarn3: " only answers on the same host, so inbound RPC delivery fails across nodes. In k8s, the pod IP is the usual choice: ",
+    tlsWarn3: " only answers on the same host, so inbound RPC delivery fails across nodes. In k8s the pod IP is the usual choice — advertise the value of ",
     tlsWarn4: ".",
 
     shutdownTitle: "Graceful shutdown",
-    shutdownP: "start() resolves once the worker is online and your process keeps running. Wire stop() into your signal handlers so shutdown stays predictable: it drains the session, flushes telemetry, and closes the local outbox.",
+    shutdownP: "Startup returns once the worker is online and your process keeps running. Wire the shutdown call into your signal handlers so teardown stays predictable: it drains the session, flushes telemetry, and closes the local outbox.",
     shutdownNodeTitle: "SIGTERM / SIGINT handler",
 
     stopTitle: "sb.stop()",
-    stopP: "stop() tears everything down in order: it clears the cert-refresh timer, closes the control session and inbound RPC server, stops the transports and subscribers, flushes telemetry, and closes the local SQLite outbox. It is idempotent, so calling it twice is safe.",
+    stopP: "Stopping tears everything down in order: it clears the cert-refresh timer, closes the control session and inbound RPC server, stops the transports and subscribers, flushes telemetry, and closes the local SQLite outbox. It is idempotent, so calling it twice is safe.",
   },
   ru: {
     badge: "SDK Reference",
@@ -114,13 +114,13 @@ const T = {
     outgoingTip: "Грузите схемы из .proto-файла? sb.client(service, protoFile) уже объявит каждый метод файла как исходящую rpc-зависимость, так что sb.service() для этих методов вызывать не нужно.",
 
     startTitle: "sb.start()",
-    startP1: "start() не принимает аргументов. Он разбирает bootstrap-ключ, выдаёт leaf-сертификат через mTLS, открывает control-стрим, поднимает входящий Call RPC-сервер (если ",
-    startP2: " не равен ",
-    startP3: ") и открывает подписчиков событий / воркфлоу / заданий. Promise разрешается, когда воркер зарегистрирован и онлайн.",
-    startNote: "Адрес входящего RPC-сервера берётся из опции advertise в конструкторе, а не из start(). Аргумента host нет.",
+    startP1:
+      "Запуск клиента разбирает bootstrap-ключ, выдаёт leaf-сертификат через mTLS, открывает control-стрим, поднимает входящий Call RPC-сервер (если клиент не объявлен caller-only) и открывает подписчиков событий / воркфлоу / заданий. Возврат происходит, когда воркер зарегистрирован и онлайн.",
+    startNote:
+      "Адрес входящего RPC-сервера берётся из настройки advertise у клиента, а не из вызова запуска. Аргумента host нет.",
 
     optsTitle: "ServiceBridgeOptions",
-    optsP: "Третий аргумент конструктора настраивает reconnect, адрес входящего сервера и дефолты вызовов. Все поля опциональны, полная таблица — на странице «Опции SDK».",
+    optsP: "Создание клиента настраивает reconnect, адрес входящего сервера и дефолты вызовов. Всё опционально — в Node SDK это объект опций, в Go — функциональные опции. Полная таблица — на странице «Опции SDK».",
     optsRows: {
       reconnectIntervalMs: "Задержка между попытками переподключения.",
       reconnectAttempts: "Максимум попыток до события disconnected{reason:'exhausted'} и авто-остановки. 0 = без лимита.",
@@ -130,11 +130,11 @@ const T = {
     },
 
     identityTitle: "Identity и instanceId",
-    identityP1: "Как только приходит первый Welcome, ",
-    identityP2: " возвращает идентификатор живой сессии: ",
-    identityP3: ". До открытия соединения (и после stop()) возвращает ",
-    identityP4: ".",
-    identityP5: " отдаёт только 12-символьный instance id в Crockford-base32 — то же значение, что дашборд показывает по реплике — или пустую строку до первого Welcome.",
+    identityP1: "Как только приходит первый Welcome, клиент отдаёт идентификатор живой сессии — ",
+    identityP3:
+      ". До открытия соединения и после остановки в нём ничего нет: Node SDK возвращает null, Go-клиент — нулевую структуру.",
+    identityP5:
+      "instanceId — 12-символьный id реплики в Crockford-base32, тот же, что показывает дашборд. Читайте identity при каждом использовании, а не кешируйте: каждая ротация сертификата выдаёт новый.",
     identityNote: "instanceId генерирует runtime на каждой сессии, вы его не задаёте. SDK получает новый на каждом переподключении и ротации сертификата.",
 
     tlsTitle: "TLS / mTLS",
@@ -149,15 +149,15 @@ const T = {
     tlsRotateP2: ".",
     tlsWarn1: "Задайте ",
     tlsWarn2: " на маршрутизируемый адрес при запуске в Docker или Kubernetes. Дефолтный ",
-    tlsWarn3: " отвечает только на том же хосте, поэтому доставка входящих RPC между узлами сломается. В k8s обычно берут IP пода: ",
+    tlsWarn3: " отвечает только на том же хосте, поэтому доставка входящих RPC между узлами сломается. В k8s обычно берут IP пода — анонсируйте значение ",
     tlsWarn4: ".",
 
     shutdownTitle: "Мягкое завершение",
-    shutdownP: "start() разрешается, когда воркер онлайн, и ваш процесс продолжает работать. Подключите stop() к обработчикам сигналов, чтобы завершение было предсказуемым: он дренирует сессию, сбрасывает телеметрию и закрывает локальный outbox.",
+    shutdownP: "Запуск завершается, когда воркер онлайн, и ваш процесс продолжает работать. Подключите остановку к обработчикам сигналов, чтобы завершение было предсказуемым: она дренирует сессию, сбрасывает телеметрию и закрывает локальный outbox.",
     shutdownNodeTitle: "Обработчик SIGTERM / SIGINT",
 
     stopTitle: "sb.stop()",
-    stopP: "stop() гасит всё по порядку: сбрасывает таймер обновления сертификата, закрывает control-сессию и входящий RPC-сервер, останавливает транспорты и подписчиков, сбрасывает телеметрию и закрывает локальный SQLite outbox. Идемпотентен, повторный вызов безопасен.",
+    stopP: "Остановка гасит всё по порядку: сбрасывает таймер обновления сертификата, закрывает control-сессию и входящий RPC-сервер, останавливает транспорты и подписчиков, сбрасывает телеметрию и закрывает локальный SQLite outbox. Идемпотентна, повторный вызов безопасен.",
   },
 };
 
@@ -219,6 +219,49 @@ await sb.start();
 
 // later, on shutdown
 await sb.stop();`,
+          go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New(
+		"localhost:14445",              // gRPC control plane address
+		os.Getenv("SERVICEBRIDGE_KEY"), // your bootstrap service key
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 1. Register what this service serves (order doesn't matter)
+	if err := sb.Handle(c, "Charge", chargeHandler); err != nil {
+		log.Fatal(err)
+	}
+	if err := sb.SubscribeEvent(c, "orders.*", onOrderEvent); err != nil {
+		log.Fatal(err)
+	}
+
+	// 2. Declare what it calls out to — before Start
+	if err := c.Service("inventory", sb.ServiceDeps{RPC: []string{"Reserve"}}); err != nil {
+		log.Fatal(err)
+	}
+
+	// 3. Bring the worker online and wait until registered
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// later, on shutdown
+	if err := c.Stop(ctx); err != nil {
+		log.Fatal(err)
+	}
+}`,
         }}
       />
 
@@ -239,15 +282,43 @@ sb.service("billing", { http: ["/invoices"] });
 
 await sb.start();
 await sb.rpc.call("inventory", "reserve", { sku: "A1", qty: 2 });`,
+          go: `// This service calls inventory.Reserve + inventory.Release,
+// runs the fulfillment service's "order.flow" workflow,
+// and reaches the billing service's HTTP routes.
+if err := c.Service("inventory", sb.ServiceDeps{RPC: []string{"Reserve", "Release"}}); err != nil {
+	log.Fatal(err)
+}
+if err := c.Service("fulfillment", sb.ServiceDeps{Workflows: []string{"order.flow"}}); err != nil {
+	log.Fatal(err)
+}
+if err := c.Service("billing", sb.ServiceDeps{HTTP: []string{"GET /invoices"}}); err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+res, err := sb.Call[*inventorypb.ReserveRequest, *inventorypb.ReserveReply](
+	ctx, c, "inventory", "Reserve",
+	&inventorypb.ReserveRequest{OrderId: "o-1"},
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println("reserved:", res.GetReserved())`,
         }}
       />
       <Callout type="tip">{t.outgoingTip}</Callout>
 
       <H2 id="start-sig">{t.startTitle}</H2>
-      <P>
-        {t.startP1}<Mono>advertise</Mono>{t.startP2}<Mono>false</Mono>{t.startP3}
-      </P>
-      <MultiCodeBlock code={{ ts: `start(): Promise<void>` }} />
+      <P>{t.startP1}</P>
+      <MultiCodeBlock
+        code={{
+          ts: `start(): Promise<void>`,
+          go: `func (c *sb.Client) Start(ctx context.Context) error`,
+        }}
+      />
       <Callout type="info">{t.startNote}</Callout>
 
       <H2 id="start-opts">{t.optsTitle}</H2>
@@ -260,6 +331,19 @@ await sb.rpc.call("inventory", "reserve", { sku: "A1", qty: 2 });`,
   callDefaults: { timeout: "10s" },
   failOnPolicyViolation: true,
 });`,
+          go: `c, err := sb.New(url, key,
+	sb.WithAdvertise(os.Getenv("POD_IP"), 0), // your app's env, fine
+	sb.WithReconnectAttempts(0),              // retry forever
+	sb.WithCallDefaults(sb.WithTimeout(10*time.Second)),
+	sb.WithFailOnPolicyViolation(),
+)
+if err != nil {
+	log.Fatal(err) // CodeConfig — sb.New does no I/O
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <ParamTable
@@ -274,13 +358,10 @@ await sb.rpc.call("inventory", "reserve", { sku: "A1", qty: 2 });`,
 
       <H2 id="instance-weight">{t.identityTitle}</H2>
       <P>
-        {t.identityP1}<Mono>sb.identity()</Mono>{t.identityP2}
+        {t.identityP1}
         <Mono>{`{ sessionId, serviceId, serviceName, instanceId }`}</Mono>{t.identityP3}
-        <Mono>null</Mono>{t.identityP4}
       </P>
-      <P>
-        <Mono>sb.instanceIdString()</Mono>{t.identityP5}
-      </P>
+      <P>{t.identityP5}</P>
       <MultiCodeBlock
         code={{
           ts: `await sb.start();
@@ -291,6 +372,15 @@ sb.logger.info("worker online", { instance: id?.instanceId });
 
 // Short form for just the replica id shown in the dashboard:
 const replica = sb.instanceIdString(); // "" before the first Welcome`,
+          go: `if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+id := c.Identity() // sb.Identity{SessionID, ServiceID, ServiceName, InstanceID}
+c.Telemetry.Logger().Info("worker online", "instance", id.InstanceID)
+
+// Read it per use — every rotation mints a fresh InstanceID under one ServiceID.
+log.Println("replica:", c.Identity().InstanceID)`,
         }}
       />
       <Callout type="info">{t.identityNote}</Callout>
@@ -310,7 +400,7 @@ const replica = sb.instanceIdString(); // "" before the first Welcome`,
       </P>
       <Callout type="warning">
         {t.tlsWarn1}<Mono>advertise.host</Mono>{t.tlsWarn2}<Mono>127.0.0.1</Mono>
-        {t.tlsWarn3}<Mono>advertise: {`{ host: process.env.POD_IP }`}</Mono>{t.tlsWarn4}
+        {t.tlsWarn3}<Mono>POD_IP</Mono>{t.tlsWarn4}
       </Callout>
 
       <H2 id="graceful-shutdown">{t.shutdownTitle}</H2>
@@ -327,12 +417,33 @@ process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
 await sb.start();`,
+          go: `if err := c.Start(context.Background()); err != nil {
+	log.Fatal(err)
+}
+
+stop := make(chan os.Signal, 1)
+signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+<-stop
+
+// drains the session, flushes telemetry, closes the local outbox
+shutdown, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+if err := c.Stop(shutdown); err != nil {
+	log.Println("stop:", err)
+}`,
         }}
       />
 
       <H2 id="stop-sig">{t.stopTitle}</H2>
       <P>{t.stopP}</P>
-      <MultiCodeBlock code={{ ts: `await sb.stop();` }} />
+      <MultiCodeBlock
+        code={{
+          ts: `await sb.stop();`,
+          go: `if err := c.Stop(ctx); err != nil {
+	log.Println("stop:", err)
+}`,
+        }}
+      />
     </div>
   );
 }

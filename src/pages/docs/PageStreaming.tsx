@@ -14,37 +14,37 @@ const T = {
     badge: "SDK Reference",
     title: "Streaming",
     description:
-      "Server-streaming RPC. A handler yields chunks one at a time; the caller reads them live with for await. Good for LLM tokens, progress updates, and any response that arrives in pieces.",
+      "Server-streaming RPC. A handler emits chunks one at a time; the caller reads them live as they land. Good for LLM tokens, progress updates, and any response that arrives in pieces.",
 
     howTitle: "How it works",
 
     callerTitle: "sb.stream() — caller side",
     callerP:
-      "You start a streaming call with sb.stream(), which returns an AsyncIterable of decoded chunks. Before start(), declare the dependency with sb.service() and load the method schema with sb.useSchema() so the SDK can decode each chunk.",
+      "A streaming call hands back something you iterate: an AsyncIterable of decoded chunks from sb.stream() in Node, an iter.Seq2 of (chunk, error) from sb.Stream in Go. Declare the method before the client goes online — sb.service() plus sb.useSchema() in Node, sb.NewMethod in Go — so the SDK can decode each chunk.",
 
     handlerTitle: "sb.rpc.handleStream() — handler side",
     handlerP:
-      "Register the handler with sb.rpc.handleStream(). It is an async generator: every value you yield becomes one chunk on the wire. Returning closes the stream cleanly; throwing closes it with an error chunk. The schema is required.",
+      "Register the handler with sb.rpc.handleStream() / sb.HandleStream. In Node it is an async generator and every value you yield becomes one chunk on the wire; in Go it is a function that pushes each chunk through a send callback, and send blocks while the caller is behind — that is the backpressure. Returning closes the stream cleanly; failing closes it with the error.",
 
     consumeTitle: "Consuming chunks (for await)",
     consumeP:
-      "Read the iterable with for await. Each turn of the loop hands you one decoded chunk in the order the handler yielded it.",
+      "Read the iterator with for await in Node, with a plain range in Go. Each turn of the loop hands you one decoded chunk, in the order the handler emitted it.",
 
     llmTitle: "LLM tokens",
     llmP:
-      "Token streaming maps straight onto this. The handler yields a token at a time as the model produces it, and the caller prints each chunk the moment it lands.",
+      "Token streaming maps straight onto this. The handler emits a token at a time as the model produces it, and the caller prints each chunk the moment it lands.",
 
     cancelTitle: "Cancellation",
     cancelP:
-      "There is no cancel() method. Break or return out of the for-await loop, and the SDK closes the underlying gRPC stream. The callee sees that close as a cancelled context and stops producing chunks.",
+      "There is no cancel() method. Leave the loop — break or return — and the SDK closes the underlying gRPC stream. The callee sees that close as a cancelled context and stops producing chunks. In Go the iterator's cleanup runs by construction, so an abandoned stream cannot leak the callee's handler.",
 
     progressTitle: "Progress",
     progressP:
-      "There is no separate progress callback. Iteration is the progress signal: yield a chunk after each unit of work and the caller advances its bar as chunks arrive.",
+      "There is no separate progress callback. Iteration is the progress signal: emit a chunk after each unit of work and the caller advances its bar as chunks arrive.",
 
     chunkTitle: "Chunk type",
     chunkP:
-      "A chunk is whatever your handler yields, decoded against the method output schema (.proto or .schema.json). The Chunk type parameter you pass to sb.stream<Req, Chunk>() and handleStream<Req, Chunk>() is that decoded payload. No envelope wraps it; you get the object directly.",
+      "A chunk is whatever your handler emits, decoded against the method's output type. The Chunk type parameter — sb.stream<Req, Chunk>() in Node, sb.Stream[Req, Chunk] in Go — is that decoded payload. No envelope wraps it; you get the value directly.",
 
     replayTitle: "Replay via dashboard",
     replayP1:
@@ -52,10 +52,10 @@ const T = {
     replayP2:
       "To re-run a captured call, open its trace in the dashboard and replay from there. Replay re-invokes the handler, which produces the stream from scratch.",
     replayTip:
-      "sb.rpc.call() throws on a streaming method, and sb.stream() throws on a unary one. The method type comes from the .proto, so the caller must pick the matching call. CallOpts.retry is silently ignored on streams: a mid-stream replay would re-deliver chunks you already read.",
+      "A unary call fails on a streaming method and a streaming call fails on a unary one, so the caller has to pick the matching form. Retries never apply to a stream: a mid-stream replay would re-deliver chunks you already read.",
 
     optCallerNote:
-      "sb.stream() takes the same CallOpts as sb.rpc.call(): transport, timeout, idempotencyKey. retry is ignored for streams.",
+      "A streaming call takes the same per-call options as a unary one: transport, timeout, idempotency key. Retries are ignored for streams.",
     pTransport: "transport",
     pTransportDesc:
       '"direct" | "proxy" | "auto" (default "auto"). direct streams callee→caller over mTLS; proxy routes through the runtime; auto picks direct when the endpoint is known, else proxy.',
@@ -66,21 +66,21 @@ const T = {
     badge: "SDK Reference",
     title: "Стриминг",
     description:
-      "Server-streaming RPC. Обработчик отдаёт чанки по одному, вызывающий читает их вживую через for await. Подходит для LLM-токенов, обновлений прогресса и любого ответа, который приходит частями.",
+      "Server-streaming RPC. Обработчик отдаёт чанки по одному, вызывающий читает их вживую по мере прихода. Подходит для LLM-токенов, обновлений прогресса и любого ответа, который приходит частями.",
 
     howTitle: "Как работает",
 
     callerTitle: "sb.stream() — сторона вызывающего",
     callerP:
-      "Стриминговый вызов запускаете через sb.stream() — он возвращает AsyncIterable декодированных чанков. До start() объявите зависимость через sb.service() и загрузите схему метода через sb.useSchema(), чтобы SDK мог декодировать каждый чанк.",
+      "Стриминговый вызов возвращает то, что вы обходите циклом: AsyncIterable декодированных чанков из sb.stream() в Node и iter.Seq2 пар (чанк, ошибка) из sb.Stream в Go. Объявите метод до подъёма клиента — sb.service() плюс sb.useSchema() в Node, sb.NewMethod в Go — чтобы SDK мог декодировать каждый чанк.",
 
     handlerTitle: "sb.rpc.handleStream() — сторона обработчика",
     handlerP:
-      "Обработчик регистрируете через sb.rpc.handleStream(). Это async-генератор: каждое значение, которое вы yield, превращается в один чанк на проводе. Возврат закрывает поток штатно; исключение закрывает его чанком с ошибкой. Схема обязательна.",
+      "Обработчик регистрируется через sb.rpc.handleStream() / sb.HandleStream. В Node это async-генератор, и каждое значение, которое вы yield, превращается в один чанк на проводе; в Go — функция, проталкивающая каждый чанк через колбэк send, и send блокируется, пока вызывающий отстаёт, — это и есть backpressure. Возврат закрывает поток штатно, ошибка закрывает его с этой ошибкой.",
 
     consumeTitle: "Чтение чанков (for await)",
     consumeP:
-      "Читайте итератор через for await. Каждый виток цикла даёт один декодированный чанк в том порядке, в котором обработчик его отдал.",
+      "Читайте итератор через for await в Node и обычным range в Go. Каждый виток цикла даёт один декодированный чанк в том порядке, в котором обработчик его отдал.",
 
     llmTitle: "LLM-токены",
     llmP:
@@ -88,7 +88,7 @@ const T = {
 
     cancelTitle: "Отмена",
     cancelP:
-      "Метода cancel() нет. Сделайте break или return из цикла for await — SDK закроет нижележащий gRPC-поток. Вызываемый увидит это закрытие как отменённый контекст и перестанет отдавать чанки.",
+      "Метода cancel() нет. Выйдите из цикла — break или return — и SDK закроет нижележащий gRPC-поток. Вызываемый увидит это закрытие как отменённый контекст и перестанет отдавать чанки. В Go очистка итератора выполняется по построению, поэтому брошенный поток не может утечь обработчиком на стороне вызываемого.",
 
     progressTitle: "Прогресс",
     progressP:
@@ -96,7 +96,7 @@ const T = {
 
     chunkTitle: "Тип чанка",
     chunkP:
-      "Чанк — это то, что отдаёт обработчик, декодированное по выходной схеме метода (.proto или .schema.json). Параметр типа Chunk, который вы передаёте в sb.stream<Req, Chunk>() и handleStream<Req, Chunk>(), и есть этот декодированный payload. Конверт его не оборачивает — вы получаете объект напрямую.",
+      "Чанк — это то, что отдаёт обработчик, декодированное по выходному типу метода. Параметр типа Chunk — sb.stream<Req, Chunk>() в Node и sb.Stream[Req, Chunk] в Go — и есть этот декодированный payload. Конверт его не оборачивает: вы получаете значение напрямую.",
 
     replayTitle: "Воспроизведение через дашборд",
     replayP1:
@@ -104,10 +104,10 @@ const T = {
     replayP2:
       "Чтобы повторить захваченный вызов, откройте его трейс в дашборде и запустите воспроизведение оттуда. Воспроизведение заново вызывает обработчик, и тот производит поток с нуля.",
     replayTip:
-      "sb.rpc.call() бросает исключение на стриминговом методе, а sb.stream() — на унарном. Тип метода задан в .proto, поэтому вызывающий обязан выбрать подходящий вызов. CallOpts.retry на потоках молча игнорируется: повтор посреди потока заново отдал бы уже прочитанные чанки.",
+      "Унарный вызов падает на стриминговом методе, а стриминговый — на унарном, поэтому вызывающий обязан выбрать подходящую форму. Повторы к потоку не применяются: повтор посреди потока заново отдал бы уже прочитанные чанки.",
 
     optCallerNote:
-      "sb.stream() принимает те же CallOpts, что и sb.rpc.call(): transport, timeout, idempotencyKey. retry для потоков игнорируется.",
+      "Стриминговый вызов принимает те же per-call опции, что и унарный: transport, timeout, ключ идемпотентности. Повторы для потоков игнорируются.",
     pTransport: "transport",
     pTransportDesc:
       '"direct" | "proxy" | "auto" (по умолчанию "auto"). direct стримит вызываемый→вызывающий по mTLS; proxy идёт через runtime; auto берёт direct, когда endpoint известен, иначе proxy.',
@@ -129,19 +129,21 @@ export function PageStreaming() {
       <P>
         {locale === "ru" ? (
           <>
-            Под капотом это <strong>server-streaming RPC</strong>. Обработчик регистрируется через{" "}
-            <Mono>sb.rpc.handleStream()</Mono> как async-генератор и <Mono>yield</Mono>-ит чанки. Вызывающий
-            запускает метод через <Mono>sb.stream()</Mono> и получает <Mono>AsyncIterable</Mono>, который
-            читает через <Mono>for await</Mono>. Один <Mono>yield</Mono> у обработчика — один чанк у
-            вызывающего, порядок сохраняется.
+            Под капотом это <strong>server-streaming RPC</strong>. Обработчик отдаёт чанки по одному:
+            в Node это async-генератор на <Mono>sb.rpc.handleStream()</Mono>, в Go — функция, которая
+            проталкивает каждый чанк через колбэк <Mono>send</Mono>. Вызывающий запускает метод и читает
+            чанки по мере прихода: <Mono>for await</Mono> по <Mono>sb.stream()</Mono> в Node и обычный{" "}
+            <Mono>range</Mono> по <Mono>iter.Seq2</Mono> из <Mono>sb.Stream</Mono> в Go. Один чанк на
+            выходе — один чанк на входе, порядок сохраняется.
           </>
         ) : (
           <>
-            Under the hood it is <strong>server-streaming RPC</strong>. The handler is an async generator
-            registered with <Mono>sb.rpc.handleStream()</Mono>; it <Mono>yield</Mono>s chunks. The caller
-            starts the method with <Mono>sb.stream()</Mono>, gets back an <Mono>AsyncIterable</Mono>, and
-            reads it with <Mono>for await</Mono>. One <Mono>yield</Mono> on the handler is one chunk on the
-            caller, in order.
+            Under the hood it is <strong>server-streaming RPC</strong>. The handler emits chunks one at a
+            time: an async generator on <Mono>sb.rpc.handleStream()</Mono> in Node, a function that pushes
+            each chunk through a <Mono>send</Mono> callback in Go. The caller starts the method and reads
+            the chunks as they land — <Mono>for await</Mono> over <Mono>sb.stream()</Mono> in Node, a plain{" "}
+            <Mono>range</Mono> over the <Mono>iter.Seq2</Mono> from <Mono>sb.Stream</Mono> in Go. One chunk
+            out is one chunk in, in order.
           </>
         )}
       </P>
@@ -167,6 +169,25 @@ for await (const chunk of sb.stream<{ prompt: string }, { token: string }>(
   { prompt: "Hello" },
 )) {
   process.stdout.write(chunk.token);
+}`,
+          go: `// Declaring the method registers the dependency and binds the schema from
+// its type parameters. Before Start.
+ai := sb.NewClient(c, "ai")
+generate, err := sb.NewMethod[*genpb.GenRequest, *genpb.Token](ai, "generate")
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+// Stream yields (chunk, error) pairs — read them with a plain range.
+for tok, err := range generate.Stream(ctx, &genpb.GenRequest{Prompt: "Hello"}) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(tok.GetText())
 }`,
         }}
       />
@@ -201,6 +222,24 @@ sb.rpc.handleStream<{ prompt: string }, { token: string }>(
 );
 
 await sb.start();`,
+          go: `// Each call to send is one chunk. Returning closes the stream cleanly;
+// returning an error closes it with that error.
+err := sb.HandleStream(c, "generate",
+	func(ctx context.Context, req *genpb.GenRequest, send func(*genpb.Token) error) error {
+		for _, tok := range modelTokens(ctx, req.GetPrompt()) {
+			if err := send(tok); err != nil {
+				return err // the caller is gone; stop producing
+			}
+		}
+		return nil
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -219,6 +258,19 @@ for await (const chunk of sb.stream<{ prompt: string }, { token: string }>(
   chunks.push(chunk);
 }
 // chunks now holds every value the handler yielded, in order.`,
+          go: `var chunks []*genpb.Token
+for tok, err := range sb.Stream[*genpb.GenRequest, *genpb.Token](
+	ctx, c, "ai", "generate", &genpb.GenRequest{Prompt: "Hello"},
+	sb.WithTransport(sb.TransportDirect),
+	sb.WithTimeout(30*time.Second),
+) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	chunks = append(chunks, tok)
+}
+// chunks now holds every value the handler sent, in order.
+log.Println("received", len(chunks))`,
         }}
       />
 
@@ -246,6 +298,29 @@ for await (const chunk of sb.stream<{ prompt: string }, { token: string }>(
 )) {
   process.stdout.write(chunk.token);
 }`,
+          go: `// Handler — send each token as the model produces it.
+err := sb.HandleStream(c, "generate",
+	func(ctx context.Context, req *genpb.GenRequest, send func(*genpb.Token) error) error {
+		for _, tok := range modelTokens(ctx, req.GetPrompt()) {
+			if err := send(tok); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+// Caller — print each token as it arrives.
+for tok, err := range sb.Stream[*genpb.GenRequest, *genpb.Token](
+	ctx, c, "ai", "generate", &genpb.GenRequest{Prompt: "Write a poem"},
+) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(tok.GetText())
+}`,
         }}
       />
 
@@ -261,6 +336,18 @@ for await (const chunk of sb.stream<{ prompt: string }, { token: string }>(
 )) {
   process.stdout.write(chunk.token);
   if (chunk.token.includes(".")) break; // break cancels the gRPC stream
+}
+// The callee's handler stops producing once the stream is cancelled.`,
+          go: `for tok, err := range sb.Stream[*genpb.GenRequest, *genpb.Token](
+	ctx, c, "ai", "generate", &genpb.GenRequest{Prompt: "Hello"},
+) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Print(tok.GetText())
+	if strings.Contains(tok.GetText(), ".") {
+		break // leaving the loop cancels the gRPC stream
+	}
 }
 // The callee's handler stops producing once the stream is cancelled.`,
         }}
@@ -292,6 +379,37 @@ for await (const chunk of sb.stream<{ reportId: string }, { pct: number }>(
 )) {
   updateProgressBar(chunk.pct);
 }`,
+          go: `// Handler — send a progress chunk per processed row.
+err := sb.HandleStream(c, "report",
+	func(ctx context.Context, req *reportpb.ReportRequest, send func(*reportpb.Progress) error) error {
+		rows, err := fetchRows(ctx, req.GetReportId())
+		if err != nil {
+			return err
+		}
+		for i, row := range rows {
+			if err := processRow(ctx, row); err != nil {
+				return err
+			}
+			pct := int32((i + 1) * 100 / len(rows))
+			if err := send(&reportpb.Progress{Pct: pct}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+// Caller — drive a progress bar.
+for chunk, err := range sb.Stream[*reportpb.ReportRequest, *reportpb.Progress](
+	ctx, c, "reports", "report", &reportpb.ReportRequest{ReportId: "rpt_42"},
+) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	updateProgressBar(chunk.GetPct())
+}`,
         }}
       />
 
@@ -309,6 +427,19 @@ sb.rpc.handleStream<Req, Chunk>(
   fn: (req: Req) => AsyncIterable<Chunk>, // async generator
   opts: { schema: SchemaSpec; captureMode?: "all" | "errors" | "none" },
 ): void;`,
+          go: `func Stream[Req, Chunk proto.Message](
+	ctx context.Context,
+	c *sb.Client,
+	service, method string,
+	req Req,
+	opts ...sb.CallOption,
+) iter.Seq2[Chunk, error]
+
+func HandleStream[Req, Chunk proto.Message](
+	c *sb.Client,
+	name string,
+	fn func(ctx context.Context, req Req, send func(Chunk) error) error,
+) error`,
         }}
       />
 

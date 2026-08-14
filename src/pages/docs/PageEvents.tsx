@@ -17,13 +17,11 @@ const T = {
     description:
       "Durable pub/sub with at-least-once delivery. Events go through a local SQLite outbox, so publishing survives a transient runtime outage. No broker required.",
     intro:
-      "The namespace is sb.event (singular). A publisher declares an event with sb.event.define and emits it with sb.event.publish; a subscriber registers a handler with sb.event.handle. Delivery, dedup, retries and DLQ all live in the runtime — the SDK only enqueues, sends, and acks.",
+      "A publisher declares an event, then emits it; a subscriber registers a handler for it. In Node that reads sb.event.define / publish / handle; in Go it is sb.DefineEvent, Publish and sb.SubscribeEvent, because a type parameter cannot ride on a method. Delivery, dedup, retries and DLQ all live in the runtime — the SDK only enqueues, sends, and acks.",
 
     publishTitle: "sb.event.publish()",
-    publishP1:
-      "Publish a payload to a declared event. The call resolves to",
-    publishP2:
-      "(a UUID v7 minted locally). You must call sb.event.define() for the name and sb.start() before publishing.",
+    publishP:
+      "Publish a payload to a declared event. You get back the event id — a UUID v7 minted locally, wrapped as { eventId } in Node and returned as a plain string in Go. The name has to be declared before the client goes online, and publishing happens after.",
     publishUnderHood:
       "By default the event is encoded with the registered schema, inserted into the local SQLite outbox inside a transaction, and the call resolves after commit. A background drainer ships outbox rows to the runtime, so a publish survives a short runtime outage and is sent on reconnect.",
 
@@ -43,17 +41,17 @@ const T = {
 
     handleTitle: "sb.event.handle()",
     handleP:
-      "Register a subscriber handler. Call it before sb.start(). The handler receives only the decoded payload — no context object, no headers. To decode the payload the subscriber must call sb.event.define(name, spec) with the same schema as the publisher; otherwise it replies Nack with reason no_schema.",
+      "Register a subscriber handler before the client goes online. It receives the decoded payload — headers stay on the envelope. Node needs the same schema declared on the subscriber side, otherwise it replies Nack with reason no_schema; Go takes the payload type from the handler you pass, so there is nothing extra to declare.",
     handleDispatchNote:
       "Several handlers for the same exact name run sequentially on one delivery, with a single Ack for the whole delivery.",
 
     defineTitle: "sb.event.define()",
     defineP1:
-      "Declare a published (or consumed) event before sb.start(). The schema source is a SchemaSpec — the same type sb.rpc.handle uses: a .proto file or a .schema.json file with explicit fieldNumber per property. Inline JSON Schema is not accepted.",
+      "Declare a published (or consumed) event before the client goes online. In Node the schema source is a SchemaSpec — the same type sb.rpc.handle uses: a .proto file or a .schema.json file with an explicit fieldNumber per property, never an inline JSON Schema. In Go the generated message type is the declaration.",
     defineP2:
       "spec is optional, but a schema-less define only registers the name in the service map. Publishing it throws no schema registered, and a subscriber replies Nack no_schema. A real, deliverable event needs a spec. Re-declaring with the same spec is a no-op; a different spec throws.",
     defineProtoNote:
-      "method must match the rpc <method> name in the .proto service block. If the .proto has no service block, set input and output message names explicitly.",
+      "In Node, method must match the rpc <method> name in the .proto service block; with no service block, set the input and output message names explicitly. Go needs only the messages — no service block and no protoc-gen-go-grpc.",
 
     retryTitle: "Retry & DLQ",
     retryP:
@@ -61,7 +59,7 @@ const T = {
     retryWaiting:
       "Subscriber offline — the delivery waits in the queue; on reconnect the runtime dispatches it automatically.",
     retryThrow:
-      "Handler throws — the SDK replies Nack and the runtime redelivers after the visibility timeout.",
+      "The handler fails — the SDK replies Nack and the runtime redelivers after the visibility timeout.",
     retryDlq:
       "After the runtime's events.max_attempts (default 5) is reached, the delivery moves to the DLQ with a copy of the payload.",
     retryTip:
@@ -80,7 +78,7 @@ const T = {
 
     wildcardTitle: "Wildcard depth",
     wildcardP:
-      "A subscription pattern may use AMQP-style wildcards. Matching happens only in the runtime (registry topic match); the SDK has no client-side matcher and dispatches an incoming delivery to the handler whose pattern equals the event name exactly.",
+      "A subscription pattern may use AMQP-style wildcards, and the runtime routes on it. Node has no client-side matcher: it dispatches an incoming delivery to the handler whose pattern equals the event name exactly. Go also matches the pattern locally, so a family subscription reaches the handler under the concrete name the publisher used.",
     wildcardStar: "matches exactly one segment.",
     wildcardHash: "matches zero or more segments.",
     wildcardCombine:
@@ -95,12 +93,11 @@ const T = {
     description:
       "Надёжный pub/sub с гарантией доставки at-least-once. События идут через локальный SQLite-outbox, поэтому публикация переживает кратковременную недоступность runtime. Брокер не нужен.",
     intro:
-      "Неймспейс — sb.event (в единственном числе). Издатель декларирует событие через sb.event.define и публикует через sb.event.publish; подписчик регистрирует обработчик через sb.event.handle. Доставка, дедуп, повторы и DLQ живут в runtime — SDK только кладёт в очередь, отправляет и подтверждает (ack).",
+      "Издатель декларирует событие и публикует его; подписчик регистрирует обработчик. В Node это sb.event.define / publish / handle, в Go — sb.DefineEvent, Publish и sb.SubscribeEvent, потому что параметр типа нельзя навесить на метод. Доставка, дедуп, повторы и DLQ живут в runtime — SDK только кладёт в очередь, отправляет и подтверждает (ack).",
 
     publishTitle: "sb.event.publish()",
-    publishP1: "Публикует payload в задекларированное событие. Возвращает",
-    publishP2:
-      "(UUID v7, сгенерированный локально). Перед публикацией нужно вызвать sb.event.define() для имени и sb.start().",
+    publishP:
+      "Публикует payload в задекларированное событие. Возвращает id события — UUID v7, сгенерированный локально: в Node он приходит как { eventId }, в Go — обычной строкой. Имя нужно задекларировать до подъёма клиента, а публиковать — после.",
     publishUnderHood:
       "По умолчанию событие кодируется зарегистрированной схемой, вставляется в локальный SQLite-outbox в транзакции, и вызов завершается после commit. Фоновый drainer отправляет строки outbox в runtime, поэтому публикация переживает короткий простой runtime и уходит при переподключении.",
 
@@ -120,17 +117,17 @@ const T = {
 
     handleTitle: "sb.event.handle()",
     handleP:
-      "Регистрирует обработчик подписчика. Вызывать до sb.start(). Обработчик получает только декодированный payload — без объекта контекста, без заголовков. Чтобы декодировать payload, подписчик должен вызвать sb.event.define(name, spec) с той же схемой, что у издателя; иначе он отвечает Nack с причиной no_schema.",
+      "Регистрирует обработчик подписчика — до подъёма клиента. Обработчик получает декодированный payload, заголовки остаются в конверте. Node требует объявить у подписчика ту же схему, иначе он отвечает Nack с причиной no_schema; Go берёт тип payload из переданного обработчика, объявлять отдельно нечего.",
     handleDispatchNote:
       "Несколько обработчиков на одно точное имя выполняются последовательно на одну доставку, с одним Ack за всю доставку.",
 
     defineTitle: "sb.event.define()",
     defineP1:
-      "Декларирует публикуемое (или потребляемое) событие до sb.start(). Источник схемы — SchemaSpec, тот же тип, что у sb.rpc.handle: файл .proto или файл .schema.json с явным fieldNumber у каждого поля. Inline JSON Schema не поддерживается.",
+      "Декларирует публикуемое (или потребляемое) событие до подъёма клиента. В Node источник схемы — SchemaSpec, тот же тип, что у sb.rpc.handle: файл .proto или файл .schema.json с явным fieldNumber у каждого поля, но не inline JSON Schema. В Go декларация — это сам сгенерированный тип сообщения.",
     defineP2:
       "spec опционален, но define без схемы лишь регистрирует имя в service map. Публикация такого события бросает no schema registered, а подписчик отвечает Nack no_schema. Для реального, доставляемого события spec обязателен. Повторный define с тем же spec — no-op; с другим spec — бросает.",
     defineProtoNote:
-      "method должен совпадать с именем rpc <method> в service-блоке .proto. Если в .proto нет service-блока, задайте имена сообщений input и output явно.",
+      "В Node method должен совпадать с именем rpc <method> в service-блоке .proto; если service-блока нет, задайте имена сообщений input и output явно. Go нужны только сообщения — ни service-блока, ни protoc-gen-go-grpc.",
 
     retryTitle: "Повторы и DLQ",
     retryP:
@@ -138,7 +135,7 @@ const T = {
     retryWaiting:
       "Подписчик офлайн — доставка ждёт в очереди; при переподключении runtime отправляет её автоматически.",
     retryThrow:
-      "Обработчик бросает исключение — SDK отвечает Nack, и runtime повторяет доставку после visibility timeout.",
+      "Обработчик отработал неуспешно — SDK отвечает Nack, и runtime повторяет доставку после visibility timeout.",
     retryDlq:
       "По достижении events.max_attempts (по умолчанию 5) доставка перемещается в DLQ с копией payload.",
     retryTip:
@@ -157,7 +154,7 @@ const T = {
 
     wildcardTitle: "Глубина wildcard",
     wildcardP:
-      "Шаблон подписки может использовать wildcard в стиле AMQP. Матчинг происходит только в runtime (registry topic match); в SDK matcher'а нет, и входящая доставка диспатчится обработчику, чей pattern точно равен имени события.",
+      "Шаблон подписки может использовать wildcard в стиле AMQP, и runtime маршрутизирует по нему. В Node клиентского matcher'а нет: входящая доставка диспатчится обработчику, чей pattern точно равен имени события. Go дополнительно сопоставляет шаблон локально, поэтому подписка на семейство доходит до обработчика под конкретным именем, которое использовал издатель.",
     wildcardStar: "совпадает ровно с одним сегментом.",
     wildcardHash: "совпадает с нулём или более сегментов.",
     wildcardCombine:
@@ -195,9 +192,7 @@ export function PageEvents() {
 
       {/* ── sb.event.publish ───────────────────────────────────────── */}
       <H2 id="event-publish">{t.publishTitle}</H2>
-      <P>
-        {t.publishP1} <Mono>{`{ eventId }`}</Mono> {t.publishP2}
-      </P>
+      <P>{t.publishP}</P>
       <MultiCodeBlock
         code={{
           ts: `sb.event.define("payment.charged", {
@@ -213,6 +208,27 @@ const { eventId } = await sb.event.publish("payment.charged", {
   userId: "u-1",
   currency: "USD",
 });`,
+          go: `// The generated type is the declaration — before Start.
+charged, err := sb.DefineEvent[*orderpb.PaymentCharged](c, "payment.charged")
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+// Publish returns once the row is durably in the local outbox.
+eventID, err := charged.Publish(ctx, &orderpb.PaymentCharged{
+	TransactionId: "tx-7",
+	Amount:        4200,
+	UserId:        "u-1",
+	Currency:      "USD",
+})
+if err != nil {
+	log.Fatal(err)
+}
+log.Println("buffered", eventID)`,
         }}
       />
       <P>{t.publishUnderHood}</P>
@@ -242,6 +258,32 @@ await sb.event.publish("order.line.removed", payload, { partitionKey: "order-42"
 await sb.event.publish("metric.counter", { name: "page_view", value: 1 }, {
   fireAndForget: true,
 });`,
+          go: `// Deduplicate on ingest
+_, err := sb.PublishEvent(ctx, c, "payment.charged",
+	&orderpb.PaymentCharged{TransactionId: "tx-7", Amount: 4200},
+	sb.WithEventIdempotencyKey("tx-7"))
+if err != nil {
+	log.Fatal(err)
+}
+
+// FIFO per order, parallel across orders
+if _, err := sb.PublishEvent(ctx, c, "order.line.added",
+	&orderpb.OrderPlaced{OrderId: "order-42"},
+	sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
+if _, err := sb.PublishEvent(ctx, c, "order.line.removed",
+	&orderpb.OrderPlaced{OrderId: "order-42"},
+	sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
+
+// Best-effort metric — skip the outbox and every retry with it
+if _, err := sb.PublishEvent(ctx, c, "metric.counter",
+	&metricpb.Counter{Name: "page_view", Value: 1},
+	sb.WithFireAndForget()); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -263,6 +305,19 @@ sb.event.handle("payment.charged", async (payload) => {
 });
 
 await sb.start();`,
+          go: `// The subscriber decodes into the same generated type the publisher used.
+err := sb.SubscribeEvent(c, "payment.charged",
+	func(ctx context.Context, e *orderpb.PaymentCharged) error {
+		// at-least-once → make this idempotent
+		return sendReceipt(ctx, e.GetTransactionId())
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>{t.handleDispatchNote}</P>
@@ -283,6 +338,20 @@ sb.event.define("payment.charged", {
 
 // From a .schema.json (explicit fieldNumber per property)
 sb.event.define("payment.charged", { schemaFile: "schemas/payment.json" });`,
+          go: `// The generated type is the whole declaration: no file, no method name.
+charged, err := sb.DefineEvent[*orderpb.PaymentCharged](c, "payment.charged")
+if err != nil {
+	log.Fatal(err)
+}
+log.Println("declared", charged.Name())
+
+// For a name whose payload shape varies by publisher, take it undecoded.
+if err := sb.SubscribeEventRaw(c, "audit.#",
+	func(ctx context.Context, payload []byte) error {
+		return archive(ctx, payload)
+	}); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
