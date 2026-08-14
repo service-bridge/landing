@@ -123,7 +123,7 @@ import (
 	"errors"
 	"testing"
 
-	"example.com/orders/paymentpb"
+	"example.com/gen/paymentpb"
 	"github.com/service-bridge/sdk/go/sbtest"
 )
 

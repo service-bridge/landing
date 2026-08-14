@@ -277,7 +277,7 @@ import (
 	"os"
 	"time"
 
-	"example.com/orders/paymentpb"
+	"example.com/gen/paymentpb"
 	sb "github.com/service-bridge/sdk/go"
 )
 
@@ -437,7 +437,7 @@ import (
 	"log"
 	"os"
 
-	"example.com/orders/paymentpb"
+	"example.com/gen/paymentpb"
 	sb "github.com/service-bridge/sdk/go"
 )
 

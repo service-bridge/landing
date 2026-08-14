@@ -354,9 +354,9 @@ import (
 	"log"
 	"os"
 
-	"example.com/orders/inventorypb"
-	"example.com/orders/orderpb"
-	"example.com/orders/paymentpb"
+	"example.com/gen/inventorypb"
+	"example.com/gen/orderpb"
+	"example.com/gen/paymentpb"
 	sb "github.com/service-bridge/sdk/go"
 )
 
