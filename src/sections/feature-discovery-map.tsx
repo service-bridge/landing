@@ -31,6 +31,64 @@ const result = await orders.rpc.call("payments", "payment.charge", { amount: 499
 
 // Live registry view, no SQL on the hot path:
 const map = orders.serviceMap();  // ReadonlyMap<serviceName, ServiceMapEntry>`,
+
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	paymentsv1 "example.com/gen/payments/v1"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+// Worker: the handler is declared before Start, the endpoint is advertised to
+// the registry on Start.
+func worker(ctx context.Context) {
+	c, err := sb.New("localhost:14445", os.Getenv("PAYMENTS_SERVICE_KEY"),
+		sb.WithAdvertise("10.0.2.4", 50051))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := sb.Handle(c, "payment.charge", charge); err != nil {
+		log.Fatal(err)
+	}
+	// → RegisterAndWatch stream opened, mTLS cert provisioned
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Caller: declare the outgoing dep, then Start.
+func caller(ctx context.Context) {
+	c, err := sb.New("localhost:14445", os.Getenv("ORDERS_SERVICE_KEY"), sb.WithCallerOnly())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := c.Service("payments", sb.ServiceDeps{RPC: []string{"payment.charge"}}); err != nil {
+		log.Fatal(err)
+	}
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// Direct caller→callee mTLS when the endpoint is in the snapshot,
+	// proxied through the runtime when it is not.
+	res, err := sb.Call[*paymentsv1.ChargeRequest, *paymentsv1.ChargeResponse](
+		ctx, c, "payments", "payment.charge",
+		&paymentsv1.ChargeRequest{Amount: 4990},
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("charged", res.GetTxId())
+
+	// Live registry view, no SQL on the hot path.
+	for _, inst := range c.ServiceMap().Instances {
+		log.Println(inst.ServiceName, inst.CallEndpoint, inst.Status)
+	}
+}`,
 };
 
 const REGISTRY_ROWS = [
@@ -124,7 +182,10 @@ export function DiscoveryMapSection() {
               See the discovery API →
             </a>
           </Card>
-          <MultiCodeBlock code={DISCOVERY_CODE} filename={{ ts: "discovery.ts" }} />
+          <MultiCodeBlock
+            code={DISCOVERY_CODE}
+            filename={{ ts: "discovery.ts", go: "discovery.go" }}
+          />
         </motion.div>
       }
       demo={

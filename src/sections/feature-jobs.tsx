@@ -47,7 +47,7 @@ const TABS: { id: string; label: string; filename: FilenameLangs; code: CodeLang
   {
     id: "cron",
     label: "Cron",
-    filename: { ts: "billing-service.ts" },
+    filename: { ts: "billing-service.ts", go: "billing-service.go" },
     code: {
       ts: `import { ServiceBridge } from "service-bridge";
 
@@ -70,12 +70,59 @@ sb.job.handle(
 );
 
 await sb.start();`,
+
+      go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	paymentsv1 "example.com/gen/payments/v1"
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/job"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Five-field cron, parsed here: a typo fails now, not silently at 03:00.
+	hourly, err := job.Cron("0 * * * *", "UTC")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// CatchupFireAll replays every tick missed while the runtime was down.
+	err = c.Job.Handle("reconcile", job.NewSpec(hourly,
+		job.WithCatchup(job.CatchupFireAll),
+		job.WithOverlap(job.OverlapSkip),
+		job.WithDeps(job.RPC("billing.reconcileAll")),
+		job.WithMaxAttempts(3),
+	), func(ctx context.Context, exec job.Execution) error {
+		// Jobs carry no payload. Be idempotent by exec.IdempotencyKey.
+		_, err := sb.Call[*paymentsv1.ReconcileRequest, *paymentsv1.ReconcileResponse](
+			ctx, c, "billing", "reconcileAll",
+			&paymentsv1.ReconcileRequest{RunId: exec.IdempotencyKey},
+		)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}`,
     },
   },
   {
     id: "delayed",
     label: "Delayed",
-    filename: { ts: "onboarding-service.ts" },
+    filename: { ts: "onboarding-service.ts", go: "onboarding-service.go" },
     code: {
       ts: `import { ServiceBridge } from "service-bridge";
 
@@ -96,12 +143,59 @@ sb.job.handle(
 );
 
 await sb.start();`,
+
+      go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"time"
+
+	eventsv1 "example.com/gen/events/v1"
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/job"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	reminder, err := sb.DefineEvent[*eventsv1.ReminderRequested](c, "email.reminder.requested")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Fires once, at a wall-clock instant.
+	tomorrow, err := job.At(time.Now().Add(24 * time.Hour))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = c.Job.Handle("trial.reminder", job.NewSpec(tomorrow,
+		job.WithDeps(job.Event("email.reminder.requested")),
+	), func(ctx context.Context, exec job.Execution) error {
+		_, err := reminder.Publish(ctx, &eventsv1.ReminderRequested{
+			ScheduledAtUnixMs: exec.ScheduledAtUnixMs,
+		})
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}`,
     },
   },
   {
     id: "interval",
     label: "Interval + Workflow",
-    filename: { ts: "platform-service.ts" },
+    filename: { ts: "platform-service.ts", go: "platform-service.go" },
     code: {
       ts: `import { ServiceBridge } from "service-bridge";
 
@@ -126,6 +220,53 @@ sb.job.handle(
 );
 
 await sb.start();`,
+
+      go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"time"
+
+	sb "github.com/service-bridge/sdk/go"
+	"github.com/service-bridge/sdk/go/job"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	everyFive, err := job.Interval(5 * time.Minute)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// OverlapBufferOne queues at most one fire behind a tick still running.
+	err = c.Job.Handle("billing.daily", job.NewSpec(everyFive,
+		job.WithOverlap(job.OverlapBufferOne),
+		job.WithDeps(job.Workflow("billing.settle")),
+	), func(ctx context.Context, exec job.Execution) error {
+		// Kick off a durable workflow, then wait for its terminal state.
+		runID, err := c.Workflow.Start(ctx, "billing.settle", map[string]any{
+			"date": time.UnixMilli(exec.ScheduledAtUnixMs).UTC().Format(time.DateOnly),
+		})
+		if err != nil {
+			return err
+		}
+		_, err = c.Workflow.Await(ctx, runID)
+		return err
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}`,
     },
   },
 ];

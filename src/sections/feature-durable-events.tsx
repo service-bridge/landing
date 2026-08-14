@@ -51,6 +51,54 @@ const { eventId } = await sb.event.publish("order.created", {
   orderId: "ord_123", amount: 4990,
   customer: { tier: "premium" },
 }, { idempotencyKey: "orders:ord_123:created" });`,
+
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	eventsv1 "example.com/gen/events/v1"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Declare the published event — the payload type is the schema.
+	created, err := sb.DefineEvent[*eventsv1.OrderCreated](c, "order.created")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Subscriber — return an error to nack: the runtime retries with backoff,
+	// then routes to the DLQ.
+	err = sb.SubscribeEvent(c, "order.created", func(ctx context.Context, e *eventsv1.OrderCreated) error {
+		return sendEmail(ctx, e.GetOrderId())
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// Publisher — durable (local outbox → runtime), at-least-once delivery.
+	// The idempotency key lets the runtime dedup re-publishes.
+	eventID, err := created.Publish(ctx, &eventsv1.OrderCreated{
+		OrderId: "ord_123", Amount: 4990, CustomerTier: "premium",
+	}, sb.WithEventIdempotencyKey("orders:ord_123:created"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println("published", eventID)
+}`,
 };
 
 const PIPELINE = [
@@ -236,6 +284,7 @@ export function DurableEventsSection() {
             code={EVENT_CODE}
             filename={{
               ts: "notifications-service.ts",
+              go: "notifications-service.go",
             }}
           />
         </motion.div>

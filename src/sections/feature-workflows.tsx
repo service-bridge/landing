@@ -58,6 +58,70 @@ await sb.start();
 // Caller side: schedule a run, then block until terminal status "success".
 const { runId } = await sb.workflow.start("merchant.onboarding", { merchantId });
 const state = await sb.workflow.await(runId);`,
+
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	sb "github.com/service-bridge/sdk/go"
+	wf "github.com/service-bridge/sdk/go/workflow"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// DAG: parallel fan-out → fan-in → conditional → sleep → followup.
+	// Declared before Start; WaitFor is the dependency graph.
+	err = c.Workflow.Handle("merchant.onboarding", wf.Definition{Steps: []wf.Step{
+		wf.Call{Control: wf.Control{ID: "validate"},
+			Service: wf.Name("merchants"), Method: wf.Name("validate"), Input: wf.Path("$.input")},
+
+		// parallel — both start concurrently after validate
+		wf.Call{Control: wf.Control{ID: "kyc", WaitFor: []string{"validate"}},
+			Service: wf.Name("kyc"), Method: wf.Name("check"), Input: wf.Path("$.input")},
+		wf.Call{Control: wf.Control{ID: "billing", WaitFor: []string{"validate"}},
+			Service: wf.Name("billing"), Method: wf.Name("setup"), Input: wf.Path("$.input")},
+
+		// fan-in — waits for both kyc and billing
+		wf.Call{Control: wf.Control{ID: "provision", WaitFor: []string{"kyc", "billing"}},
+			Service: wf.Name("merchants"), Method: wf.Name("create"), Input: wf.Path("$.input")},
+
+		// conditional — skipped unless provision.status is "active"
+		wf.Publish{Control: wf.Control{ID: "welcome", WaitFor: []string{"provision"},
+			When: wf.Equals(wf.Path("$.provision.status"), "active")},
+			Event: wf.Name("email.welcome"), Input: wf.Path("$.provision")},
+
+		// durable timer — no goroutine held during the wait
+		wf.Sleep{Control: wf.Control{ID: "wait", WaitFor: []string{"welcome"}}, DurationSec: 86_400},
+		wf.Call{Control: wf.Control{ID: "followup", WaitFor: []string{"wait"}},
+			Service: wf.Name("emails"), Method: wf.Name("followup"), Input: wf.Path("$.input")},
+	}})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// Caller side: schedule a run, then block until it reaches a terminal state.
+	runID, err := c.Workflow.Start(ctx, "merchant.onboarding", map[string]any{"merchantId": merchantID})
+	if err != nil {
+		log.Fatal(err)
+	}
+	state, err := c.Workflow.Await(ctx, runID)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(state)
+}`,
 };
 
 type NodeStatus = "success" | "running" | "pending";
@@ -176,7 +240,10 @@ export function WorkflowsSection() {
               </a>
             </Button>
           </Card>
-          <MultiCodeBlock code={WORKFLOW_CODE} filename={{ ts: "merchant-onboarding.ts" }} />
+          <MultiCodeBlock
+            code={WORKFLOW_CODE}
+            filename={{ ts: "merchant-onboarding.ts", go: "merchant-onboarding.go" }}
+          />
         </div>
       }
       demo={

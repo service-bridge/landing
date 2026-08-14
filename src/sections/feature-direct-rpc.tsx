@@ -32,6 +32,46 @@ sb.rpc.handle(
 );
 
 await sb.start();`,
+
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	ordersv1 "example.com/gen/orders/v1"
+	paymentsv1 "example.com/gen/payments/v1"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Inbound handler, declared before Start. The type parameters are the schema.
+	err = sb.Handle(c, "orders.create",
+		func(ctx context.Context, req *ordersv1.CreateOrderRequest) (*ordersv1.CreateOrderResponse, error) {
+			// Direct caller→worker mTLS gRPC call — no proxy on the data path
+			charge, err := sb.Call[*paymentsv1.ChargeRequest, *paymentsv1.ChargeResponse](
+				ctx, c, "payments", "payment.charge",
+				&paymentsv1.ChargeRequest{OrderId: req.GetId(), Amount: req.GetTotal()},
+			)
+			if err != nil {
+				return nil, err
+			}
+			return &ordersv1.CreateOrderResponse{Ok: charge.GetOk(), TxId: charge.GetTxId()}, nil
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}`,
 };
 
 // ─── Animated packet dot ─────────────────────────────────────────────────────
@@ -99,7 +139,10 @@ export function DirectRpcSection() {
               </Card>
             </div>
           </Card>
-          <MultiCodeBlock code={RPC_CODE} filename={{ ts: "orders-service.ts" }} />
+          <MultiCodeBlock
+            code={RPC_CODE}
+            filename={{ ts: "orders-service.ts", go: "orders-service.go" }}
+          />
           <Button asChild variant="link" size="sm" className="h-auto px-0 text-emerald-300">
             <a href="#docs">
               Read the RPC docs

@@ -24,7 +24,43 @@ sb.rpc.handleStream("generate", async function* (req) {
 
 await sb.start();`,
 
-  go: undefined,
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	aiv1 "example.com/gen/ai/v1"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Server-streaming handler: send pushes one chunk and blocks while the
+	// caller is behind — that is the backpressure.
+	err = sb.HandleStream(c, "generate",
+		func(ctx context.Context, req *aiv1.GenerateRequest, send func(*aiv1.Token) error) error {
+			for token := range llm.Stream(ctx, req.GetPrompt()) {
+				if err := send(&aiv1.Token{Token: token}); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+}`,
+
   py: undefined,
 };
 
@@ -41,7 +77,43 @@ for await (const chunk of sb.stream("ai-service", "generate", { prompt })) {
   process.stdout.write(chunk.token);
 }`,
 
-  go: undefined,
+  go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	aiv1 "example.com/gen/ai/v1"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New("localhost:14445", os.Getenv("SERVICEBRIDGE_SERVICE_KEY"), sb.WithCallerOnly())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := c.Service("ai-service", sb.ServiceDeps{RPC: []string{"generate"}}); err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+
+	// Stream is an iter.Seq2 — plain range. Chunks arrive over direct gRPC,
+	// and leaving the loop tears the stream down.
+	chunks := sb.Stream[*aiv1.GenerateRequest, *aiv1.Token](ctx, c, "ai-service", "generate",
+		&aiv1.GenerateRequest{Prompt: prompt})
+	for chunk, err := range chunks {
+		if err != nil {
+			log.Fatal(err)
+		}
+		os.Stdout.WriteString(chunk.GetToken())
+	}
+}`,
+
   py: undefined,
 };
 
@@ -210,7 +282,9 @@ export function StreamsSection() {
           <div style={{ minHeight: minStreamCodeHeight + 48 }}>
             <MultiCodeBlock
               filename={
-                tab === "writer" ? { ts: "ai-service.ts" } : { ts: "subscriber.ts" }
+                tab === "writer"
+                  ? { ts: "ai-service.ts", go: "ai-service.go" }
+                  : { ts: "subscriber.ts", go: "subscriber.go" }
               }
               code={tab === "writer" ? WRITER_CODE : READER_CODE}
             />
