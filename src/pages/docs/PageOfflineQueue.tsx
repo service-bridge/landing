@@ -1,7 +1,6 @@
 import { MultiCodeBlock } from "../../ui/CodeBlock";
 import {
   Callout,
-  DocCodeBlock,
   H2,
   H3,
   P,
@@ -32,6 +31,23 @@ const T = {
     flowStep4: "On reconnect the drainer wakes up automatically and ships everything that accumulated while offline.",
     flowCode:
       "// publish never blocks on the network — it writes to disk and returns\nconst { eventId } = await sb.event.publish(\"order.created\", {\n  orderId: \"ord_123\",\n  total: 4990,\n});\n\n// eventId is real immediately (UUIDv7), even if the runtime is down.\n// The drainer delivers the event once the connection is back.",
+    flowCodeGo: `// Publish never blocks on the network — it writes to disk and returns.
+created, err := sb.DefineEvent[*orderpb.OrderCreated](c, "order.created")
+if err != nil {
+	log.Fatal(err)
+}
+
+id, err := created.Publish(ctx, &orderpb.OrderCreated{
+	OrderId: "ord_123",
+	Total:   4990,
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+// The id is real immediately (UUIDv7), even if the runtime is down.
+// The drainer delivers the event once the connection is back.
+log.Println(id)`,
 
     crashTitle: "Crash recovery",
     crashP:
@@ -43,9 +59,9 @@ const T = {
 
     configTitle: "Configuration",
     configP:
-      "You tune the outbox through ServiceBridge constructor options. The SDK reads no environment variables; pass what you need when you build the client.",
+      "You tune the outbox through client options — the constructor options object in Node, functional options on sb.New in Go. Neither SDK reads environment variables; pass what you need when you build the client.",
     optDataDir: "Directory that holds the SQLite file sdk.db. The outbox lives here, so the path must be writable and persistent (not a tmpfs) for events to survive a restart.",
-    optMaxRows: "Cap on rows in the outbox. When it is reached, sb.event.publish() throws OutboxFullError instead of enqueuing.",
+    optMaxRows: "Cap on rows in the outbox. When it is reached, a publish fails instead of enqueuing: OutboxFullError in Node, an error matching sb.ErrOutboxFull in Go. In Go, 0 lifts the cap — an uncapped buffer turns a long outage into a full disk.",
     optDrainerBatch: "How many pending rows the drainer pulls and ships per iteration.",
     optMaxInFlight: "Max concurrent event deliveries the subscriber declares to the runtime; it bounds back-pressure.",
     configCode: `const sb = new ServiceBridge("localhost:14445", serviceKey, {
@@ -54,12 +70,33 @@ const T = {
   eventsDrainerBatch: 100,
   eventsMaxInFlight: 64,
 });`,
+    configCodeGo: `c, err := sb.New("localhost:14445", serviceKey,
+	sb.WithDataDir("/var/lib/myapp/sb"), // persistent volume for sdk.db
+	sb.WithMaxOutboxRows(200_000),
+	sb.WithDrainBatchSize(100),
+	sb.WithMaxInFlightEvents(64),
+)
+if err != nil {
+	log.Fatal(err)
+}`,
 
     fullTitle: "When the outbox is full",
     fullP:
-      "The SDK never drops your events to make room; there is no eviction policy. If the outbox reaches the cap because the runtime has been unreachable for a while, publish() throws OutboxFullError. Catch it, slow the producer down, or raise maxOutboxRows.",
+      "The SDK never drops your events to make room; there is no eviction policy. If the outbox reaches the cap because the runtime has been unreachable for a while, the publish fails: OutboxFullError in Node, an error matching sb.ErrOutboxFull in Go. Catch it, slow the producer down, or raise the cap.",
     fullCode:
       'import { OutboxFullError } from "service-bridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime has been down too long and the local outbox is full —\n    // slow down the producer or raise maxOutboxRows in the constructor\n  }\n  throw err;\n}',
+    fullCodeGo: `created, err := sb.DefineEvent[*orderpb.OrderCreated](c, "order.created")
+if err != nil {
+	log.Fatal(err)
+}
+
+if _, err := created.Publish(ctx, &orderpb.OrderCreated{OrderId: "ord_123"}); err != nil {
+	if errors.Is(err, sb.ErrOutboxFull) {
+		// the runtime has been down too long and the local outbox is full —
+		// slow the producer down or raise WithMaxOutboxRows on the client
+	}
+	log.Fatal(err)
+}`,
 
     calloutPersist:
       "The offline queue is durable, not in-memory. Events buffered while offline live in sdk.db on disk and survive a process restart. Point dataDir at a persistent volume.",
@@ -87,6 +124,23 @@ const T = {
     flowStep4: "При переподключении drainer просыпается автоматически и отправляет всё, что накопилось в офлайне.",
     flowCode:
       "// publish никогда не блокируется на сети — пишет на диск и возвращается\nconst { eventId } = await sb.event.publish(\"order.created\", {\n  orderId: \"ord_123\",\n  total: 4990,\n});\n\n// eventId реальный сразу (UUIDv7), даже если runtime недоступен.\n// Drainer доставит событие, как только соединение восстановится.",
+    flowCodeGo: `// publish никогда не блокируется на сети — пишет на диск и возвращается
+created, err := sb.DefineEvent[*orderpb.OrderCreated](c, "order.created")
+if err != nil {
+	log.Fatal(err)
+}
+
+id, err := created.Publish(ctx, &orderpb.OrderCreated{
+	OrderId: "ord_123",
+	Total:   4990,
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+// id реальный сразу (UUIDv7), даже если runtime недоступен.
+// Drainer доставит событие, как только соединение восстановится.
+log.Println(id)`,
 
     crashTitle: "Восстановление после краха",
     crashP:
@@ -98,9 +152,9 @@ const T = {
 
     configTitle: "Конфигурация",
     configP:
-      "Outbox настраивается опциями конструктора ServiceBridge. SDK не читает переменные окружения — передайте нужное при создании клиента.",
+      "Outbox настраивается опциями клиента — объектом опций конструктора в Node, функциональными опциями sb.New в Go. Ни один SDK не читает переменные окружения — передайте нужное при создании клиента.",
     optDataDir: "Каталог с файлом SQLite sdk.db. Outbox лежит здесь, поэтому путь должен быть записываемым и постоянным (не tmpfs), чтобы события пережили перезапуск.",
-    optMaxRows: "Лимит строк в outbox. Когда он достигнут, sb.event.publish() бросает OutboxFullError вместо постановки в очередь.",
+    optMaxRows: "Лимит строк в outbox. Когда он достигнут, публикация падает вместо постановки в очередь: OutboxFullError в Node, ошибка, совпадающая с sb.ErrOutboxFull, в Go. В Go 0 снимает лимит — неограниченный буфер превращает долгий простой в переполненный диск.",
     optDrainerBatch: "Сколько pending-строк drainer берёт и отправляет за одну итерацию.",
     optMaxInFlight: "Максимум одновременных доставок событий, которые подписчик заявляет рантайму; ограничивает back-pressure.",
     configCode: `const sb = new ServiceBridge("localhost:14445", serviceKey, {
@@ -109,12 +163,33 @@ const T = {
   eventsDrainerBatch: 100,
   eventsMaxInFlight: 64,
 });`,
+    configCodeGo: `c, err := sb.New("localhost:14445", serviceKey,
+	sb.WithDataDir("/var/lib/myapp/sb"), // постоянный том для sdk.db
+	sb.WithMaxOutboxRows(200_000),
+	sb.WithDrainBatchSize(100),
+	sb.WithMaxInFlightEvents(64),
+)
+if err != nil {
+	log.Fatal(err)
+}`,
 
     fullTitle: "Когда outbox заполнен",
     fullP:
-      "SDK никогда не выбрасывает ваши события, чтобы освободить место; политики вытеснения нет. Если outbox достиг лимита из-за долгой недоступности runtime, publish() бросает OutboxFullError. Поймайте ошибку, притормозите производителя или поднимите maxOutboxRows.",
+      "SDK никогда не выбрасывает ваши события, чтобы освободить место; политики вытеснения нет. Если outbox достиг лимита из-за долгой недоступности runtime, публикация падает: OutboxFullError в Node, ошибка, совпадающая с sb.ErrOutboxFull, в Go. Поймайте ошибку, притормозите производителя или поднимите лимит.",
     fullCode:
       'import { OutboxFullError } from "service-bridge";\n\ntry {\n  await sb.event.publish("order.created", payload);\n} catch (err) {\n  if (err instanceof OutboxFullError) {\n    // runtime недоступен слишком долго, локальный outbox заполнен —\n    // замедлите производителя или увеличьте maxOutboxRows в конструкторе\n  }\n  throw err;\n}',
+    fullCodeGo: `created, err := sb.DefineEvent[*orderpb.OrderCreated](c, "order.created")
+if err != nil {
+	log.Fatal(err)
+}
+
+if _, err := created.Publish(ctx, &orderpb.OrderCreated{OrderId: "ord_123"}); err != nil {
+	if errors.Is(err, sb.ErrOutboxFull) {
+		// runtime недоступен слишком долго, локальный outbox заполнен —
+		// замедлите производителя или увеличьте WithMaxOutboxRows у клиента
+	}
+	log.Fatal(err)
+}`,
 
     calloutPersist:
       "Офлайн-очередь долговечная, а не в памяти. События, буферизованные в офлайне, лежат в файле sdk.db на диске и переживают перезапуск процесса. Укажите dataDir на постоянном томе.",
@@ -146,7 +221,7 @@ export function PageOfflineQueue() {
         <li>{t.flowStep4}</li>
       </ul>
 
-      <MultiCodeBlock code={{ ts: t.flowCode }} />
+      <MultiCodeBlock code={{ ts: t.flowCode, go: t.flowCodeGo }} />
 
       <Callout type="info">{t.calloutPersist}</Callout>
 
@@ -161,17 +236,17 @@ export function PageOfflineQueue() {
 
       <ParamTable
         rows={[
-          { name: "dataDir", type: "string", default: '"./.servicebridge"', desc: t.optDataDir },
-          { name: "maxOutboxRows", type: "number", default: "100000", desc: t.optMaxRows },
-          { name: "eventsDrainerBatch", type: "number", default: "50", desc: t.optDrainerBatch },
-          { name: "eventsMaxInFlight", type: "number", default: "32", desc: t.optMaxInFlight },
+          { name: "dataDir · WithDataDir", type: "string", default: '"./.servicebridge"', desc: t.optDataDir },
+          { name: "maxOutboxRows · WithMaxOutboxRows", type: "number", default: "100000 (Node) · 10000 (Go)", desc: t.optMaxRows },
+          { name: "eventsDrainerBatch · WithDrainBatchSize", type: "number", default: "50 (Node) · 100 (Go)", desc: t.optDrainerBatch },
+          { name: "eventsMaxInFlight · WithMaxInFlightEvents", type: "number", default: "32", desc: t.optMaxInFlight },
         ]}
       />
-      <DocCodeBlock code={t.configCode} lang="ts" />
+      <MultiCodeBlock code={{ ts: t.configCode, go: t.configCodeGo }} />
 
       <H3>{t.fullTitle}</H3>
       <P>{t.fullP}</P>
-      <MultiCodeBlock code={{ ts: t.fullCode }} />
+      <MultiCodeBlock code={{ ts: t.fullCode, go: t.fullCodeGo }} />
 
       <Callout type="tip">{t.calloutScope}</Callout>
     </div>

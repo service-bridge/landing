@@ -24,11 +24,8 @@ const T = {
 
     rpcTitle: "RPC — retries with timeout",
     rpcP1:
-      "By default a call is retried up to 3 attempts with exponential backoff and jitter. Each attempt has its own timeout (default",
-    rpcP2:
-      "), so a silent downstream is cut off and retried instead of hanging forever. Set",
-    rpcP3: "to disable retries for non-idempotent calls.",
-    retryHead: "RetryOpts defaults",
+      "By default a call is retried up to 3 attempts with exponential backoff and jitter, so a silent downstream is cut off and retried instead of hanging forever. In Node each attempt carries its own timeout (default 30s) and the whole policy is a per-call RetryOpts; set maxAttempts: 1 to disable retries for a non-idempotent call. In Go the budget is one client-wide option, sb.WithCallAttempts(n) (default 3, 1 disables retries), and a call is bounded by sb.WithTimeout or the caller's context deadline.",
+    retryHead: "RetryOpts defaults (Node)",
     retryMaxAttempts: "Total attempts including the first. Set to 1 to disable retries.",
     retryBaseDelay: "Delay before the first retry; grows exponentially.",
     retryFactor: "Multiplier applied to the delay on each subsequent attempt.",
@@ -45,9 +42,9 @@ const T = {
     outageEventsTitle: "Events keep buffering",
     outageEventsP:
       "Publishes still succeed: they land in the local SQLite outbox on disk. The drainer keeps retrying with backoff until the runtime is reachable again, then flushes the backlog. Nothing is lost across a restart — on startup any stuck rows are reset and re-queued.",
-    outageEventsWarn1: "Durability comes from the outbox. A publish with",
+    outageEventsWarn1: "Durability comes from the outbox. A fire-and-forget publish —",
     outageEventsWarn2:
-      "skips the outbox and goes straight to the runtime — fast, but lost if the runtime is down. Use it only when the event is disposable.",
+      "— skips the outbox and goes straight to the runtime: fast, but lost if the runtime is down. Use it only when the event is disposable.",
 
     outageRpcTitle: "Direct RPC keeps flowing",
     outageRpcP:
@@ -81,11 +78,8 @@ const T = {
 
     rpcTitle: "RPC — повторы с таймаутом",
     rpcP1:
-      "По умолчанию вызов повторяется до 3 попыток с экспоненциальным backoff и jitter. У каждой попытки свой таймаут (по умолчанию",
-    rpcP2:
-      "), поэтому молчащий downstream отсекается и повторяется, а не висит вечно. Задайте",
-    rpcP3: ", чтобы отключить повторы для неидемпотентных вызовов.",
-    retryHead: "RetryOpts — значения по умолчанию",
+      "По умолчанию вызов повторяется до 3 попыток с экспоненциальным backoff и jitter, поэтому молчащий downstream отсекается и повторяется, а не висит вечно. В Node у каждой попытки свой таймаут (по умолчанию 30s), а вся политика — это RetryOpts на конкретный вызов; maxAttempts: 1 отключает повторы для неидемпотентного вызова. В Go бюджет попыток — одна опция клиента, sb.WithCallAttempts(n) (по умолчанию 3, 1 отключает повторы), а вызов ограничивается sb.WithTimeout или дедлайном контекста вызывающего.",
+    retryHead: "RetryOpts — значения по умолчанию (Node)",
     retryMaxAttempts: "Всего попыток, включая первую. Значение 1 отключает повторы.",
     retryBaseDelay: "Задержка перед первым повтором; растёт экспоненциально.",
     retryFactor: "Множитель, применяемый к задержке на каждой следующей попытке.",
@@ -102,9 +96,9 @@ const T = {
     outageEventsTitle: "События продолжают буферизоваться",
     outageEventsP:
       "Публикации всё равно успешны: они попадают в локальный SQLite-outbox на диске. Drainer продолжает повторять с backoff, пока runtime снова не станет доступен, затем сбрасывает накопленное. Ничего не теряется при перезапуске — на старте зависшие строки сбрасываются и снова ставятся в очередь.",
-    outageEventsWarn1: "Durability обеспечивает outbox. Публикация с",
+    outageEventsWarn1: "Durability обеспечивает outbox. Публикация fire-and-forget —",
     outageEventsWarn2:
-      "минует outbox и идёт напрямую в runtime — быстро, но теряется, если runtime недоступен. Используйте только для одноразовых событий.",
+      "— минует outbox и идёт напрямую в runtime: быстро, но теряется, если runtime недоступен. Используйте только для одноразовых событий.",
 
     outageRpcTitle: "Прямой RPC продолжает работать",
     outageRpcP:
@@ -141,6 +135,15 @@ sb.event.handle("payment.captured", async (payload) => {
   // Key the write by a stable id so a re-delivery is a no-op.
   await markPaidOnce(e.eventId, e.orderId);
 });`,
+          go: `// Subscriber may run more than once for the same event — stay idempotent.
+err := sb.SubscribeEvent(c, "payment.captured",
+	func(ctx context.Context, e *paymentpb.PaymentCaptured) error {
+		// Key the write by a stable id so a re-delivery is a no-op.
+		return markPaidOnce(ctx, e.GetEventId(), e.GetOrderId())
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>
@@ -153,14 +156,24 @@ sb.event.handle("payment.captured", async (payload) => {
   { eventId, orderId, amountCents: 4200 },
   { idempotencyKey: eventId },
 );`,
+          go: `captured, err := sb.DefineEvent[*paymentpb.PaymentCaptured](c, "payment.captured")
+if err != nil {
+	log.Fatal(err)
+}
+
+// after Start
+_, err = captured.Publish(ctx,
+	&paymentpb.PaymentCaptured{EventId: eventID, OrderId: orderID, AmountCents: 4200},
+	sb.WithEventIdempotencyKey(eventID),
+)
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
       <H3>{t.rpcTitle}</H3>
-      <P>
-        {t.rpcP1} <Mono>"30s"</Mono>
-        {t.rpcP2} <Mono>maxAttempts: 1</Mono> {t.rpcP3}
-      </P>
+      <P>{t.rpcP1}</P>
       <MultiCodeBlock
         code={{
           ts: `// Default: up to 3 attempts, exponential backoff + jitter.
@@ -179,6 +192,28 @@ await sb.rpc.call(
 
 // Disable retries for a non-idempotent call.
 await sb.rpc.call("ledger", "appendOnce", entry, { retry: { maxAttempts: 1 } });`,
+          go: `// Default: up to 3 attempts, exponential backoff + jitter.
+if _, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge", &paymentpb.ChargeRequest{AmountCents: 4200},
+); err != nil {
+	log.Fatal(err)
+}
+
+// Bound one call and opt it into runtime-side dedup, which is also what
+// unlocks retrying a failure that leaves the callee's state unknown.
+if _, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge", &paymentpb.ChargeRequest{AmountCents: 4200},
+	sb.WithTimeout(5*time.Second),
+	sb.WithIdempotencyKey("order-42"),
+); err != nil {
+	log.Fatal(err)
+}
+
+// The attempt budget is set once on the client, not per call.
+c, err := sb.New(url, key, sb.WithCallAttempts(1)) // 1 = no retries
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <H3>{t.retryHead}</H3>
@@ -201,7 +236,8 @@ await sb.rpc.call("ledger", "appendOnce", entry, { retry: { maxAttempts: 1 } });
       <H3>{t.outageEventsTitle}</H3>
       <P>{t.outageEventsP}</P>
       <Callout type="warning">
-        {t.outageEventsWarn1} <Mono>fireAndForget: true</Mono> {t.outageEventsWarn2}
+        {t.outageEventsWarn1} <Mono>fireAndForget: true</Mono> /{" "}
+        <Mono>sb.WithFireAndForget()</Mono> {t.outageEventsWarn2}
       </Callout>
 
       <H3>{t.outageRpcTitle}</H3>

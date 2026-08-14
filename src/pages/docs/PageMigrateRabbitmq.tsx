@@ -25,7 +25,7 @@ const T = {
       { name: "ch.ack(msg)", type: "RabbitMQ", desc: "Handler resolves without throwing. No explicit ack call — see Ack / nack." },
       { name: "ch.nack(msg, false, requeue)", type: "RabbitMQ", desc: "Handler throws. Always \"requeues\" for redelivery up to events.max_attempts — there's no per-nack requeue=false to drop immediately (see What's missing)." },
       { name: "dead-letter-exchange + DLQ", type: "RabbitMQ", desc: "events_dlq Postgres table, browsable and replayable from the dashboard — see Dead-letter & replay." },
-      { name: "channel.prefetch(n)", type: "RabbitMQ", desc: "eventsMaxInFlight constructor option (default 32) — caps concurrent inbound deliveries to one subscriber instance, declared to the runtime as SubscribeInit.max_in_flight. See Prefetch & ordering." },
+      { name: "channel.prefetch(n)", type: "RabbitMQ", desc: "A client option — eventsMaxInFlight in Node, WithMaxInFlightEvents in Go, default 32 — capping concurrent inbound deliveries to one subscriber instance, declared to the runtime as SubscribeInit.max_in_flight. See Prefetch & ordering." },
       { name: "publisher confirms", type: "RabbitMQ", desc: "SDK outbox: publish() resolves after a local SQLite COMMIT (WAL mode); a background drainer ships the row to the runtime. Durable across a publisher crash between confirm and broker ack." },
       { name: "message / queue TTL", type: "RabbitMQ", desc: "Not supported per-message. Only DLQ rows have a retention window (events.dlq_retention_ms, default 30d)." },
       { name: "fanout / direct / topic / headers exchange types", type: "RabbitMQ", desc: "One flat model: exact name match plus optional wildcard pattern. No headers-exchange-style routing on arbitrary metadata." },
@@ -80,10 +80,46 @@ sb2.event.handle("payment.charged", async (payload) => {
   // resolving normally = ack; throwing = nack, runtime retries with backoff
 });
 await sb2.start();`,
+    afterCodeGo: `// after: ServiceBridge Durable Events
+// publisher side
+c, err := sb.New(url, serviceKey)
+if err != nil {
+	log.Fatal(err)
+}
+charged, err := sb.DefineEvent[*paymentpb.PaymentCharged](c, "payment.charged")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+if _, err := charged.Publish(ctx, &paymentpb.PaymentCharged{
+	TransactionId: "tx-7",
+	AmountCents:   4200,
+}); err != nil {
+	log.Fatal(err)
+}
+
+// consumer side (same generated type, exact-name handler)
+c2, err := sb.New(url, otherServiceKey, sb.WithMaxInFlightEvents(10))
+if err != nil {
+	log.Fatal(err)
+}
+err = sb.SubscribeEvent(c2, "payment.charged",
+	func(ctx context.Context, e *paymentpb.PaymentCharged) error {
+		// returning nil = ack; returning an error = nack, runtime retries with backoff
+		return sendReceipt(ctx, e.GetTransactionId())
+	})
+if err != nil {
+	log.Fatal(err)
+}
+if err := c2.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
     beforeAfterCallout:
       "The subscriber pattern controls what the runtime routes to this service (\"payment.*\" would also match), but the SDK dispatches locally by exact event name — the handler that actually fires needs sb.event.handle(\"payment.charged\", ...) matching the delivered name literally. See Wildcard routing in the Events reference for the full rule.",
     wildcardNote:
-      "Both publisher and subscriber must declare sb.event.define(name, spec) with the same schema. Unlike RabbitMQ where the exchange doesn't care about message shape, ServiceBridge encodes payloads as Protobuf — a subscriber without a matching schema declaration gets Nack \"no_schema\" on every delivery.",
+      "Both publisher and subscriber declare the event with the same payload schema. Unlike RabbitMQ where the exchange doesn't care about message shape, ServiceBridge encodes payloads as Protobuf — a subscriber without a matching schema declaration gets Nack \"no_schema\" on every delivery.",
 
     ackNackTitle: "Ack / nack",
     ackNackP1:
@@ -94,6 +130,16 @@ await sb2.start();`,
   }
   await sendReceipt(payload.transactionId); // returns normally → ack
 });`,
+    ackNackCodeGo: `err := sb.SubscribeEvent(c, "payment.charged",
+	func(ctx context.Context, e *paymentpb.PaymentCharged) error {
+		if !isValid(e) {
+			return errors.New("invalid payload") // → nack, runtime retries per backoff ladder
+		}
+		return sendReceipt(ctx, e.GetTransactionId()) // nil → ack
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     ackNackP2:
       "If the runtime doesn't see an ack within events.visibility_timeout_ms (default 30 000ms) — e.g. the consumer crashed mid-handler — it treats the delivery as lost and redelivers. A late ack after that window is accepted as a no-op, not an error.",
     ackNackMulti:
@@ -111,14 +157,37 @@ await sb2.start();`,
 
     prefetchTitle: "Prefetch & ordering",
     prefetchP1:
-      "channel.prefetch(n) caps how many unacked messages a RabbitMQ consumer can hold at once. The direct equivalent is the eventsMaxInFlight constructor option (default 32) — it's declared to the runtime as SubscribeInit.max_in_flight and caps concurrent inbound deliveries to that subscriber instance.",
+      "channel.prefetch(n) caps how many unacked messages a RabbitMQ consumer can hold at once. The direct equivalent is a client option — eventsMaxInFlight in Node, WithMaxInFlightEvents in Go, default 32 — declared to the runtime as SubscribeInit.max_in_flight and capping concurrent inbound deliveries to that subscriber instance.",
     prefetchCode: `const sb = new ServiceBridge(url, key, {
   eventsMaxInFlight: 10, // like channel.prefetch(10)
 });`,
+    prefetchCodeGo: `c, err := sb.New(url, key,
+	sb.WithMaxInFlightEvents(10), // like channel.prefetch(10)
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     prefetchP2:
       "Ordering is the bigger behavioral difference. RabbitMQ queues are FIFO per queue by default; ServiceBridge fans deliveries out in parallel across a consumer service's instances unless you opt into per-key ordering with partitionKey on publish:",
     prefetchOrderCode: `await sb.event.publish("order.line.added",   payload, { partitionKey: "order-42" });
 await sb.event.publish("order.line.removed", payload, { partitionKey: "order-42" });
+// → strictly in order, on ONE instance of the consumer`,
+    prefetchOrderCodeGo: `added, err := sb.DefineEvent[*orderpb.LineChanged](c, "order.line.added")
+if err != nil {
+	log.Fatal(err)
+}
+removed, err := sb.DefineEvent[*orderpb.LineChanged](c, "order.line.removed")
+if err != nil {
+	log.Fatal(err)
+}
+
+line := &orderpb.LineChanged{OrderId: "order-42", Sku: "sku-1"}
+if _, err := added.Publish(ctx, line, sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
+if _, err := removed.Publish(ctx, line, sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
 // → strictly in order, on ONE instance of the consumer`,
     prefetchP3:
       "Without partitionKey, deliveries for the same consumer service run with full parallelism across its live instances — closer to a RabbitMQ queue with multiple competing consumers and no message grouping than to a single ordered queue.",
@@ -154,7 +223,7 @@ await sb.event.publish("order.line.removed", payload, { partitionKey: "order-42"
       { name: "ch.ack(msg)", type: "RabbitMQ", desc: "Handler резолвится без throw. Явного вызова ack нет — см. «Ack / nack»." },
       { name: "ch.nack(msg, false, requeue)", type: "RabbitMQ", desc: "Handler бросает исключение. Всегда «requeue» для редоставки до events.max_attempts — нет per-nack requeue=false для немедленного дропа (см. «Чего нет»)." },
       { name: "dead-letter-exchange + DLQ", type: "RabbitMQ", desc: "Таблица events_dlq в Postgres, просматриваемая и воспроизводимая из дашборда — см. «DLQ и replay»." },
-      { name: "channel.prefetch(n)", type: "RabbitMQ", desc: "Опция конструктора eventsMaxInFlight (по умолчанию 32) — ограничивает конкурентные входящие доставки одному инстансу подписчика, объявляется рантайму как SubscribeInit.max_in_flight. См. «Prefetch и порядок»." },
+      { name: "channel.prefetch(n)", type: "RabbitMQ", desc: "Опция клиента — eventsMaxInFlight в Node, WithMaxInFlightEvents в Go, по умолчанию 32 — ограничивает конкурентные входящие доставки одному инстансу подписчика, объявляется рантайму как SubscribeInit.max_in_flight. См. «Prefetch и порядок»." },
       { name: "publisher confirms", type: "RabbitMQ", desc: "SDK outbox: publish() резолвится после локального COMMIT в SQLite (WAL). Фоновый drainer отправляет строку рантайму. Переживает краш издателя между confirm и подтверждением брокера." },
       { name: "TTL сообщения / очереди", type: "RabbitMQ", desc: "На уровне сообщения не поддерживается. Только у строк DLQ есть окно хранения (events.dlq_retention_ms, по умолчанию 30д)." },
       { name: "типы exchange fanout / direct / topic / headers", type: "RabbitMQ", desc: "Одна плоская модель: точное совпадение имени плюс опциональный wildcard-паттерн. Маршрутизации в стиле headers-exchange по произвольным метаданным нет." },
@@ -209,10 +278,46 @@ sb2.event.handle("payment.charged", async (payload) => {
   // нормальный резолв = ack; throw = nack, рантайм ретраит с backoff
 });
 await sb2.start();`,
+    afterCodeGo: `// после: ServiceBridge Durable Events
+// сторона издателя
+c, err := sb.New(url, serviceKey)
+if err != nil {
+	log.Fatal(err)
+}
+charged, err := sb.DefineEvent[*paymentpb.PaymentCharged](c, "payment.charged")
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+if _, err := charged.Publish(ctx, &paymentpb.PaymentCharged{
+	TransactionId: "tx-7",
+	AmountCents:   4200,
+}); err != nil {
+	log.Fatal(err)
+}
+
+// сторона подписчика (тот же сгенерированный тип, handler по точному имени)
+c2, err := sb.New(url, otherServiceKey, sb.WithMaxInFlightEvents(10))
+if err != nil {
+	log.Fatal(err)
+}
+err = sb.SubscribeEvent(c2, "payment.charged",
+	func(ctx context.Context, e *paymentpb.PaymentCharged) error {
+		// nil = ack; ошибка = nack, рантайм ретраит с backoff
+		return sendReceipt(ctx, e.GetTransactionId())
+	})
+if err != nil {
+	log.Fatal(err)
+}
+if err := c2.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
     beforeAfterCallout:
       "Паттерн подписчика управляет тем, что рантайм маршрутизирует этому сервису (\"payment.*\" тоже бы совпал), но SDK диспатчит локально по точному имени события — реально сработает handler с sb.event.handle(\"payment.charged\", ...), буквально совпадающим с доставленным именем. Полное правило — в разделе Wildcard routing справочника Events.",
     wildcardNote:
-      "И издатель, и подписчик должны объявить sb.event.define(name, spec) с одинаковой схемой. В отличие от RabbitMQ, где exchange не заботится о форме сообщения, ServiceBridge кодирует payload как Protobuf — подписчик без совпадающего объявления схемы получает Nack \"no_schema\" на каждую доставку.",
+      "И издатель, и подписчик объявляют событие с одинаковой схемой payload. В отличие от RabbitMQ, где exchange не заботится о форме сообщения, ServiceBridge кодирует payload как Protobuf — подписчик без совпадающего объявления схемы получает Nack \"no_schema\" на каждую доставку.",
 
     ackNackTitle: "Ack / nack",
     ackNackP1:
@@ -223,6 +328,16 @@ await sb2.start();`,
   }
   await sendReceipt(payload.transactionId); // нормальный возврат → ack
 });`,
+    ackNackCodeGo: `err := sb.SubscribeEvent(c, "payment.charged",
+	func(ctx context.Context, e *paymentpb.PaymentCharged) error {
+		if !isValid(e) {
+			return errors.New("invalid payload") // → nack, рантайм ретраит по лестнице backoff
+		}
+		return sendReceipt(ctx, e.GetTransactionId()) // nil → ack
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     ackNackP2:
       "Если рантайм не видит ack за events.visibility_timeout_ms (по умолчанию 30 000мс) — например консьюмер упал в середине handler'а — доставка считается потерянной и редоставляется. Поздний ack после этого окна принимается как no-op, не как ошибка.",
     ackNackMulti:
@@ -240,14 +355,37 @@ await sb2.start();`,
 
     prefetchTitle: "Prefetch и порядок",
     prefetchP1:
-      "channel.prefetch(n) ограничивает, сколько неподтверждённых сообщений консьюмер RabbitMQ может держать одновременно. Прямой эквивалент — опция конструктора eventsMaxInFlight (по умолчанию 32) — она объявляется рантайму как SubscribeInit.max_in_flight и ограничивает конкурентные входящие доставки этому инстансу подписчика.",
+      "channel.prefetch(n) ограничивает, сколько неподтверждённых сообщений консьюмер RabbitMQ может держать одновременно. Прямой эквивалент — опция клиента: eventsMaxInFlight в Node, WithMaxInFlightEvents в Go, по умолчанию 32. Она объявляется рантайму как SubscribeInit.max_in_flight и ограничивает конкурентные входящие доставки этому инстансу подписчика.",
     prefetchCode: `const sb = new ServiceBridge(url, key, {
   eventsMaxInFlight: 10, // как channel.prefetch(10)
 });`,
+    prefetchCodeGo: `c, err := sb.New(url, key,
+	sb.WithMaxInFlightEvents(10), // как channel.prefetch(10)
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     prefetchP2:
       "Больше поведенческая разница — в порядке. Очереди RabbitMQ по умолчанию FIFO на очередь; ServiceBridge раздаёт доставки параллельно по инстансам сервиса-потребителя, если не подключить упорядочивание по ключу через partitionKey при publish:",
     prefetchOrderCode: `await sb.event.publish("order.line.added",   payload, { partitionKey: "order-42" });
 await sb.event.publish("order.line.removed", payload, { partitionKey: "order-42" });
+// → строго по порядку, на ОДНОМ инстансе консьюмера`,
+    prefetchOrderCodeGo: `added, err := sb.DefineEvent[*orderpb.LineChanged](c, "order.line.added")
+if err != nil {
+	log.Fatal(err)
+}
+removed, err := sb.DefineEvent[*orderpb.LineChanged](c, "order.line.removed")
+if err != nil {
+	log.Fatal(err)
+}
+
+line := &orderpb.LineChanged{OrderId: "order-42", Sku: "sku-1"}
+if _, err := added.Publish(ctx, line, sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
+if _, err := removed.Publish(ctx, line, sb.WithPartitionKey("order-42")); err != nil {
+	log.Fatal(err)
+}
 // → строго по порядку, на ОДНОМ инстансе консьюмера`,
     prefetchP3:
       "Без partitionKey доставки для одного сервиса-потребителя идут с полным параллелизмом по его живым инстансам — это ближе к очереди RabbitMQ с несколькими конкурирующими консьюмерами без группировки сообщений, чем к одной упорядоченной очереди.",
@@ -281,13 +419,13 @@ export function PageMigrateRabbitmq() {
       <H2 id="before-after">{t.beforeAfterTitle}</H2>
       <P>{t.beforeAfterP}</P>
       <MultiCodeBlock code={{ ts: t.beforeCode }} />
-      <MultiCodeBlock code={{ ts: t.afterCode }} />
+      <MultiCodeBlock code={{ ts: t.afterCode, go: t.afterCodeGo }} />
       <Callout type="tip">{t.beforeAfterCallout}</Callout>
       <P>{t.wildcardNote}</P>
 
       <H2 id="ack-nack">{t.ackNackTitle}</H2>
       <P>{t.ackNackP1}</P>
-      <MultiCodeBlock code={{ ts: t.ackNackCode }} />
+      <MultiCodeBlock code={{ ts: t.ackNackCode, go: t.ackNackCodeGo }} />
       <P>{t.ackNackP2}</P>
       <P>{t.ackNackMulti}</P>
 
@@ -308,9 +446,9 @@ export function PageMigrateRabbitmq() {
 
       <H2 id="prefetch">{t.prefetchTitle}</H2>
       <P>{t.prefetchP1}</P>
-      <MultiCodeBlock code={{ ts: t.prefetchCode }} />
+      <MultiCodeBlock code={{ ts: t.prefetchCode, go: t.prefetchCodeGo }} />
       <P>{t.prefetchP2}</P>
-      <MultiCodeBlock code={{ ts: t.prefetchOrderCode }} />
+      <MultiCodeBlock code={{ ts: t.prefetchOrderCode, go: t.prefetchOrderCodeGo }} />
       <P>{t.prefetchP3}</P>
 
       <H2 id="not-supported">{t.notSupportedTitle}</H2>

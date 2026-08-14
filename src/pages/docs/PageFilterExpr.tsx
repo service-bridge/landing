@@ -21,8 +21,8 @@ const T = {
     syntaxTitle: "DSL syntax",
     syntaxP1pre: "Add a",
     syntaxP1mid: "field to any",
-    syntaxP1step: "step. It is a",
-    syntaxP1obj: "Record<string, JsonExpression>",
+    syntaxP1step: "step. It is a map",
+    syntaxP1obj: "path → expected value",
     syntaxP1end:
       "where each key is a path into the published event payload, and each value is what that path must equal for the step to resume.",
     syntaxExample: "A run parks on this step until an event matches the filter:",
@@ -49,8 +49,9 @@ const T = {
       "A value is matched for equality. A plain literal (string, number, boolean, object, array) is compared as-is.",
     valueP2pre: "If a value is itself a path string like",
     valueP2mid:
-      "it is first resolved against the workflow run state, then the resolved value is what the event must equal. To match a literal that looks like a path, wrap it as",
-    valueP2end: ".",
+      "it is first resolved against the workflow run state, then the resolved value is what the event must equal. In Node, to match a literal that looks like a path, wrap it as",
+    valueP2end:
+      ". Go tells the two apart by type instead: wf.Path is the expression, and a plain string that reads like one is escaped for you.",
 
     operatorsTitle: "Operators",
     opP1pre: "There is exactly one operator:",
@@ -79,8 +80,8 @@ const T = {
     syntaxTitle: "Синтаксис DSL",
     syntaxP1pre: "Добавьте поле",
     syntaxP1mid: "к любому шагу",
-    syntaxP1step: ". Это",
-    syntaxP1obj: "Record<string, JsonExpression>",
+    syntaxP1step: ". Это карта",
+    syntaxP1obj: "путь → ожидаемое значение",
     syntaxP1end:
       ", где каждый ключ — путь внутри payload опубликованного события, а каждое значение — то, чему этот путь должен быть равен, чтобы шаг возобновился.",
     syntaxExample: "Запуск стоит на этом шаге, пока событие не совпадёт с фильтром:",
@@ -107,8 +108,9 @@ const T = {
       "Значение сравнивается на равенство. Обычный литерал (строка, число, булево, объект, массив) сравнивается как есть.",
     valueP2pre: "Если значение само является путём-строкой, например",
     valueP2mid:
-      "оно сначала вычисляется против состояния запуска воркфлоу, и уже вычисленному значению событие должно быть равно. Чтобы сравнить с литералом, похожим на путь, оберните его как",
-    valueP2end: ".",
+      "оно сначала вычисляется против состояния запуска воркфлоу, и уже вычисленному значению событие должно быть равно. В Node, чтобы сравнить с литералом, похожим на путь, оберните его как",
+    valueP2end:
+      ". В Go эти два случая различаются по типу: wf.Path — это выражение, а обычная строка, похожая на путь, экранируется за вас.",
 
     operatorsTitle: "Операторы",
     opP1pre: "Оператор ровно один:",
@@ -160,6 +162,21 @@ export function PageFilterExpr() {
     },
   ],
 });`,
+          go: `err := c.Workflow.Handle("checkout", wf.Definition{
+	Steps: []wf.Step{
+		wf.WaitEvent{
+			Control: wf.Control{ID: "await_payment", TimeoutSec: 600},
+			Event:   wf.Name("payments.settled"),
+			Filter: map[string]any{
+				"$.status": "success",
+				"$.amount": 100,
+			},
+		},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 
@@ -182,6 +199,18 @@ export function PageFilterExpr() {
   event: "logistics.shipped",
   // "$.orderId" of the event must equal this run's input orderId
   filter: { "$.orderId": "$.input.orderId" },
+}`,
+          go: `awaitShipment := wf.WaitEvent{
+	Control: wf.Control{ID: "await_shipment"},
+	Event:   wf.Name("logistics.shipped"),
+	// The event's "$.orderId" must equal this run's input orderId.
+	// wf.Path marks the value as an expression; a bare string stays a literal.
+	Filter: map[string]any{"$.orderId": wf.Path("$.input.orderId")},
+}
+
+err := c.Workflow.Handle("checkout", wf.Definition{Steps: []wf.Step{awaitShipment}})
+if err != nil {
+	log.Fatal(err)
 }`,
         }}
       />

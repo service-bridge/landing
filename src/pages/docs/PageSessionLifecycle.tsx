@@ -60,8 +60,31 @@ sb.on("disconnected", ({ reason, error }) => {
 await sb.start();          // Connecting → Connected
 console.log(sb.identity()); // { sessionId, serviceId, serviceName, instanceId }
 await sb.stop();           // graceful teardown`,
+    statesCodeGo: `c, err := sb.New("localhost:14445", key)
+if err != nil {
+	log.Fatal(err)
+}
+
+c.OnConnected(func(id sb.Identity) {
+	log.Println("session up", id.ServiceName, id.SessionID)
+})
+c.OnReconnecting(func(attempt int, cause error) {
+	log.Printf("reconnecting #%d: %v", attempt, cause)
+})
+c.OnDisconnected(func(cause error) {
+	log.Println("session down:", cause)
+})
+
+if err := c.Start(ctx); err != nil { // Connecting → Connected
+	log.Fatal(err)
+}
+log.Println(c.Identity()) // {SessionID ServiceID ServiceName InstanceID}
+
+if err := c.Stop(ctx); err != nil { // graceful teardown
+	log.Fatal(err)
+}`,
     statesNote:
-      "Declare everything (sb.rpc.handle, sb.event.define, sb.workflow.handle, sb.job.handle, sb.service) before start(). The first registration sent to the runtime is built from those declarations.",
+      "Declare everything — RPC handlers, event definitions and subscriptions, workflows, jobs, outgoing dependencies — before start. The first registration sent to the runtime is built from those declarations.",
 
     epochTitle: "Epoch Fencing",
     epochP1:
@@ -79,36 +102,57 @@ const id = sb.instanceIdString();
 // full identity, or null during reconnect / after stop()
 const me = sb.identity();
 // { sessionId, serviceId, serviceName, instanceId }`,
+    epochCodeGo: `// Identity is read per use, never cached: every certificate rotation mints a
+// fresh InstanceID for the same ServiceID.
+id := c.Identity()
+
+log.Println(id.InstanceID) // "" before the first Welcome
+log.Println(id.SessionID, id.ServiceID, id.ServiceName) // stable across a cert rotation`,
     epochWarning:
       "A cert rotation gives you a new instanceId and re-emits connected. sessionId and serviceName are stable across the rotation; cache identity() per session, not for the lifetime of the process.",
 
     suspendedTitle: "Suspended Recovery",
-    suspendedP1a: "When the control stream drops (network blip, runtime restart), the SDK does not fail fast. The session enters",
-    suspendedP1b:
-      "and a retry is scheduled with a fixed delay. By default it makes up to",
-    suspendedP1c:
-      "attempts, then emits disconnected with reason",
-    suspendedP1d: "and stops.",
+    suspendedP1:
+      "When the control stream drops (network blip, runtime restart), the SDK does not fail fast. The session enters Reconnecting and a retry is scheduled. The Node SDK waits a fixed reconnectIntervalMs and gives up after reconnectAttempts tries, emitting disconnected with reason \"exhausted\". The Go SDK walks a jittered ladder — 1s, 5s, 15s, 30s, 60s, the last rung repeating — and never gives up unless you cap it with WithReconnectAttempts.",
     suspendedP2:
       "Recovery re-provisions a fresh cert and re-sends the registration built from your declarations — you do not re-register handlers. In-flight RPCs are not replayed automatically: the caller retries them (RPC has its own retry policy). Durable events sit in the local outbox and drain once the session is back.",
     suspendedParams: [
       {
-        name: "reconnectIntervalMs",
-        type: "number",
+        name: "reconnectIntervalMs (Node)",
+        type: "number (ms)",
         default: "3000",
-        desc: "Delay between reconnect attempts.",
+        desc: "Fixed delay between reconnect attempts.",
       },
       {
-        name: "reconnectAttempts",
+        name: "reconnectAttempts (Node)",
         type: "number",
         default: "3",
         desc: "Max attempts before disconnected{reason:'exhausted'} + auto-stop. 0 = unlimited.",
+      },
+      {
+        name: "WithReconnectLadder (Go)",
+        type: "...time.Duration",
+        default: "1s, 5s, 15s, 30s, 60s",
+        desc: "Reconnect delays. The last rung repeats forever and every rung is jittered.",
+      },
+      {
+        name: "WithReconnectAttempts (Go)",
+        type: "int",
+        default: "0 — unlimited",
+        desc: "Cap on consecutive reconnect attempts. 0 keeps retrying forever.",
       },
     ],
     suspendedCode: `const sb = new ServiceBridge("localhost:14445", key, {
   reconnectIntervalMs: 3000,
   reconnectAttempts: 0, // retry forever, never give up
 });`,
+    suspendedCodeGo: `c, err := sb.New("localhost:14445", key,
+	sb.WithReconnectLadder(time.Second, 5*time.Second, 30*time.Second),
+	sb.WithReconnectAttempts(0), // 0 = retry forever; it is already the Go default
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     suspendedTip:
       "Durable publishes survive a reconnect: sb.event.publish writes to a local SQLite outbox first, so a transient runtime outage does not lose events — the drainer flushes them after the session recovers.",
 
@@ -135,6 +179,19 @@ process.on("SIGTERM", async () => {
   await sb.stop();
   process.exit(0);
 });`,
+    drainCodeGo: `c.OnDraining(func(reason string) {
+	// the runtime asked us to leave; finish what we can, then exit
+	log.Println("runtime is draining:", reason)
+})
+
+// wire your own shutdown to Stop for clean teardown
+ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
+defer stop()
+
+<-ctx.Done()
+if err := c.Stop(context.Background()); err != nil {
+	log.Fatal(err)
+}`,
   },
   ru: {
     badge: "Транспорт и отказоустойчивость",
@@ -186,8 +243,31 @@ sb.on("disconnected", ({ reason, error }) => {
 await sb.start();          // Connecting → Connected
 console.log(sb.identity()); // { sessionId, serviceId, serviceName, instanceId }
 await sb.stop();           // плавное завершение`,
+    statesCodeGo: `c, err := sb.New("localhost:14445", key)
+if err != nil {
+	log.Fatal(err)
+}
+
+c.OnConnected(func(id sb.Identity) {
+	log.Println("сессия поднята", id.ServiceName, id.SessionID)
+})
+c.OnReconnecting(func(attempt int, cause error) {
+	log.Printf("reconnecting #%d: %v", attempt, cause)
+})
+c.OnDisconnected(func(cause error) {
+	log.Println("сессия упала:", cause)
+})
+
+if err := c.Start(ctx); err != nil { // Connecting → Connected
+	log.Fatal(err)
+}
+log.Println(c.Identity()) // {SessionID ServiceID ServiceName InstanceID}
+
+if err := c.Stop(ctx); err != nil { // плавное завершение
+	log.Fatal(err)
+}`,
     statesNote:
-      "Объявляйте всё (sb.rpc.handle, sb.event.define, sb.workflow.handle, sb.job.handle, sb.service) до start(). Первая регистрация, отправленная в runtime, собирается из этих объявлений.",
+      "Объявляйте всё — RPC-хендлеры, определения и подписки событий, воркфлоу, задания, исходящие зависимости — до старта. Первая регистрация, отправленная в runtime, собирается из этих объявлений.",
 
     epochTitle: "Ограждение по epoch",
     epochP1:
@@ -206,37 +286,57 @@ const id = sb.instanceIdString();
 // полная идентичность, или null во время reconnect / после stop()
 const me = sb.identity();
 // { sessionId, serviceId, serviceName, instanceId }`,
+    epochCodeGo: `// Identity читается на каждое обращение и никогда не кешируется: каждая
+// ротация сертификата даёт новый InstanceID при том же ServiceID.
+id := c.Identity()
+
+log.Println(id.InstanceID) // "" до первого Welcome
+log.Println(id.SessionID, id.ServiceID, id.ServiceName) // стабильны при ротации сертификата`,
     epochWarning:
       "Ротация сертификата даёт новый instanceId и повторно эмитит connected. sessionId и serviceName стабильны при ротации; кэшируйте identity() на сессию, а не на всю жизнь процесса.",
 
     suspendedTitle: "Восстановление после обрыва",
-    suspendedP1a:
-      "Когда control-стрим падает (сбой сети, перезапуск runtime), SDK не падает сразу. Сессия переходит в",
-    suspendedP1b:
-      "и планируется повтор с фиксированной задержкой. По умолчанию делается до",
-    suspendedP1c:
-      "попыток, затем эмитится disconnected с причиной",
-    suspendedP1d: "и SDK останавливается.",
+    suspendedP1:
+      "Когда control-стрим падает (сбой сети, перезапуск runtime), SDK не падает сразу. Сессия переходит в Reconnecting и планируется повтор. Node SDK ждёт фиксированный reconnectIntervalMs и сдаётся после reconnectAttempts попыток, эмитя disconnected с причиной \"exhausted\". Go SDK идёт по лестнице с джиттером — 1с, 5с, 15с, 30с, 60с, последняя ступень повторяется — и не сдаётся, пока вы не ограничите его через WithReconnectAttempts.",
     suspendedP2:
       "Восстановление провижионит свежий сертификат и заново шлёт регистрацию, собранную из ваших объявлений — хендлеры перерегистрировывать не нужно. Незавершённые RPC автоматически не повторяются: их повторяет вызывающая сторона (у RPC своя retry-политика). Durable-события лежат в локальном outbox и уходят после возврата сессии.",
     suspendedParams: [
       {
-        name: "reconnectIntervalMs",
-        type: "number",
+        name: "reconnectIntervalMs (Node)",
+        type: "number (мс)",
         default: "3000",
-        desc: "Задержка между попытками переподключения.",
+        desc: "Фиксированная задержка между попытками переподключения.",
       },
       {
-        name: "reconnectAttempts",
+        name: "reconnectAttempts (Node)",
         type: "number",
         default: "3",
         desc: "Максимум попыток до disconnected{reason:'exhausted'} + авто-стоп. 0 = без лимита.",
+      },
+      {
+        name: "WithReconnectLadder (Go)",
+        type: "...time.Duration",
+        default: "1с, 5с, 15с, 30с, 60с",
+        desc: "Задержки переподключения. Последняя ступень повторяется вечно, каждая идёт с джиттером.",
+      },
+      {
+        name: "WithReconnectAttempts (Go)",
+        type: "int",
+        default: "0 — без лимита",
+        desc: "Лимит подряд идущих попыток переподключения. 0 — повторять вечно.",
       },
     ],
     suspendedCode: `const sb = new ServiceBridge("localhost:14445", key, {
   reconnectIntervalMs: 3000,
   reconnectAttempts: 0, // повторять вечно, никогда не сдаваться
 });`,
+    suspendedCodeGo: `c, err := sb.New("localhost:14445", key,
+	sb.WithReconnectLadder(time.Second, 5*time.Second, 30*time.Second),
+	sb.WithReconnectAttempts(0), // 0 = повторять вечно; в Go это и есть значение по умолчанию
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     suspendedTip:
       "Durable-публикации переживают reconnect: sb.event.publish сначала пишет в локальный SQLite outbox, поэтому кратковременный сбой runtime не теряет события — drainer сливает их после восстановления сессии.",
 
@@ -263,6 +363,19 @@ process.on("SIGTERM", async () => {
   await sb.stop();
   process.exit(0);
 });`,
+    drainCodeGo: `c.OnDraining(func(reason string) {
+	// runtime попросил уйти; доделаем что можем и выходим
+	log.Println("runtime is draining:", reason)
+})
+
+// привяжите свой shutdown к Stop для чистого завершения
+ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM)
+defer stop()
+
+<-ctx.Done()
+if err := c.Stop(context.Background()); err != nil {
+	log.Fatal(err)
+}`,
   },
 };
 
@@ -296,7 +409,7 @@ export function PageSessionLifecycle() {
           </tbody>
         </table>
       </div>
-      <MultiCodeBlock code={{ ts: t.statesCode }} />
+      <MultiCodeBlock code={{ ts: t.statesCode, go: t.statesCodeGo }} />
       <Callout type="info">{t.statesNote}</Callout>
 
       <H2 id="epoch-fencing">{t.epochTitle}</H2>
@@ -308,18 +421,14 @@ export function PageSessionLifecycle() {
         {t.epochP3a} <Mono>leaseEpoch</Mono>
         {t.epochP3b}
       </P>
-      <MultiCodeBlock code={{ ts: t.epochCode }} />
+      <MultiCodeBlock code={{ ts: t.epochCode, go: t.epochCodeGo }} />
       <Callout type="warning">{t.epochWarning}</Callout>
 
       <H2 id="suspended-recovery">{t.suspendedTitle}</H2>
-      <P>
-        {t.suspendedP1a} <Mono>Reconnecting</Mono> {t.suspendedP1b}{" "}
-        <Mono>reconnectAttempts</Mono> {t.suspendedP1c} <Mono>"exhausted"</Mono>{" "}
-        {t.suspendedP1d}
-      </P>
+      <P>{t.suspendedP1}</P>
       <P>{t.suspendedP2}</P>
       <ParamTable rows={t.suspendedParams} />
-      <MultiCodeBlock code={{ ts: t.suspendedCode }} />
+      <MultiCodeBlock code={{ ts: t.suspendedCode, go: t.suspendedCodeGo }} />
       <Callout type="tip">{t.suspendedTip}</Callout>
 
       <H2 id="drain-path">{t.drainTitle}</H2>
@@ -330,7 +439,7 @@ export function PageSessionLifecycle() {
       <P>
         {t.drainP2a} <Mono>sb.stop()</Mono> {t.drainP2b}
       </P>
-      <MultiCodeBlock code={{ ts: t.drainCode }} />
+      <MultiCodeBlock code={{ ts: t.drainCode, go: t.drainCodeGo }} />
     </div>
   );
 }

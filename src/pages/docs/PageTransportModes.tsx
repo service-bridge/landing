@@ -23,13 +23,13 @@ const T = {
     directP2:
       "Direct works only when the callee published a call_endpoint and the caller has an outbound transport ready. The caller validates the callee's SPIFFE identity from its leaf cert, so a direct call is still authenticated end to end.",
     directTip:
-      "auto (the default) already uses direct whenever an endpoint is known. Set transport: \"direct\" only to force it and fail fast if no endpoint exists.",
+      "Direct is where a call goes by default. In Node the default is auto, which picks direct whenever an endpoint is known; set transport: \"direct\" to force it and fail fast when no endpoint exists. The Go SDK has no auto: TransportDirect is the default and there is nothing to force.",
 
     proxyTitle: "Proxy Mode",
     proxyP1:
       "In proxy mode the call goes caller → runtime Invoke → callee. The runtime forwards the request, so the callee does not need to be directly reachable from the caller — useful across NAT or separate networks.",
     proxyP2:
-      "Force it per call with transport: \"proxy\". With auto, the SDK falls back to proxy on its own whenever the picked instance has no call_endpoint.",
+      "Ask for it per call: transport: \"proxy\" in Node, sb.WithTransport(sb.TransportProxy) in Go. Node's auto mode also falls back to proxy on its own whenever the picked instance has no call_endpoint; Go never falls back, so a direct call with nowhere to go returns CodeNoLiveInstance.",
 
     hierarchyTitle: "Config Hierarchy",
     hierarchyP:
@@ -39,11 +39,11 @@ const T = {
       " — the transport field on the CallOpts you pass to sb.rpc.call() or sb.stream(). Highest priority.",
     hierItem2Pre: "Client default",
     hierItem2Post:
-      " — callDefaults on the ServiceBridge constructor (and the per-client callDefaults on sb.client(...)). The constructor default is merged into sb.stream() and into the typed methods returned by sb.client(); a bare sb.rpc.call() reads only its own CallOpts.",
+      " — callDefaults on the ServiceBridge constructor in Node (and the per-client callDefaults on sb.client(...)), sb.WithCallDefaults(...) on sb.New in Go. The constructor default is merged into sb.stream() and into the typed methods returned by sb.client(); a bare sb.rpc.call() reads only its own CallOpts. In Go the defaults apply under every call and stream that does not override them.",
     hierMerge:
       "Where a default applies, the SDK merges it shallowly as { ...callDefaults, ...perCallOpts }, so a per-call value always wins.",
     autoNote:
-      "When neither layer sets transport, the effective value is \"auto\": direct if the chosen instance has an endpoint, proxy otherwise.",
+      "When neither layer sets transport, Node falls back to \"auto\": direct if the chosen instance has an endpoint, proxy otherwise. Go falls back to TransportDirect — the choice is explicit or it is direct.",
 
     cbTitle: "Circuit Breakers",
     cbP1:
@@ -77,7 +77,7 @@ const T = {
     zoneP3:
       "If a runtime health hint is older than 60 seconds it is treated as stale — the runtime itself might be impaired — and the local circuit breaker carries the routing decision instead.",
     zoneWarn:
-      "The Node SDK has no availability-zone field and no zone weight or affinity setting. Load balancing is by live in-flight count, not by topology. There is nothing to configure — it is automatic.",
+      "Neither SDK has an availability-zone field and neither has a zone weight or affinity setting. Load balancing is by live in-flight count, not by topology. There is nothing to configure — it is automatic.",
   },
   ru: {
     badge: "Транспорт и отказоустойчивость",
@@ -91,13 +91,13 @@ const T = {
     directP2:
       "Direct работает, только если получатель опубликовал call_endpoint, а у вызывающего поднят исходящий транспорт. Вызывающий проверяет SPIFFE-идентичность получателя из его leaf-сертификата, так что прямой вызов остаётся аутентифицированным сквозным образом.",
     directTip:
-      "auto (значение по умолчанию) уже выбирает direct, когда endpoint известен. Ставьте transport: \"direct\" только чтобы принудить и быстро упасть, если endpoint'а нет.",
+      "По умолчанию вызов идёт direct. В Node дефолт — auto: он выбирает direct, когда endpoint известен; transport: \"direct\" принуждает и быстро падает, если endpoint'а нет. В Go SDK auto нет: TransportDirect — значение по умолчанию, принуждать нечего.",
 
     proxyTitle: "Прокси-режим (Proxy)",
     proxyP1:
       "В режиме proxy вызов идёт вызывающий → runtime Invoke → получатель. Runtime пересылает запрос, поэтому получатель не обязан быть напрямую достижим от вызывающего — полезно за NAT или в разных сетях.",
     proxyP2:
-      "Принудить на конкретный вызов: transport: \"proxy\". В режиме auto SDK сам уходит в proxy, когда у выбранного инстанса нет call_endpoint.",
+      "Запросить на конкретный вызов: transport: \"proxy\" в Node, sb.WithTransport(sb.TransportProxy) в Go. Режим auto в Node ещё и сам уходит в proxy, когда у выбранного инстанса нет call_endpoint; Go не переключается сам — прямой вызов, которому некуда идти, возвращает CodeNoLiveInstance.",
 
     hierarchyTitle: "Иерархия конфигурации",
     hierarchyP:
@@ -107,11 +107,11 @@ const T = {
       " — поле transport в CallOpts, которое вы передаёте в sb.rpc.call() или sb.stream(). Высший приоритет.",
     hierItem2Pre: "Дефолт клиента",
     hierItem2Post:
-      " — callDefaults в конструкторе ServiceBridge (и per-client callDefaults в sb.client(...)). Дефолт из конструктора мёржится в sb.stream() и в типизированные методы из sb.client(); голый sb.rpc.call() читает только свой CallOpts.",
+      " — callDefaults в конструкторе ServiceBridge в Node (и per-client callDefaults в sb.client(...)), sb.WithCallDefaults(...) в sb.New в Go. Дефолт из конструктора Node мёржится в sb.stream() и в типизированные методы из sb.client(); голый sb.rpc.call() читает только свой CallOpts. В Go дефолты применяются под каждым вызовом и стримом, который их не переопределил.",
     hierMerge:
       "Там, где дефолт применяется, SDK мёржит его поверхностно как { ...callDefaults, ...perCallOpts }, поэтому значение из вызова всегда побеждает.",
     autoNote:
-      "Если ни один уровень не задал transport, эффективное значение — \"auto\": direct, если у выбранного инстанса есть endpoint, иначе proxy.",
+      "Если ни один уровень не задал transport, Node уходит в \"auto\": direct, если у выбранного инстанса есть endpoint, иначе proxy. Go уходит в TransportDirect — выбор либо явный, либо direct.",
 
     cbTitle: "Circuit Breakers",
     cbP1:
@@ -145,7 +145,7 @@ const T = {
     zoneP3:
       "Если health-хинт от runtime старше 60 секунд, он считается устаревшим — сам runtime мог сломаться — и решение о маршрутизации берёт на себя локальный circuit breaker.",
     zoneWarn:
-      "В Node SDK нет поля зоны доступности и нет настройки веса или аффинити зоны. Балансировка — по числу живых вызовов «в полёте», а не по топологии. Настраивать нечего — всё автоматически.",
+      "Ни в одном SDK нет поля зоны доступности и настройки веса или аффинити зоны. Балансировка — по числу живых вызовов «в полёте», а не по топологии. Настраивать нечего — всё автоматически.",
   },
 };
 
@@ -166,6 +166,16 @@ export function PageTransportModes() {
 const res = await sb.rpc.call("payments", "charge", { amount: 100 }, {
   transport: "direct",
 });`,
+          go: `// Direct mTLS call — the Go default; fails if the callee published no endpoint.
+res, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge",
+	&paymentpb.ChargeRequest{AmountCents: 100},
+	sb.WithTransport(sb.TransportDirect),
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(res.GetTransactionId())`,
         }}
       />
       <Callout type="tip">{t.directTip}</Callout>
@@ -179,6 +189,16 @@ const res = await sb.rpc.call("payments", "charge", { amount: 100 }, {
 const res = await sb.rpc.call("payments", "charge", { amount: 100 }, {
   transport: "proxy",
 });`,
+          go: `// Route through the runtime even if a direct endpoint is known.
+res, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge",
+	&paymentpb.ChargeRequest{AmountCents: 100},
+	sb.WithTransport(sb.TransportProxy),
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(res.GetTransactionId())`,
         }}
       />
 
@@ -207,6 +227,35 @@ for await (const chunk of sb.stream("payments", "watch", payload)) { /* ... */ }
 
 // Per-call override always wins; transport here is explicit.
 await sb.rpc.call("payments", "charge", payload, { transport: "direct" });`,
+          go: `// Client default: applied under every call that does not override it.
+c, err := sb.New("localhost:14445", key,
+	sb.WithCallDefaults(
+		sb.WithTransport(sb.TransportProxy),
+		sb.WithTimeout(10*time.Second),
+	),
+)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Inherits the proxy default from WithCallDefaults.
+for chunk, err := range sb.Stream[*orderpb.OrderCreated, *orderpb.OrderCompleted](
+	ctx, c, "payments", "watch", &orderpb.OrderCreated{OrderId: "ord_42"},
+) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(chunk.GetTxId())
+}
+
+// Per-call override always wins; transport here is explicit.
+if _, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge",
+	&paymentpb.ChargeRequest{AmountCents: 100},
+	sb.WithTransport(sb.TransportDirect),
+); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <Callout type="info">{t.autoNote}</Callout>

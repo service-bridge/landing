@@ -13,13 +13,13 @@ const T = {
     overviewP1:
       "A Temporal workflow is a function in your language (TypeScript, Go, Java...). It can branch, loop, call Activities conditionally, spawn child workflows dynamically, and hold arbitrary local state — as long as it stays deterministic. Temporal's SDK replays that function against the recorded event history to rebuild in-memory state whenever a worker restarts, moves, or reconnects. Determinism is the whole game: no direct randomness, wall-clock time, or I/O inside workflow code — those go through Activities, Timers, or Side Effects.",
     overviewP2:
-      "ServiceBridge Workflows have no workflow function to replay. sb.workflow.handle(name, def) registers a static graph of typed steps (call, publish, workflow, sleep, wait_event, wait_signal, parallel, sequence, local) with waitFor dependencies. The SDK canonicalizes this graph and hashes it (contract_hash) at registration. The runner is intentionally thin: for each ready step it does beginStep → resolve JsonExpression inputs → exactly one call → completeStep. No retries, no backoff, no circuit breaker on the SDK side — all of that (lease, heartbeat, dispatcher, compensation) lives in the runtime, driven off persisted state in Postgres.",
+      "ServiceBridge Workflows have no workflow function to replay. The client's workflow domain registers a static graph of typed steps (call, publish, workflow, sleep, wait_event, wait_signal, parallel, sequence, local) with waitFor dependencies. The SDK canonicalizes this graph and hashes it (contract_hash) at registration. The runner is intentionally thin: for each ready step it does beginStep → resolve JsonExpression inputs → exactly one call → completeStep. No retries, no backoff, no circuit breaker on the SDK side — all of that (lease, heartbeat, dispatcher, compensation) lives in the runtime, driven off persisted state in Postgres.",
     overviewCallout:
       "There is no replay-determinism concept here because there is no user code being replayed. Recovery after an SDK-instance crash means the runtime reassigns the run to a live instance and beginStep returns the cached output for already-completed steps (\"alreadyDone\") — not a re-execution of your function from the top.",
 
     mappingTitle: "Temporal → ServiceBridge Workflows",
     mappingRows: [
-      { name: "Workflow function (arbitrary code, replayed)", type: "Temporal", desc: "Static Step[] DAG registered via sb.workflow.handle(name, def) — a declarative plan, not code you write in a loop/branch-heavy style." },
+      { name: "Workflow function (arbitrary code, replayed)", type: "Temporal", desc: "A static step DAG registered on the client's workflow domain (sb.workflow.handle in Node, c.Workflow.Handle in Go) — a declarative plan, not code you write in a loop/branch-heavy style." },
       { name: "Activity, called via proxyActivities", type: "Temporal", desc: "A call step (runs sb.rpc.call under the hood) or a publish step (sb.event.publish), addressed by service/method or event name." },
       { name: "Child workflow (executeChild)", type: "Temporal", desc: "workflow step type — nests another registered workflow and waits for it to finish." },
       { name: "Signal (defineSignal + setHandler)", type: "Temporal", desc: "wait_signal step — parks the run at that specific DAG point until sb.workflow.signal(runId, name, payload)." },
@@ -90,6 +90,75 @@ await sb.start();
 const { runId } = await sb.workflow.start("onboard-user", { userId: "u-1" });
 await sb.workflow.signal(runId, "user-approved", { approvedBy: "admin" });
 const finalState = await sb.workflow.await(runId); // resolves only on status "success"`,
+    afterCodeGo: `// after: ServiceBridge Workflows
+err := c.Workflow.Handle("onboard-user", wf.Definition{
+	Input: map[string]any{
+		"type":       "object",
+		"properties": map[string]any{"userId": map[string]any{"type": "string"}},
+	},
+	Steps: []wf.Step{
+		wf.Call{
+			Control: wf.Control{
+				ID: "charge",
+				Compensate: &wf.Compensation{
+					Service: wf.Name("payments"),
+					Method:  wf.Name("Refund"),
+					Input:   map[string]any{"chargeId": wf.Path("$.charge.transactionId")},
+				},
+			},
+			Service: wf.Name("payments"),
+			Method:  wf.Name("Charge"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+		wf.WaitSignal{
+			Control: wf.Control{ID: "approved", WaitFor: []string{"charge"}, TimeoutSec: 3600},
+			Signal:  "user-approved",
+		},
+		wf.Call{
+			Control: wf.Control{
+				ID:      "provision",
+				WaitFor: []string{"approved"},
+				Compensate: &wf.Compensation{
+					Service: wf.Name("accounts"),
+					Method:  wf.Name("Delete"),
+					Input:   map[string]any{"id": wf.Path("$.provision.id")},
+				},
+			},
+			Service: wf.Name("accounts"),
+			Method:  wf.Name("Create"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+		wf.Sleep{
+			Control:     wf.Control{ID: "cooldown", WaitFor: []string{"provision"}},
+			DurationSec: 60,
+		},
+		wf.Publish{
+			Control: wf.Control{ID: "notify", WaitFor: []string{"cooldown"}},
+			Event:   wf.Name("user.onboarded"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+runID, err := c.Workflow.Start(ctx, "onboard-user", map[string]any{"userId": "u-1"})
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Workflow.Signal(ctx, runID, "user-approved", map[string]any{"approvedBy": "admin"}); err != nil {
+	log.Fatal(err)
+}
+final, err := c.Workflow.Await(ctx, runID) // returns only on status "success"
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(final)`,
     exampleCallout:
       "Read the two side by side: the Temporal version is a function you could extend with any control flow at any point. The ServiceBridge version is data — a fixed list of steps wired by waitFor. That's the whole trade: less code to reason about for a fixed shape, no room for a runtime if/else you didn't declare up front.",
 
@@ -101,6 +170,23 @@ const finalState = await sb.workflow.await(runId); // resolves only on status "s
     signalsCode: `{ type: "wait_signal", id: "approved", signal: "user-approved", timeoutSec: 3600 }
 { type: "sleep", id: "cooldown", durationSec: 60 }
 { type: "wait_event", id: "payment_confirmed", event: "payment.confirmed" }`,
+    signalsCodeGo: `err := c.Workflow.Handle("checkout", wf.Definition{Steps: []wf.Step{
+	wf.WaitSignal{
+		Control: wf.Control{ID: "approved", TimeoutSec: 3600},
+		Signal:  "user-approved",
+	},
+	wf.Sleep{
+		Control:     wf.Control{ID: "cooldown", WaitFor: []string{"approved"}},
+		DurationSec: 60,
+	},
+	wf.WaitEvent{
+		Control: wf.Control{ID: "payment_confirmed", WaitFor: []string{"cooldown"}},
+		Event:   wf.Name("payment.confirmed"),
+	},
+}})
+if err != nil {
+	log.Fatal(err)
+}`,
 
     compensationTitle: "Compensation",
     compensationP1:
@@ -115,7 +201,7 @@ const finalState = await sb.workflow.await(runId); // resolves only on status "s
       "This is the section to read before committing to a migration. Temporal's core value proposition is that workflow code looks like normal application code — loops, conditionals, local variables, dynamically constructed child-workflow IDs — and the platform makes it durable via deterministic replay. ServiceBridge does not offer that. You are not writing a workflow function; you are writing a configuration object.",
     determinismRows: [
       { id: "control-flow", name: "Control flow", en: "Static Step[] DAG, wired by waitFor. Conditional branching only via the when predicate (equals / in / and / or / not against resolved state) and forEach over a state array — both evaluated once per step, not arbitrary runtime logic." },
-      { id: "local-computation", name: "Local computation", en: "The local step type runs a plain JS function (fn: (state) => Promise<unknown>) — but it is documented as \"no I/O\". Every I/O-having unit of work has to be its own call / publish / workflow step, not inline code inside a bigger function." },
+      { id: "local-computation", name: "Local computation", en: "The local step runs a plain function in the declaring process — a JS callback in Node, a Go closure on wf.Local — but it is documented as \"no I/O\". Every I/O-having unit of work has to be its own call / publish / workflow step, not inline code inside a bigger function." },
       { id: "schema-evolution", name: "Schema evolution", en: "Re-registering the same workflow name with a different step graph is rejected at registration (contract_hash mismatch). There is no GetVersion()-style branch-and-deprecate; a changed shape needs a new workflow name." },
       { id: "long-running", name: "Long-running / infinite workflows", en: "No Continue-As-New equivalent in the current feature set. A run's step list is fixed and finite at registration time." },
       { id: "recovery-model", name: "Recovery model", en: "Not replay. The runtime persists state per step in Postgres; on lease reclaim beginStep returns the cached output for finished steps. There's no possibility of a nondeterminism bug because there's no code being re-run." },
@@ -143,13 +229,13 @@ const finalState = await sb.workflow.await(runId); // resolves only on status "s
     overviewP1:
       "Temporal-workflow — это функция на вашем языке (TypeScript, Go, Java...). Она может ветвиться, зацикливаться, условно вызывать Activity, динамически порождать дочерние workflow и держать произвольное локальное состояние — пока остаётся детерминированной. SDK Temporal реплеит эту функцию против записанной истории событий, чтобы восстановить in-memory состояние при рестарте, переезде или переподключении воркера. Детерминизм — вся суть: никакой прямой случайности, wall-clock времени или I/O внутри кода workflow — это идёт через Activity, Timer'ы или Side Effect'ы.",
     overviewP2:
-      "У ServiceBridge Workflows нет функции workflow для replay. sb.workflow.handle(name, def) регистрирует статический граф типизированных шагов (call, publish, workflow, sleep, wait_event, wait_signal, parallel, sequence, local) с зависимостями waitFor. SDK canonicalize'ит этот граф и хеширует его (contract_hash) при регистрации. Раннер намеренно тонкий: для каждого готового шага он делает beginStep → резолв JsonExpression входов → ровно один вызов → completeStep. Никаких повторов, backoff, circuit breaker на стороне SDK — всё это (lease, heartbeat, диспетчер, компенсация) живёт в рантайме, управляется персистентным состоянием в Postgres.",
+      "У ServiceBridge Workflows нет функции workflow для replay. Workflow-домен клиента регистрирует статический граф типизированных шагов (call, publish, workflow, sleep, wait_event, wait_signal, parallel, sequence, local) с зависимостями waitFor. SDK canonicalize'ит этот граф и хеширует его (contract_hash) при регистрации. Раннер намеренно тонкий: для каждого готового шага он делает beginStep → резолв JsonExpression входов → ровно один вызов → completeStep. Никаких повторов, backoff, circuit breaker на стороне SDK — всё это (lease, heartbeat, диспетчер, компенсация) живёт в рантайме, управляется персистентным состоянием в Postgres.",
     overviewCallout:
       "Концепции replay-детерминизма здесь нет, потому что нет пользовательского кода для replay. Восстановление после краша SDK-инстанса означает, что рантайм переназначает run живому инстансу, и beginStep возвращает закешированный output для уже завершённых шагов (\"alreadyDone\") — а не повторное выполнение вашей функции с начала.",
 
     mappingTitle: "Temporal → ServiceBridge Workflows",
     mappingRows: [
-      { name: "Функция workflow (произвольный код, replay)", type: "Temporal", desc: "Статический DAG Step[], регистрируется через sb.workflow.handle(name, def) — декларативный план, не код в стиле циклов/ветвлений." },
+      { name: "Функция workflow (произвольный код, replay)", type: "Temporal", desc: "Статический DAG шагов, регистрируется в workflow-домене клиента (sb.workflow.handle в Node, c.Workflow.Handle в Go) — декларативный план, не код в стиле циклов/ветвлений." },
       { name: "Activity, вызывается через proxyActivities", type: "Temporal", desc: "Шаг call (внутри sb.rpc.call) или publish (sb.event.publish), адресуется по service/method или имени события." },
       { name: "Дочерний workflow (executeChild)", type: "Temporal", desc: "Тип шага workflow — вкладывает другой зарегистрированный workflow и ждёт его завершения." },
       { name: "Signal (defineSignal + setHandler)", type: "Temporal", desc: "Шаг wait_signal — паркует run в этой конкретной точке DAG до sb.workflow.signal(runId, name, payload)." },
@@ -220,6 +306,75 @@ await sb.start();
 const { runId } = await sb.workflow.start("onboard-user", { userId: "u-1" });
 await sb.workflow.signal(runId, "user-approved", { approvedBy: "admin" });
 const finalState = await sb.workflow.await(runId); // резолвится только на статусе "success"`,
+    afterCodeGo: `// после: ServiceBridge Workflows
+err := c.Workflow.Handle("onboard-user", wf.Definition{
+	Input: map[string]any{
+		"type":       "object",
+		"properties": map[string]any{"userId": map[string]any{"type": "string"}},
+	},
+	Steps: []wf.Step{
+		wf.Call{
+			Control: wf.Control{
+				ID: "charge",
+				Compensate: &wf.Compensation{
+					Service: wf.Name("payments"),
+					Method:  wf.Name("Refund"),
+					Input:   map[string]any{"chargeId": wf.Path("$.charge.transactionId")},
+				},
+			},
+			Service: wf.Name("payments"),
+			Method:  wf.Name("Charge"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+		wf.WaitSignal{
+			Control: wf.Control{ID: "approved", WaitFor: []string{"charge"}, TimeoutSec: 3600},
+			Signal:  "user-approved",
+		},
+		wf.Call{
+			Control: wf.Control{
+				ID:      "provision",
+				WaitFor: []string{"approved"},
+				Compensate: &wf.Compensation{
+					Service: wf.Name("accounts"),
+					Method:  wf.Name("Delete"),
+					Input:   map[string]any{"id": wf.Path("$.provision.id")},
+				},
+			},
+			Service: wf.Name("accounts"),
+			Method:  wf.Name("Create"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+		wf.Sleep{
+			Control:     wf.Control{ID: "cooldown", WaitFor: []string{"provision"}},
+			DurationSec: 60,
+		},
+		wf.Publish{
+			Control: wf.Control{ID: "notify", WaitFor: []string{"cooldown"}},
+			Event:   wf.Name("user.onboarded"),
+			Input:   map[string]any{"userId": wf.Path("$.input.userId")},
+		},
+	},
+})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+runID, err := c.Workflow.Start(ctx, "onboard-user", map[string]any{"userId": "u-1"})
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Workflow.Signal(ctx, runID, "user-approved", map[string]any{"approvedBy": "admin"}); err != nil {
+	log.Fatal(err)
+}
+final, err := c.Workflow.Await(ctx, runID) // вернётся только на статусе "success"
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(final)`,
     exampleCallout:
       "Сравните эти два примера рядом: версия Temporal — функция, которую можно расширить любым control flow в любой точке. Версия ServiceBridge — данные: фиксированный список шагов, связанных через waitFor. Это и есть весь обмен: меньше кода для фиксированной формы, но нет места для runtime if/else, который вы не объявили заранее.",
 
@@ -231,6 +386,23 @@ const finalState = await sb.workflow.await(runId); // резолвится то�
     signalsCode: `{ type: "wait_signal", id: "approved", signal: "user-approved", timeoutSec: 3600 }
 { type: "sleep", id: "cooldown", durationSec: 60 }
 { type: "wait_event", id: "payment_confirmed", event: "payment.confirmed" }`,
+    signalsCodeGo: `err := c.Workflow.Handle("checkout", wf.Definition{Steps: []wf.Step{
+	wf.WaitSignal{
+		Control: wf.Control{ID: "approved", TimeoutSec: 3600},
+		Signal:  "user-approved",
+	},
+	wf.Sleep{
+		Control:     wf.Control{ID: "cooldown", WaitFor: []string{"approved"}},
+		DurationSec: 60,
+	},
+	wf.WaitEvent{
+		Control: wf.Control{ID: "payment_confirmed", WaitFor: []string{"cooldown"}},
+		Event:   wf.Name("payment.confirmed"),
+	},
+}})
+if err != nil {
+	log.Fatal(err)
+}`,
 
     compensationTitle: "Компенсация",
     compensationP1:
@@ -245,7 +417,7 @@ const finalState = await sb.workflow.await(runId); // резолвится то�
       "Это раздел, который нужно прочитать перед тем, как решиться на миграцию. Ключевое предложение Temporal — код workflow выглядит как обычный код приложения: циклы, условия, локальные переменные, динамически строящиеся ID дочерних workflow — а платформа делает это durable через детерминированный replay. ServiceBridge этого не предлагает. Вы не пишете функцию workflow — вы пишете объект конфигурации.",
     determinismRows: [
       { id: "control-flow", name: "Control flow", en: "Статический DAG Step[], связанный через waitFor. Условное ветвление только через предикат when (equals / in / and / or / not против резолвнутого состояния) и forEach по массиву состояния — оба вычисляются один раз на шаг, не произвольная runtime-логика." },
-      { id: "local-computation", name: "Локальные вычисления", en: "Тип шага local запускает обычную JS-функцию (fn: (state) => Promise<unknown>) — но задокументирован как «без I/O». Каждая единица работы с I/O должна быть отдельным шагом call / publish / workflow, не инлайн-кодом внутри большей функции." },
+      { id: "local-computation", name: "Локальные вычисления", en: "Шаг local запускает обычную функцию в объявившем процессе — JS-колбэк в Node, Go-замыкание в wf.Local — но задокументирован как «без I/O». Каждая единица работы с I/O должна быть отдельным шагом call / publish / workflow, не инлайн-кодом внутри большей функции." },
       { id: "schema-evolution", name: "Эволюция схемы", en: "Повторная регистрация того же имени workflow с другим графом шагов отвергается при регистрации (несовпадение contract_hash). Нет GetVersion()-style паттерна ветвления и депрекации; изменённая форма требует нового имени workflow." },
       { id: "long-running", name: "Долгоживущие / бесконечные workflow", en: "Нет эквивалента Continue-As-New в текущем наборе фич. Список шагов run'а фиксирован и конечен на момент регистрации." },
       { id: "recovery-model", name: "Модель восстановления", en: "Не replay. Рантайм персистит состояние по шагам в Postgres; при lease reclaim beginStep возвращает закешированный output для завершённых шагов. Баг недетерминизма невозможен, потому что нет кода, который переисполняется." },
@@ -283,13 +455,13 @@ export function PageMigrateTemporal() {
       <H2 id="example">{t.exampleTitle}</H2>
       <P>{t.exampleP}</P>
       <MultiCodeBlock code={{ ts: t.beforeCode }} />
-      <MultiCodeBlock code={{ ts: t.afterCode }} />
+      <MultiCodeBlock code={{ ts: t.afterCode, go: t.afterCodeGo }} />
       <Callout type="tip">{t.exampleCallout}</Callout>
 
       <H2 id="signals-timers">{t.signalsTitle}</H2>
       <P>{t.signalsP1}</P>
       <P>{t.signalsP2}</P>
-      <MultiCodeBlock code={{ ts: t.signalsCode }} />
+      <MultiCodeBlock code={{ ts: t.signalsCode, go: t.signalsCodeGo }} />
 
       <H2 id="compensation">{t.compensationTitle}</H2>
       <P>{t.compensationP1}</P>

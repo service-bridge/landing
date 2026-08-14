@@ -10,7 +10,7 @@ const T = {
       "Every RPC call, event publish, event delivery, job run, workflow step, and HTTP request becomes an operation in a trace, automatically, over the existing gRPC connection. No OTEL collector, no Jaeger, no sidecar.",
     calloutTip1bold: "Zero-config tracing.",
     calloutTip1:
-      "The SDK emits telemetry by default; pass telemetry: false to the ServiceBridge constructor to switch it off. Each built-in domain (RPC, HTTP, events, workflows, jobs) emits its own operations, the runtime stores them in PostgreSQL, and the dashboard renders them. Nothing to install, nothing to wire up.",
+      "The SDK emits telemetry by default. Each built-in domain (RPC, HTTP, events, workflows, jobs) emits its own operations, the runtime stores them in PostgreSQL, and the dashboard renders them. Nothing to install, nothing to wire up. Node can switch the transport off with telemetry: false on the constructor; the Go SDK has no such knob — telemetry is always on.",
 
     autoTitle: "Automatic traces",
     autoDesc:
@@ -25,24 +25,24 @@ const T = {
       ["EVENT", "publish / deliver", "Publisher on sb.event.publish(); one deliver op per consumer"],
       ["WORKFLOW", "run / sleep / wait_event / wait_signal", "Workflow run and each step the runtime dispatches"],
       ["JOB", "exec", "Scheduler on each job execution (cron / delayed / interval)"],
-      ["HTTP", "handle", "Express / Fastify / Hono integration, one op per incoming request"],
-      ["USER", "subop", "Your own sub-operations via sb.telemetry.startOp()"],
+      ["HTTP", "handle", "The HTTP integration (Express / Fastify / Hono, net/http / chi / gin), one op per incoming request"],
+      ["USER", "subop", "Your own sub-operations via sb.telemetry.startOp() / c.Telemetry.StartOp()"],
     ] as [string, string, string][],
     spanTableNote:
       "Each operation carries channel + kind, a human-readable subject (e.g. rpc.call:billing-service/charge, http.handle:GET//api/v1/users, event.publish:order.created), the actor instance, the peer service, an optional businessKey, and a status.",
 
     inlineLogsTitle: "Inline logs",
     inlineLogsDesc:
-      "Logs and metrics you emit through sb.telemetry inside a handler are correlated to the active operation automatically. Trace context propagates through ALS (AsyncLocalStorage), so any log written while a handler runs is stitched to that handler's operation and its trace. In the dashboard you expand an operation to read its logs inline: no separate log query, no tab switching.",
+      "Logs and metrics you emit through the telemetry domain inside a handler are correlated to the active operation automatically. Node carries the trace context through AsyncLocalStorage; Go carries it on the ctx the handler receives, so pass that ctx down. Either way a log written while a handler runs is stitched to that handler's operation and its trace. In the dashboard you expand an operation to read its logs inline: no separate log query, no tab switching.",
     inlineLogsNote:
-      "Each log line is auto-tagged with the current instance_id and the active trace / op id. sb.logger is a short alias for sb.telemetry.log.",
+      "Each log line is auto-tagged with the current instance_id and the active trace / op id. In Node sb.logger is a short alias for sb.telemetry.log; in Go c.Telemetry.Logger() is an ordinary *slog.Logger, and its Handler() plugs into a slog chain you already have.",
 
     traceIdHeaderTitle: "X-SB-Trace header",
     traceIdHeaderDesc1pre: "Trace context travels across services on a single wire header,",
     traceIdHeaderDesc1end:
       ". Its value is two RFC 9562 UUID strings joined by a dash:",
     traceIdHeaderItems: [
-      ["The HTTP integrations (Express / Fastify / Hono) read incoming", "and continue the parent trace; on a missing or malformed value they mint a fresh root."],
+      ["The HTTP integrations read incoming", "and continue the parent trace; on a missing or malformed value they mint a fresh root."],
       ["The RPC server reads the same header field on each incoming call, so a nested", "inherits the caller's trace."],
       ["Outgoing", ",", "and", "propagate the active context automatically; you never set the header by hand."],
     ],
@@ -51,7 +51,7 @@ const T = {
 
     traceContextTitle: "Trace context",
     traceContextDesc1pre:
-      "Propagation is fully automatic through ALS (AsyncLocalStorage); you never read, build, or pass a trace context by hand. Inside any handler, a nested",
+      "Propagation is automatic: Node threads it through AsyncLocalStorage, Go through the ctx a handler receives. You never read, build, or pass a trace id by hand. Inside any handler, a nested",
     traceContextDesc1mid: ",",
     traceContextDesc1end:
       "or",
@@ -91,7 +91,7 @@ const T = {
       "Каждый RPC-вызов, публикация события, доставка события, запуск задачи, шаг воркфлоу и HTTP-запрос становятся операцией в трейсе — автоматически, поверх уже открытого gRPC-соединения. Без OTEL-коллектора, Jaeger и сайдкаров.",
     calloutTip1bold: "Трассировка без настройки.",
     calloutTip1:
-      "SDK эмитит телеметрию по умолчанию; чтобы выключить, передайте telemetry: false в конструктор ServiceBridge. Каждый встроенный домен (RPC, HTTP, события, воркфлоу, задачи) сам эмитит свои операции, runtime хранит их в PostgreSQL, а дашборд их рисует. Ничего устанавливать и связывать не нужно.",
+      "SDK эмитит телеметрию по умолчанию. Каждый встроенный домен (RPC, HTTP, события, воркфлоу, задачи) сам эмитит свои операции, runtime хранит их в PostgreSQL, а дашборд их рисует. Ничего устанавливать и связывать не нужно. В Node транспорт можно выключить через telemetry: false в конструкторе; в Go SDK такой опции нет — телеметрия всегда включена.",
 
     autoTitle: "Автоматические трейсы",
     autoDesc:
@@ -106,24 +106,24 @@ const T = {
       ["EVENT", "publish / deliver", "Издатель на sb.event.publish(); одна deliver-операция на потребителя"],
       ["WORKFLOW", "run / sleep / wait_event / wait_signal", "Запуск воркфлоу и каждый шаг, который диспетчеризует runtime"],
       ["JOB", "exec", "Планировщик на каждом запуске задачи (cron / delayed / interval)"],
-      ["HTTP", "handle", "Интеграция Express / Fastify / Hono, одна операция на входящий запрос"],
-      ["USER", "subop", "Ваши собственные под-операции через sb.telemetry.startOp()"],
+      ["HTTP", "handle", "HTTP-интеграция (Express / Fastify / Hono, net/http / chi / gin), одна операция на входящий запрос"],
+      ["USER", "subop", "Ваши собственные под-операции через sb.telemetry.startOp() / c.Telemetry.StartOp()"],
     ] as [string, string, string][],
     spanTableNote:
       "Каждая операция несёт channel + kind, человекочитаемый subject (например rpc.call:billing-service/charge, http.handle:GET//api/v1/users, event.publish:order.created), инстанс-исполнитель, контрагента-сервис, опциональный businessKey и статус.",
 
     inlineLogsTitle: "Встроенные логи",
     inlineLogsDesc:
-      "Логи и метрики, которые вы эмитите через sb.telemetry внутри обработчика, автоматически связываются с активной операцией. Контекст трейса распространяется через ALS (AsyncLocalStorage), поэтому любой лог, записанный во время работы обработчика, пришивается к операции этого обработчика и его трейсу. В дашборде вы разворачиваете операцию и читаете её логи прямо в ней — без отдельного поиска по логам, без переключения вкладок.",
+      "Логи и метрики, которые вы эмитите через домен телеметрии внутри обработчика, автоматически связываются с активной операцией. Node несёт контекст трейса через AsyncLocalStorage, Go — на ctx, который получает обработчик, поэтому передавайте этот ctx дальше. В обоих случаях лог, записанный во время работы обработчика, пришивается к операции этого обработчика и его трейсу. В дашборде вы разворачиваете операцию и читаете её логи прямо в ней — без отдельного поиска по логам, без переключения вкладок.",
     inlineLogsNote:
-      "Каждая строка лога авто-тегируется текущим instance_id и активным trace / op id. sb.logger — короткий алиас sb.telemetry.log.",
+      "Каждая строка лога авто-тегируется текущим instance_id и активным trace / op id. В Node sb.logger — короткий алиас sb.telemetry.log; в Go c.Telemetry.Logger() — обычный *slog.Logger, а его Handler() встраивается в вашу собственную цепочку slog.",
 
     traceIdHeaderTitle: "Заголовок X-SB-Trace",
     traceIdHeaderDesc1pre: "Контекст трейса передаётся между сервисами в одном wire-заголовке —",
     traceIdHeaderDesc1end:
       ". Его значение — две UUID-строки (RFC 9562), соединённые дефисом:",
     traceIdHeaderItems: [
-      ["HTTP-интеграции (Express / Fastify / Hono) читают входящий", "и продолжают родительский трейс; при отсутствии или невалидном значении минтят свежий root."],
+      ["HTTP-интеграции читают входящий", "и продолжают родительский трейс; при отсутствии или невалидном значении минтят свежий root."],
       ["RPC-сервер читает то же поле заголовка на каждом входящем вызове, поэтому вложенный", "наследует трейс вызывающего."],
       ["Исходящие", ",", "и", "распространяют активный контекст автоматически — заголовок руками вы не ставите."],
     ],
@@ -132,7 +132,7 @@ const T = {
 
     traceContextTitle: "Контекст трейса",
     traceContextDesc1pre:
-      "Распространение полностью автоматическое через ALS (AsyncLocalStorage) — вы никогда не читаете, не собираете и не передаёте контекст трейса руками. Внутри любого обработчика вложенный",
+      "Распространение автоматическое: Node тянет его через AsyncLocalStorage, Go — через ctx, который получает обработчик. Вы никогда не читаете, не собираете и не передаёте trace id руками. Внутри любого обработчика вложенный",
     traceContextDesc1mid: ",",
     traceContextDesc1end:
       "или",
@@ -221,6 +221,25 @@ export function PageTracing() {
   // → expand this operation in the dashboard to read both inline
   return { txId: tx.id };
 }, { schema: { protoFile: "./payments.proto" } });`,
+          go: `err := sb.Handle(c, "charge",
+	func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+		// The logger writes into the telemetry buffer and reads trace and op id
+		// off ctx, so both lines are correlated to this RPC operation:
+		logger := c.Telemetry.Logger()
+		logger.InfoContext(ctx, "charge.start", "orderId", req.GetOrderId())
+
+		tx, err := stripeCharge(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		logger.InfoContext(ctx, "charge.done", "txId", tx.GetTransactionId())
+		// → expand this operation in the dashboard to read both inline
+		return tx, nil
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>{t.inlineLogsNote}</P>
@@ -278,6 +297,33 @@ X-SB-Trace: 0190f3c1-7a2b-7c3d-8e4f-1a2b3c4d5e6f-0190f3c1-7a2b-7c3d-8e4f-aaaaaaa
 
   return { txId: tx.txId };
 }, { schema: { protoFile: "./checkout.proto" } });`,
+          go: `err := sb.Handle(c, "checkout",
+	func(ctx context.Context, req *orderpb.OrderCreated) (*orderpb.OrderCompleted, error) {
+		// This nested call runs under the handler's ctx. You pass no context
+		// object and set no header. Caller, this handler, and the downstream
+		// charge all share one trace id automatically:
+		tx, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+			ctx, c, "payments", "charge",
+			&paymentpb.ChargeRequest{OrderId: req.GetOrderId()},
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// Same for a publish: the event carries the active trace to every consumer.
+		done := &orderpb.OrderCompleted{
+			OrderId: req.GetOrderId(),
+			TxId:    tx.GetTransactionId(),
+		}
+		if _, err := sb.PublishEvent(ctx, c, "order.paid", done); err != nil {
+			return nil, err
+		}
+
+		return done, nil
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
 

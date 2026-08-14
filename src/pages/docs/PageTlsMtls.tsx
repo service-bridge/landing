@@ -177,6 +177,20 @@ await sb.start();
 
 const id = sb.identity();
 // { sessionId, serviceId, serviceName, instanceId }`,
+          go: `// One service key is all the TLS material you provide.
+// Start provisions the mTLS leaf and opens the encrypted control stream.
+c, err := sb.New("localhost:14445", serviceKey)
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+// from here every connection is mutual TLS
+
+id := c.Identity()
+log.Println(id.SessionID, id.ServiceID, id.ServiceName, id.InstanceID)`,
         }}
       />
       <P>

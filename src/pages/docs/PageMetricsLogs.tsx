@@ -28,6 +28,10 @@ const T = {
       "and call it. There are three kinds; create each handle once and reuse it.",
     metricsKindsTitle: "Three kinds",
     counterDesc: "Monotonically increasing count. .inc() adds 1, .inc(n) adds n.",
+    counterDescGo: "Monotonically increasing count. .Inc() adds 1, .Add(n) adds n.",
+    gaugeDescGo: "A value that goes up and down. .Set(value) writes the current reading.",
+    histogramDescGo:
+      "A distribution of observations. .Observe(value) records one sample; the bucket bounds are explicit, so nothing guesses them for you.",
     gaugeDesc: "A value that goes up and down. .set(value) writes the current reading.",
     histogramDesc:
       "A distribution of observations like latency or sizes. .observe(value) records one sample; the unit defaults to \"s\".",
@@ -40,17 +44,18 @@ const T = {
       "argument is a flat object of string-only tags. Every metric is also tagged with the current",
     metricsLabels1end: "automatically, so each reading is tied to the instance that produced it.",
     metricsCallout:
-      "Metric handles can be created before start(). Points buffer in a local ring and flush to the runtime as soon as a session exists.",
+      "Metric handles can be created before the client starts. Points buffer in a local ring and flush to the runtime as soon as a session exists. A handle held for the lifetime of the process keeps reporting across certificate rotations: it re-resolves under the live instance instead of one the runtime already tore down.",
 
     logsTitle: "Log capture",
     logsIntro1pre: "Write structured logs through",
     logsIntro1mid: "(or the shorthand",
     logsIntro1post:
-      "). Four levels are available; the second argument is an arbitrary object of structured fields, serialized to JSON.",
+      "). Four levels are available; the second argument is an arbitrary object of structured fields, serialized to JSON. In Go the same sink is c.Telemetry.Logger(), a plain *slog.Logger, so the levels and the key/value pairs are slog's.",
     logsFieldsDesc:
       "Each entry is auto-tagged with the current instance_id and, inside a traced operation, the active trace and op id, so a log line links straight to its trace in the dashboard.",
     logsLevelsTitle: "Levels",
-    logsLevelsDesc: "debug, info, warn, error. All take (message, fields?).",
+    logsLevelsDesc:
+      "debug, info, warn, error. In Node all four take (message, fields?); in Go they are slog's Debug / Info / Warn / Error, and the …Context variants are what carry the trace and op id.",
     logsCallout:
       "No logging config to set up. The SDK pushes metrics and logs over the same telemetry gRPC stream as traces, and you read them in the built-in dashboard. How long they stay is a runtime setting: tune the telemetry.* retention keys in the dashboard at /settings, never an environment variable.",
 
@@ -105,6 +110,10 @@ const T = {
       "и вызывайте его. Видов три; каждый хендл создавайте один раз и переиспользуйте.",
     metricsKindsTitle: "Три вида",
     counterDesc: "Монотонно растущий счётчик. .inc() прибавляет 1, .inc(n) — на n.",
+    counterDescGo: "Монотонно растущий счётчик. .Inc() прибавляет 1, .Add(n) — на n.",
+    gaugeDescGo: "Значение, которое растёт и падает. .Set(value) записывает текущий замер.",
+    histogramDescGo:
+      "Распределение наблюдений. .Observe(value) записывает один сэмпл; границы бакетов задаются явно — за вас их никто не угадывает.",
     gaugeDesc: "Значение, которое растёт и падает. .set(value) записывает текущий замер.",
     histogramDesc:
       "Распределение наблюдений вроде задержек или размеров. .observe(value) записывает один сэмпл; единица по умолчанию \"s\".",
@@ -117,17 +126,18 @@ const T = {
       "— плоский объект меток (только строки). Каждая метрика также авто-тегируется текущим",
     metricsLabels1end: ", так что замер привязан к инстансу, который его произвёл.",
     metricsCallout:
-      "Хендлы метрик можно создавать до start(). Точки буферизуются в локальном ring-буфере и уходят в рантайм, как только появится сессия.",
+      "Хендлы метрик можно создавать до старта клиента. Точки буферизуются в локальном ring-буфере и уходят в рантайм, как только появится сессия. Хендл, живущий всё время процесса, продолжает репортить и после ротации сертификата: он переразрешается под живой инстанс, а не под тот, который рантайм уже снёс.",
 
     logsTitle: "Захват логов",
     logsIntro1pre: "Пишите структурные логи через",
     logsIntro1mid: "(или короткий алиас",
     logsIntro1post:
-      "). Доступны четыре уровня; второй аргумент — произвольный объект структурных полей, сериализуемый в JSON.",
+      "). Доступны четыре уровня; второй аргумент — произвольный объект структурных полей, сериализуемый в JSON. В Go тот же приёмник — c.Telemetry.Logger(), обычный *slog.Logger, поэтому уровни и пары ключ/значение — из slog.",
     logsFieldsDesc:
       "Каждая запись авто-тегируется текущим instance_id, а внутри трейсимой операции — активным trace и op id, поэтому строка лога ведёт прямо к своему трейсу в дашборде.",
     logsLevelsTitle: "Уровни",
-    logsLevelsDesc: "debug, info, warn, error. Все принимают (message, fields?).",
+    logsLevelsDesc:
+      "debug, info, warn, error. В Node все четыре принимают (message, fields?); в Go это slog-овские Debug / Info / Warn / Error, а trace и op id несут варианты с суффиксом Context.",
     logsCallout:
       "Никакой настройки логирования нет. SDK шлёт метрики и логи по тому же gRPC-потоку телеметрии, что и трейсы, а читаете вы их во встроенном дашборде. Срок хранения — настройка рантайма: правьте ключи telemetry.* в дашборде на /settings, не переменную окружения.",
 
@@ -180,7 +190,8 @@ export function PageMetricsLogs() {
         {t.metricsIntro1pre} <strong>{t.metricsIntro1bold}</strong> {t.metricsIntro1post}
       </P>
       <P>
-        {t.metricsIntro2pre} <Mono>sb.telemetry</Mono> {t.metricsIntro2post}
+        {t.metricsIntro2pre} <Mono>sb.telemetry</Mono> / <Mono>c.Telemetry</Mono>{" "}
+        {t.metricsIntro2post}
       </P>
       <MultiCodeBlock
         code={{
@@ -200,6 +211,23 @@ queueDepth.set(42);
 // Histogram: distribution; unit defaults to "s"
 const latency = sb.telemetry.histogram("charge_latency", "s");
 latency.observe(0.137);`,
+          go: `c, err := sb.New("localhost:14445", key)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Counter: monotonically increasing
+charges := c.Telemetry.Counter("charges_total", map[string]string{"currency": "usd"})
+charges.Inc()  // +1
+charges.Add(3) // +3
+
+// Gauge: goes up and down
+queueDepth := c.Telemetry.Gauge("queue_depth", "", nil)
+queueDepth.Set(42)
+
+// Histogram: a distribution, with explicit bucket bounds
+latency := c.Telemetry.Histogram("charge_latency", "s", nil, []float64{0.05, 0.1, 0.5, 1})
+latency.Observe(0.137)`,
         }}
       />
 
@@ -215,9 +243,12 @@ latency.observe(0.137);`,
       <H3 id="metrics-sig">{t.metricsSigTitle}</H3>
       <ParamTable
         rows={[
-          { name: "counter", type: t.counterSig, desc: t.counterDesc },
-          { name: "gauge", type: t.gaugeSig, desc: t.gaugeDesc },
-          { name: "histogram", type: t.histogramSig, desc: t.histogramDesc },
+          { name: "counter (Node)", type: t.counterSig, desc: t.counterDesc },
+          { name: "gauge (Node)", type: t.gaugeSig, desc: t.gaugeDesc },
+          { name: "histogram (Node)", type: t.histogramSig, desc: t.histogramDesc },
+          { name: "Counter (Go)", type: "c.Telemetry.Counter(name, labels)", desc: t.counterDescGo },
+          { name: "Gauge (Go)", type: "c.Telemetry.Gauge(name, unit, labels)", desc: t.gaugeDescGo },
+          { name: "Histogram (Go)", type: "c.Telemetry.Histogram(name, unit, labels, bounds)", desc: t.histogramDescGo },
         ]}
       />
       <P>
@@ -242,6 +273,18 @@ sb.telemetry.log.error("charge failed", { orderId, err: String(err) });
 
 // sb.logger is a shorthand for sb.telemetry.log
 sb.logger.warn("retrying charge", { orderId, attempt: 2 });`,
+          go: `// Logger() is an ordinary *slog.Logger writing into the telemetry buffer.
+// Pass ctx so each line carries the active trace and op id.
+logger := c.Telemetry.Logger()
+
+logger.InfoContext(ctx, "charge ok", "orderId", orderID, "amountCents", amountCents)
+if err := reprice(ctx, cartID); err != nil {
+	logger.ErrorContext(ctx, "charge failed", "orderId", orderID, "err", err)
+}
+
+// Handler() plugs the telemetry sink into a slog chain you already have.
+app := slog.New(logger.Handler())
+app.Warn("retrying charge", "orderId", orderID, "attempt", 2)`,
         }}
       />
 

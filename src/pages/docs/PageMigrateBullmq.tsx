@@ -66,6 +66,29 @@ sb.job.handle(
 );
 
 await sb.start();`,
+    afterCodeGo: `// after: ServiceBridge Jobs
+c, err := sb.New(url, serviceKey)
+if err != nil {
+	log.Fatal(err)
+}
+
+nightly, err := job.Cron("0 9 * * *", "Europe/Moscow") // five fields, no seconds
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("daily-report",
+	job.NewSpec(nightly, job.WithMaxAttempts(5)),
+	func(ctx context.Context, exec job.Execution) error {
+		return generateReport(ctx, exec.LocalScheduledAtUnixMs)
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
     beforeAfterCallout:
       "No Redis connection object, no separate Worker process to deploy, no queue.add() call to trigger the schedule — the trigger lives in the job definition and the runtime is the only caller.",
 
@@ -78,6 +101,19 @@ sb.job.handle(
   { trigger: { delayed: { at: Date.now() + 24 * 3600_000 } } },
   async (ctx) => { await sendReminder(userId); },
 );`,
+    delayedAfterCodeGo: `// after: ServiceBridge Jobs
+tomorrow, err := job.At(time.Now().Add(24 * time.Hour))
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("send-reminder", job.NewSpec(tomorrow),
+	func(ctx context.Context, exec job.Execution) error {
+		return sendReminder(ctx, "u-1")
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     delayedNote:
       "BullMQ's queue.add() both defines and enqueues the job in one call, per invocation, with arbitrary job data. ServiceBridge separates the two: sb.job.handle() is a one-time registration (call it once, before sb.start()); there is no per-run \"enqueue with custom data\" call. A delayed job fires once at the given moment and reads what it needs from ctx or your own storage, not from an ad-hoc payload — see the callout in Model differences.",
 
@@ -97,6 +133,20 @@ sb.job.handle(
   },
   async (ctx) => { /* ... */ },
 );`,
+    concurrencyOverlapCodeGo: `every, err := job.Interval(60 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("heavy-etl",
+	job.NewSpec(every,
+		job.WithOverlap(job.OverlapAllow),
+		job.WithMaxConcurrent(5), // up to 5 concurrent runs of THIS job
+	),
+	func(ctx context.Context, exec job.Execution) error { return nil })
+if err != nil {
+	log.Fatal(err)
+}`,
     concurrencyNote:
       "Default overlap is \"skip\": if the previous tick is still running when the next one fires, the new tick is dropped. There's no BullMQ-style unbounded backlog of pending jobs to drain — a job's queue depth is bounded by its own trigger cadence, not by how fast producers push work.",
 
@@ -122,8 +172,30 @@ sb.job.handle(
     await chargeInvoices(ctx.localScheduledAt);
   },
 );`,
+    retriesCodeGo: `daily, err := job.Cron("0 6 * * *", "UTC")
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("charge-invoices",
+	job.NewSpec(daily,
+		job.WithMaxAttempts(5),
+		job.WithRetry(job.RetryPolicy{
+			InitialMs: 1000, MaxMs: 60_000, Multiplier: 2, Jitter: 0.25,
+		}),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		if badInput {
+			// Wrapping ErrPermanent goes straight to jobs_dlq, no retry.
+			return fmt.Errorf("bad input: %w", job.ErrPermanent)
+		}
+		return chargeInvoices(ctx, exec.LocalScheduledAtUnixMs)
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     retriesCallout:
-      "Handlers must be idempotent by ctx.idempotencyKey, not by ctx.attempt. Delivery is at-least-once: the same tick can invoke the handler more than once after a lease expiry or an SDK crash. BullMQ's job.data is fixed per enqueue; ServiceBridge has no enqueue-time payload, so idempotency keys off the schedule slot, not caller-supplied data.",
+      "Handlers must be idempotent by the execution's idempotency key, not by its attempt number. Delivery is at-least-once: the same tick can invoke the handler more than once after a lease expiry or an SDK crash. BullMQ's job.data is fixed per enqueue; ServiceBridge has no enqueue-time payload, so idempotency keys off the schedule slot, not caller-supplied data.",
     retriesDlqP:
       "Exhausted retries land a row in the jobs_dlq Postgres table (execution_id + last_error) — this is the ServiceBridge equivalent of BullMQ's failed set. Unlike Durable Events, which have a dashboard DLQ view with one-click replay, jobs_dlq in the current version has no SDK method and no dashboard replay button — inspect it via Postgres directly, and re-trigger by waiting for the next natural tick (there is no manual re-run API yet).",
 
@@ -200,6 +272,29 @@ sb.job.handle(
 );
 
 await sb.start();`,
+    afterCodeGo: `// после: ServiceBridge Jobs
+c, err := sb.New(url, serviceKey)
+if err != nil {
+	log.Fatal(err)
+}
+
+nightly, err := job.Cron("0 9 * * *", "Europe/Moscow") // пять полей, без секунд
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("daily-report",
+	job.NewSpec(nightly, job.WithMaxAttempts(5)),
+	func(ctx context.Context, exec job.Execution) error {
+		return generateReport(ctx, exec.LocalScheduledAtUnixMs)
+	})
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`,
     beforeAfterCallout:
       "Нет объекта подключения к Redis, нет отдельного Worker-процесса для деплоя, нет вызова queue.add() для запуска расписания — триггер живёт в определении job, единственный, кто его вызывает — рантайм.",
 
@@ -212,6 +307,19 @@ sb.job.handle(
   { trigger: { delayed: { at: Date.now() + 24 * 3600_000 } } },
   async (ctx) => { await sendReminder(userId); },
 );`,
+    delayedAfterCodeGo: `// после: ServiceBridge Jobs
+tomorrow, err := job.At(time.Now().Add(24 * time.Hour))
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("send-reminder", job.NewSpec(tomorrow),
+	func(ctx context.Context, exec job.Execution) error {
+		return sendReminder(ctx, "u-1")
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     delayedNote:
       "queue.add() в BullMQ одним вызовом одновременно определяет и ставит job в очередь, с произвольными данными job на каждый вызов. ServiceBridge разделяет это: sb.job.handle() — одноразовая регистрация (вызывается один раз, до sb.start()); отдельного вызова «поставить в очередь с кастомными данными» на каждый запуск нет. Delayed job срабатывает один раз в заданный момент и читает нужное из ctx или своего хранилища, а не из ad-hoc payload — см. коллаут в «Отличиях модели».",
 
@@ -231,6 +339,20 @@ sb.job.handle(
   },
   async (ctx) => { /* ... */ },
 );`,
+    concurrencyOverlapCodeGo: `every, err := job.Interval(60 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("heavy-etl",
+	job.NewSpec(every,
+		job.WithOverlap(job.OverlapAllow),
+		job.WithMaxConcurrent(5), // до 5 параллельных запусков ЭТОГО job
+	),
+	func(ctx context.Context, exec job.Execution) error { return nil })
+if err != nil {
+	log.Fatal(err)
+}`,
     concurrencyNote:
       "Дефолтный overlap — \"skip\": если предыдущий тик ещё бежит, когда наступает следующий, новый тик пропускается. Нет BullMQ-style неограниченного бэклога pending-job'ов для дренирования — глубина очереди job'а ограничена его собственным триггером, а не скоростью продюсеров.",
 
@@ -256,8 +378,30 @@ sb.job.handle(
     await chargeInvoices(ctx.localScheduledAt);
   },
 );`,
+    retriesCodeGo: `daily, err := job.Cron("0 6 * * *", "UTC")
+if err != nil {
+	log.Fatal(err)
+}
+
+err = c.Job.Handle("charge-invoices",
+	job.NewSpec(daily,
+		job.WithMaxAttempts(5),
+		job.WithRetry(job.RetryPolicy{
+			InitialMs: 1000, MaxMs: 60_000, Multiplier: 2, Jitter: 0.25,
+		}),
+	),
+	func(ctx context.Context, exec job.Execution) error {
+		if badInput {
+			// Обёртка ErrPermanent — сразу в jobs_dlq, без retry.
+			return fmt.Errorf("bad input: %w", job.ErrPermanent)
+		}
+		return chargeInvoices(ctx, exec.LocalScheduledAtUnixMs)
+	})
+if err != nil {
+	log.Fatal(err)
+}`,
     retriesCallout:
-      "Handler должен быть идемпотентен по ctx.idempotencyKey, не по ctx.attempt. Доставка at-least-once: один и тот же тик может вызвать handler больше одного раза после истечения lease или краша SDK. job.data в BullMQ фиксирован на момент enqueue; в ServiceBridge нет payload на момент enqueue, поэтому идемпотентность привязана к слоту расписания, а не к данным вызывающей стороны.",
+      "Handler должен быть идемпотентен по ключу идемпотентности исполнения, не по номеру попытки. Доставка at-least-once: один и тот же тик может вызвать handler больше одного раза после истечения lease или краша SDK. job.data в BullMQ фиксирован на момент enqueue; в ServiceBridge нет payload на момент enqueue, поэтому идемпотентность привязана к слоту расписания, а не к данным вызывающей стороны.",
     retriesDlqP:
       "Исчерпанные повторы кладут строку в таблицу jobs_dlq в Postgres (execution_id + last_error) — это эквивалент failed-набора BullMQ. В отличие от Durable Events, у которых есть дашборд DLQ с replay в один клик, jobs_dlq в текущей версии не имеет ни метода SDK, ни кнопки replay в дашборде — смотрите её напрямую через Postgres, а повторный запуск — только дождавшись следующего естественного тика (ручного API повторного запуска пока нет).",
 
@@ -291,25 +435,25 @@ export function PageMigrateBullmq() {
       <H2 id="before-after">{t.beforeAfterTitle}</H2>
       <P>{t.beforeAfterP}</P>
       <MultiCodeBlock code={{ ts: t.beforeCode }} />
-      <MultiCodeBlock code={{ ts: t.afterCode }} />
+      <MultiCodeBlock code={{ ts: t.afterCode, go: t.afterCodeGo }} />
       <Callout type="tip">{t.beforeAfterCallout}</Callout>
 
       <H3 id="delayed">{t.delayedTitle}</H3>
       <MultiCodeBlock code={{ ts: t.delayedBeforeCode }} />
-      <MultiCodeBlock code={{ ts: t.delayedAfterCode }} />
+      <MultiCodeBlock code={{ ts: t.delayedAfterCode, go: t.delayedAfterCodeGo }} />
       <P>{t.delayedNote}</P>
 
       <H2 id="concurrency">{t.concurrencyTitle}</H2>
       <P>{t.concurrencyP1}</P>
       <P>{t.concurrencyP2}</P>
       <P>{t.concurrencyOverlapTitle}</P>
-      <MultiCodeBlock code={{ ts: t.concurrencyOverlapCode }} />
+      <MultiCodeBlock code={{ ts: t.concurrencyOverlapCode, go: t.concurrencyOverlapCodeGo }} />
       <P>{t.concurrencyNote}</P>
       <Callout type="warning">{t.prioritiesNote}</Callout>
 
       <H2 id="retries-dlq">{t.retriesTitle}</H2>
       <P>{t.retriesP1}</P>
-      <MultiCodeBlock code={{ ts: t.retriesCode }} />
+      <MultiCodeBlock code={{ ts: t.retriesCode, go: t.retriesCodeGo }} />
       <Callout type="warning">{t.retriesCallout}</Callout>
       <P>{t.retriesDlqP}</P>
 

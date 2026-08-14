@@ -72,6 +72,82 @@ services:
     allow_caller_services: [orders]
     allow_publish_topics: [order.*]`;
 
+const TEST_HARNESS_CODE_GO = `package payments
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"example.com/gen/paymentpb"
+	"github.com/service-bridge/sdk/go/sbtest"
+)
+
+// The production handler, wired to whatever answers outbound calls.
+func makeChargeHandler(h *sbtest.Harness) sbtest.Handler[*paymentpb.ChargeRequest, *paymentpb.ChargeReply] {
+	return func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeReply, error) {
+		check, err := sbtest.Call[*paymentpb.CheckRequest, *paymentpb.CheckReply](
+			ctx, h.RPC, "fraud-svc", "Check", &paymentpb.CheckRequest{UserId: req.GetUserId()})
+		if err != nil {
+			return nil, err
+		}
+		if check.GetBlocked() {
+			return nil, errors.New("user " + req.GetUserId() + " blocked")
+		}
+		if _, err := sbtest.Publish(ctx, h.Event, "payment.charged",
+			&paymentpb.PaymentCharged{
+				TransactionId: "tx-" + req.GetUserId(),
+				AmountCents:   req.GetAmountCents(),
+			}); err != nil {
+			return nil, err
+		}
+		return &paymentpb.ChargeReply{TransactionId: "tx-" + req.GetUserId(), Ok: true}, nil
+	}
+}
+
+func TestChargeBlocksFlaggedUser(t *testing.T) {
+	h := sbtest.New()
+	if err := sbtest.RespondWith(h.RPC, "fraud-svc", "Check",
+		&paymentpb.CheckReply{Blocked: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sbtest.Handle(h.RPC, "Charge", makeChargeHandler(h)); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		context.Background(), h.RPC, "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-1", AmountCents: 42})
+	if err == nil {
+		t.Fatal("expected the flagged user to be refused")
+	}
+}
+
+func TestChargePublishesPaymentCharged(t *testing.T) {
+	h := sbtest.New()
+	if err := sbtest.RespondWith(h.RPC, "fraud-svc", "Check",
+		&paymentpb.CheckReply{Blocked: false}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sbtest.Define[*paymentpb.PaymentCharged](h.Event, "payment.charged"); err != nil {
+		t.Fatal(err)
+	}
+	if err := sbtest.Handle(h.RPC, "Charge", makeChargeHandler(h)); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := sbtest.Invoke[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+		context.Background(), h.RPC, "Charge",
+		&paymentpb.ChargeRequest{UserId: "u-1", AmountCents: 42}); err != nil {
+		t.Fatal(err)
+	}
+
+	published := h.Event.Published()
+	if len(published) != 1 || published[0].Name != "payment.charged" {
+		t.Fatalf("expected one payment.charged, got %v", published)
+	}
+}`;
+
 const TEST_HARNESS_CODE = `import { describe, expect, test } from "bun:test";
 import { createTestHarness } from "service-bridge/testing";
 
@@ -125,11 +201,11 @@ const T = {
 
     unitTestsTitle: "Unit tests without a runtime",
     unitTestsP1:
-      "The e2e job above spins up a real runtime because it's testing the wire contract. For testing your own handler logic — the RPC/event business logic without a live gRPC connection, SQLite outbox, or Postgres — use service-bridge/testing instead. It's a separate build target (service-bridge/testing in the package's exports map) with no network, no SQLite, no runtime.",
+      "The e2e job above spins up a real runtime because it's testing the wire contract. For testing your own handler logic — the RPC/event business logic without a live gRPC connection, SQLite outbox, or Postgres — use the in-memory doubles instead: service-bridge/testing in Node, the sbtest package in Go. Both are separate import paths with no network, no SQLite, no runtime.",
     unitTestsP2:
-      "createTestHarness() gives you harness.rpc (handle/invoke for inbound RPC, mockResponse/calls for outbound) and harness.event (handle/deliver for inbound events, publish/published for outbound). Handlers run exactly as registered in production — no Protobuf encode/decode in the loop, since that's the serde layer's job, not the handler's:",
+      "createTestHarness() gives you harness.rpc (handle/invoke for inbound RPC, mockResponse/calls for outbound) and harness.event (handle/deliver for inbound events, publish/published for outbound). In Go, sbtest.New() gives the same two doubles as h.RPC and h.Event, driven by the free functions Handle / Invoke / Respond / RespondWith / Define / Subscribe / Publish. Handlers run exactly as registered in production — no Protobuf encode/decode in the loop, since that's the serde layer's job, not the handler's:",
     unitTestsNote:
-      "This path needs no CI service containers, no Postgres, no Docker — it runs in the same bun test invocation as any other unit test, which is why it's worth keeping separate from the e2e job: fast feedback on handler logic in every PR, the full ephemeral-runtime job reserved for what actually needs the wire.",
+      "This path needs no CI service containers, no Postgres, no Docker — it runs in the same bun test or go test invocation as any other unit test, which is why it's worth keeping separate from the e2e job: fast feedback on handler logic in every PR, the full ephemeral-runtime job reserved for what actually needs the wire. What the doubles deliberately do not reproduce — runtime routing, wildcard event patterns, access policy, leases, retries, breakers, streaming, workflows, idempotency — belongs in that e2e job.",
   },
   ru: {
     badge: "Рецепт CI",
@@ -157,11 +233,11 @@ const T = {
 
     unitTestsTitle: "Юнит-тесты без рантайма",
     unitTestsP1:
-      "Задача e2e выше поднимает реальный рантайм, потому что тестирует wire-контракт. Для тестирования логики собственных handler'ов — бизнес-логики RPC/event без живого gRPC-соединения, SQLite outbox или Postgres — используйте вместо этого service-bridge/testing. Это отдельная точка сборки (service-bridge/testing в exports пакета) без сети, без SQLite, без рантайма.",
+      "Задача e2e выше поднимает реальный рантайм, потому что тестирует wire-контракт. Для тестирования логики собственных handler'ов — бизнес-логики RPC/event без живого gRPC-соединения, SQLite outbox или Postgres — используйте in-memory двойники: service-bridge/testing в Node, пакет sbtest в Go. Оба — отдельные пути импорта без сети, без SQLite, без рантайма.",
     unitTestsP2:
-      "createTestHarness() даёт harness.rpc (handle/invoke для входящих RPC, mockResponse/calls для исходящих) и harness.event (handle/deliver для входящих событий, publish/published для исходящих). Handler'ы выполняются ровно как зарегистрированы в продакшене — без Protobuf encode/decode в цикле, это забота serde-слоя, не handler'а:",
+      "createTestHarness() даёт harness.rpc (handle/invoke для входящих RPC, mockResponse/calls для исходящих) и harness.event (handle/deliver для входящих событий, publish/published для исходящих). В Go sbtest.New() даёт те же два двойника как h.RPC и h.Event, а управляют ими свободные функции Handle / Invoke / Respond / RespondWith / Define / Subscribe / Publish. Handler'ы выполняются ровно как зарегистрированы в продакшене — без Protobuf encode/decode в цикле, это забота serde-слоя, не handler'а:",
     unitTestsNote:
-      "Этот путь не требует CI-сервис-контейнеров, Postgres, Docker — выполняется в том же вызове bun test, что и любой другой юнит-тест, поэтому его стоит держать отдельно от задачи e2e: быстрая обратная связь по логике handler'ов на каждый PR, полная задача с эфемерным рантаймом — только для того, что реально требует wire.",
+      "Этот путь не требует CI-сервис-контейнеров, Postgres, Docker — выполняется в том же вызове bun test или go test, что и любой другой юнит-тест, поэтому его стоит держать отдельно от задачи e2e: быстрая обратная связь по логике handler'ов на каждый PR, полная задача с эфемерным рантаймом — только для того, что реально требует wire. Чего двойники намеренно не воспроизводят — маршрутизацию рантайма, wildcard-шаблоны событий, политику доступа, лизы, ретраи, breaker'ы, стриминг, workflow, идемпотентность — проверяется именно в задаче e2e.",
   },
 };
 
@@ -196,7 +272,7 @@ export function PageCi() {
       <H2 id="unit-tests">{t.unitTestsTitle}</H2>
       <P>{t.unitTestsP1}</P>
       <P>{t.unitTestsP2}</P>
-      <MultiCodeBlock code={{ ts: TEST_HARNESS_CODE }} />
+      <MultiCodeBlock code={{ ts: TEST_HARNESS_CODE, go: TEST_HARNESS_CODE_GO }} />
       <Callout type="tip">{t.unitTestsNote}</Callout>
       <P>
         <Mono>createTestHarness()</Mono> · <Mono>service-bridge/testing</Mono> · <Mono>sb apply --keys-out</Mono>

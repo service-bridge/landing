@@ -1,7 +1,7 @@
 // keywords: servicebridge quick-start getting-started bun add service-bridge npm i service-bridge RPC gRPC microservices Node.js TypeScript SDK distributed-tracing mTLS service-mesh zero-sidecar proto schema sb.rpc.handle sb.rpc.call sb.client
 
 import { MultiCodeBlock } from "../../ui/CodeBlock";
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader } from "../../ui/DocComponents";
+import { Callout, DocCodeBlock, H2, P, PageHeader } from "../../ui/DocComponents";
 import { useDocLocale } from "../../lib/locale-context";
 
 const T = {
@@ -11,30 +11,27 @@ const T = {
     description: "From zero to a working RPC call between two services in about five minutes.",
 
     installTitle: "Install the SDK",
-    installP: "The Node SDK is one package. Install it with Bun or npm:",
+    installP: "The SDK is one package. Add it to your project:",
     installNote:
       "The SDK speaks gRPC to a running runtime on port 14445. No runtime yet? See Installation. The dashboard lives at http://localhost:14444.",
 
     workerTitle: "Create a worker",
     workerP1:
-      "A worker handles incoming RPC calls. Its contract is one .proto file with a service block, which gives you both the method signature and the payload schema in one place.",
+      "A worker handles incoming RPC calls. Its contract is the pair of Protobuf messages the handler takes and returns — write them in one .proto file and share it between the services that speak to each other.",
     workerProtoCaption: "payment.proto — the shared contract",
-    workerP2Pre: "Register a handler with",
-    workerP2Mid: ". Every handler takes a",
-    workerP2Post:
-      "option pointing at the .proto file; ServiceBridge resolves the input and output messages from the service block. Then call",
-    workerP2End: "to provision a cert, connect, and start taking requests.",
+    workerP2:
+      "Register a handler under a method name, then start the client to provision a certificate, connect, and begin taking requests. The request and response messages are the schema the runtime routes by.",
     workerFileCaption: "payment-svc.ts",
     workerSchemaNote:
-      "Schemas come from a .proto or .schema.json file. There is no inline JSON-Schema in code. Register every handler before start(); anything declared after start() never reaches the runtime.",
+      "Register every handler before you start the client; anything declared after start never reaches the runtime. The Node SDK reads the schema from the .proto or .schema.json file you point it at; the Go SDK reads it from the generated message types, so there is no file to ship and no service block to write.",
 
     callTitle: "Call it from another service",
     callP1:
-      "Any service with a valid key calls a registered method directly over mTLS, with no broker, sidecar, or proxy in the path. The shortest caller is a typed client built from the same .proto:",
+      "Any service with a valid key calls a registered method directly over mTLS, with no broker, sidecar, or proxy in the path. The shortest caller is a typed client bound to the same contract:",
     callClientCaption: "checkout-svc.ts — typed client",
-    callP2Pre: "The typed client wraps",
-    callP2Post:
-      ". Skip the client and call by name when you don't need the types:",
+    callClientCaptionGo: "checkout-svc.go — typed client",
+    callP2:
+      "The typed client wraps one by-name call. Address the method by name directly when a declared client is more than you need:",
     callRawCaption: "Call by name",
     callKeyNote:
       "Each service authenticates with its own bootstrap key. Create one per service in the dashboard, then pass it to the constructor. Read it from your app's own environment, never hard-code it.",
@@ -47,30 +44,27 @@ const T = {
     description: "От нуля до рабочего RPC-вызова между двумя сервисами примерно за пять минут.",
 
     installTitle: "Установка SDK",
-    installP: "Node SDK — один пакет. Поставьте его через Bun или npm:",
+    installP: "SDK — один пакет. Добавьте его в проект:",
     installNote:
       "SDK говорит с рантаймом по gRPC на порту 14445. Рантайма ещё нет? Смотрите раздел «Установка». Панель управления — на http://localhost:14444.",
 
     workerTitle: "Создание воркера",
     workerP1:
-      "Воркер обрабатывает входящие RPC-вызовы. Его контракт — один .proto-файл с блоком service, где сразу заданы и сигнатура метода, и схема payload.",
+      "Воркер обрабатывает входящие RPC-вызовы. Его контракт — пара Protobuf-сообщений, которые обработчик принимает и возвращает. Опишите их в одном .proto-файле и разделяйте между сервисами, которые общаются друг с другом.",
     workerProtoCaption: "payment.proto — общий контракт",
-    workerP2Pre: "Зарегистрируйте обработчик через",
-    workerP2Mid: ". Каждому обработчику нужна опция",
-    workerP2Post:
-      ", указывающая на .proto-файл; ServiceBridge сам находит сообщения input и output в блоке service. Затем вызовите",
-    workerP2End: ", чтобы выпустить сертификат, подключиться и начать принимать запросы.",
+    workerP2:
+      "Зарегистрируйте обработчик под именем метода, затем запустите клиент: он выпустит сертификат, подключится и начнёт принимать запросы. Сообщения запроса и ответа — это и есть схема, по которой рантайм маршрутизирует.",
     workerFileCaption: "payment-svc.ts",
     workerSchemaNote:
-      "Схемы берутся из .proto или .schema.json-файла. Инлайн JSON-Schema в коде нет. Регистрируйте все обработчики до start(); всё, что объявлено после, до рантайма не доходит.",
+      "Регистрируйте все обработчики до запуска клиента; всё, что объявлено после, до рантайма не доходит. Node SDK читает схему из .proto или .schema.json-файла, на который вы указываете; Go SDK берёт её из сгенерированных типов сообщений — файл рядом с бинарём не нужен, блок service писать не нужно.",
 
     callTitle: "Вызов из другого сервиса",
     callP1:
-      "Любой сервис с действующим ключом вызывает зарегистрированный метод напрямую по mTLS, без брокера, sidecar и прокси на пути. Самый короткий вызывающий — типизированный клиент из того же .proto:",
+      "Любой сервис с действующим ключом вызывает зарегистрированный метод напрямую по mTLS, без брокера, sidecar и прокси на пути. Самый короткий вызывающий — типизированный клиент, привязанный к тому же контракту:",
     callClientCaption: "checkout-svc.ts — типизированный клиент",
-    callP2Pre: "Типизированный клиент оборачивает",
-    callP2Post:
-      ". Без клиента можно вызвать по имени, когда типы не нужны:",
+    callClientCaptionGo: "checkout-svc.go — типизированный клиент",
+    callP2:
+      "Типизированный клиент оборачивает один вызов по имени. Обращайтесь к методу по имени напрямую, когда объявленный клиент избыточен:",
     callRawCaption: "Вызов по имени",
     callKeyNote:
       "Каждый сервис аутентифицируется своим bootstrap-ключом. Создайте по ключу на сервис в панели и передайте его в конструктор. Читайте ключ из окружения своего приложения, не зашивайте в код.",
@@ -94,6 +88,7 @@ export function PageQuickStart() {
           ts: `bun add service-bridge
 # or
 npm i service-bridge`,
+          go: `go get github.com/service-bridge/sdk/go`,
         }}
       />
       <Callout type="info">{t.installNote}</Callout>
@@ -119,14 +114,48 @@ message ChargeResponse {
   bool   ok             = 2;
 }`}
       />
-      <P>
-        {t.workerP2Pre} <Mono>sb.rpc.handle()</Mono>
-        {t.workerP2Mid} <Mono>schema</Mono> {t.workerP2Post} <Mono>sb.start()</Mono>{" "}
-        {t.workerP2End}
-      </P>
+      <P>{t.workerP2}</P>
       <MultiCodeBlock
         filename={t.workerFileCaption}
         code={{
+          go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	"example.com/gen/paymentpb"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New(
+		"localhost:14445",
+		os.Getenv("PAYMENT_KEY"), // this service's own bootstrap key
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// The request and response types are the contract: the SDK reads the
+	// protobuf descriptor straight out of the generated struct.
+	err = sb.Handle(c, "Charge",
+		func(ctx context.Context, req *paymentpb.ChargeRequest) (*paymentpb.ChargeResponse, error) {
+			return &paymentpb.ChargeResponse{
+				TransactionId: "tx-" + req.GetUserId(),
+				Ok:            req.GetAmount() > 0,
+			}, nil
+		})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := c.Start(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+	log.Println("payment online:", c.Identity().ServiceName)
+}`,
           ts: `import { ServiceBridge } from "service-bridge";
 
 const sb = new ServiceBridge(
@@ -155,7 +184,7 @@ console.log("payment online:", sb.identity()?.serviceName);`,
       <H2 id="call-rpc">{t.callTitle}</H2>
       <P>{t.callP1}</P>
       <MultiCodeBlock
-        filename={t.callClientCaption}
+        filename={{ ts: t.callClientCaption, go: t.callClientCaptionGo }}
         code={{
           ts: `import { ServiceBridge } from "service-bridge";
 
@@ -174,12 +203,50 @@ const result = await payment.Charge({ userId: "u-42", amount: 100 });
 console.log(result); // { transactionId: "tx-u-42", ok: true }
 
 await sb.stop();`,
+          go: `package main
+
+import (
+	"context"
+	"log"
+	"os"
+
+	"example.com/gen/paymentpb"
+	sb "github.com/service-bridge/sdk/go"
+)
+
+func main() {
+	c, err := sb.New(
+		"localhost:14445",
+		os.Getenv("CHECKOUT_KEY"), // this service's own bootstrap key
+		sb.WithCallerOnly(),       // outbound only: no inbound handlers here
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Two lines: declare the outgoing dependency and bind the schema from the
+	// type parameters. Both must run before Start.
+	payment := sb.NewClient(c, "payment-svc")
+	charge, err := sb.NewMethod[*paymentpb.ChargeRequest, *paymentpb.ChargeResponse](payment, "Charge")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.Background()
+	if err := c.Start(ctx); err != nil {
+		log.Fatal(err)
+	}
+	defer func() { _ = c.Stop(ctx) }()
+
+	res, err := charge.Call(ctx, &paymentpb.ChargeRequest{UserId: "u-42", Amount: 100})
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(res.GetTransactionId(), res.GetOk()) // tx-u-42 true
+}`,
         }}
       />
-      <P>
-        {t.callP2Pre} <Mono>sb.rpc.call(service, method, payload, opts?)</Mono>
-        {t.callP2Post}
-      </P>
+      <P>{t.callP2}</P>
       <MultiCodeBlock
         filename={t.callRawCaption}
         code={{
@@ -189,6 +256,15 @@ await sb.stop();`,
 >("payment-svc", "Charge", { userId: "u-42", amount: 100 }, { timeout: "10s" });
 
 console.log(result.transactionId);`,
+          go: `res, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeResponse](
+	ctx, c, "payment-svc", "Charge",
+	&paymentpb.ChargeRequest{UserId: "u-42", Amount: 100},
+	sb.WithTimeout(10*time.Second),
+)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(res.GetTransactionId())`,
         }}
       />
       <Callout type="info">{t.callKeyNote}</Callout>

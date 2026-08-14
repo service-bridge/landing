@@ -158,6 +158,29 @@ console.log("policy warnings:", policy?.warnings.length ?? 0);
 sb.on("policy_violation", (v) => {
   console.warn("policy denied", v.declaration, v.reason);
 });`,
+          go: `c, err := sb.New("localhost:14445", os.Getenv("SERVICE_KEY"))
+if err != nil {
+	log.Fatal(err)
+}
+
+// React to policy changing live. Callbacks run on the client's goroutines
+// and must not block.
+c.OnPolicyViolation(func(v sb.PolicyViolation) {
+	log.Println("policy denied", v.Declaration, v.Value, v.Reason)
+})
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+// Live service map pushed by the runtime — instances and methods per service.
+for _, inst := range c.ServiceMap().Instances {
+	log.Println(inst.ServiceName, inst.InstanceID, inst.CallEndpoint)
+}
+
+// Current access policy for this worker; empty before the first snapshot.
+policy := c.PolicyEvaluation()
+log.Println("policy warnings:", len(policy.Warnings))`,
         }}
       />
 

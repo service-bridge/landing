@@ -30,13 +30,13 @@ const T = {
     capsP1:
       "Each service carries seven boolean capability flags. They are coarse kill-switches: a disabled flag denies that operation regardless of any finer rule. Four are acceptance-side (registering a handler of that type), three are egress-side (sending at all). All default to on for a new key. The Type column below shows the side.",
     capRows: [
-      { name: "rpc.handle", side: "acceptance", desc: "Register RPC handlers (sb.rpc.handle)" },
-      { name: "event.handle", side: "acceptance", desc: "Subscribe to events (sb.event.handle)" },
-      { name: "workflow.handle", side: "acceptance", desc: "Register workflow definitions (sb.workflow.handle)" },
-      { name: "job.handle", side: "acceptance", desc: "Register jobs (sb.job.handle). Jobs are self-only: no egress, no external caller" },
-      { name: "rpc.call", side: "egress", desc: "Call RPC on other services (sb.rpc.call)" },
-      { name: "event.publish", side: "egress", desc: "Publish events (sb.event.publish)" },
-      { name: "workflow.run", side: "egress", desc: "Start workflows on other services (sb.workflow.start)" },
+      { name: "rpc.handle", side: "acceptance", desc: "Register RPC handlers" },
+      { name: "event.handle", side: "acceptance", desc: "Subscribe to events" },
+      { name: "workflow.handle", side: "acceptance", desc: "Register workflow definitions" },
+      { name: "job.handle", side: "acceptance", desc: "Register jobs. Jobs are self-only: no egress, no external caller" },
+      { name: "rpc.call", side: "egress", desc: "Call RPC on other services" },
+      { name: "event.publish", side: "egress", desc: "Publish events" },
+      { name: "workflow.run", side: "egress", desc: "Start workflows on other services" },
     ],
 
     capsDisable:
@@ -69,11 +69,11 @@ const T = {
     sdkP1:
       "The SDK never sets policy — that is the operator's job. What it does is surface what the runtime decides. On the first registry snapshot the runtime sends a PolicyEvaluation; the SDK logs each violation and emits a policy_violation event:",
     sdkP2:
-      "For strict environments set failOnPolicyViolation: true — any warning in the first snapshot makes start() stop the service (disconnected, reason starts with \"policy:\") instead of running degraded.",
+      "For strict environments turn the warning into a stop: failOnPolicyViolation: true in Node, sb.WithFailOnPolicyViolation() in Go. Any warning in the first snapshot then stops the service instead of running it degraded.",
     sdkP3:
-      "Read the last evaluation at any time with sb.policyEvaluation() — it returns the capabilities, your egress/acceptance rules, and warnings, or null before the first snapshot.",
+      "Read the last evaluation at any time — sb.policyEvaluation() in Node, c.PolicyEvaluation() in Go. It returns the capabilities and the warnings; before the first snapshot it is empty.",
     sdkRuntimeErr:
-      "A denied call rejects at the runtime: sb.rpc.call throws RpcAccessDeniedError, sb.workflow.start throws WorkflowAccessDeniedError. A denied publish is fire-and-forget into the local outbox, so it does not throw — the outbox row is marked failed and policy_violation fires with denySide: 'self_egress'.",
+      "A denied call is refused at the runtime: Node throws RpcAccessDeniedError / WorkflowAccessDeniedError, Go returns an error matching sb.ErrAccessDenied. A denied publish is fire-and-forget into the local outbox, so it does not fail at the call site — the outbox row is marked failed and the policy violation is reported with denySide 'self_egress'.",
 
     exampleTitle: "Example: locked-down payments key",
     exampleP1:
@@ -103,13 +103,13 @@ const T = {
     capsP1:
       "У каждого сервиса семь булевых capability-флагов. Это грубые kill-switch: выключенный флаг денит операцию независимо от любых тонких правил. Четыре — acceptance-сторона (регистрация хендлера этого типа), три — egress-сторона (отправка в принципе). У нового ключа все включены. В колонке Type ниже указана сторона.",
     capRows: [
-      { name: "rpc.handle", side: "acceptance", desc: "Регистрация RPC-хендлеров (sb.rpc.handle)" },
-      { name: "event.handle", side: "acceptance", desc: "Подписка на события (sb.event.handle)" },
-      { name: "workflow.handle", side: "acceptance", desc: "Регистрация определений воркфлоу (sb.workflow.handle)" },
-      { name: "job.handle", side: "acceptance", desc: "Регистрация задач (sb.job.handle). Задачи self-only: без egress и без внешнего вызывающего" },
-      { name: "rpc.call", side: "egress", desc: "Вызов RPC других сервисов (sb.rpc.call)" },
-      { name: "event.publish", side: "egress", desc: "Публикация событий (sb.event.publish)" },
-      { name: "workflow.run", side: "egress", desc: "Запуск воркфлоу на других сервисах (sb.workflow.start)" },
+      { name: "rpc.handle", side: "acceptance", desc: "Регистрация RPC-хендлеров" },
+      { name: "event.handle", side: "acceptance", desc: "Подписка на события" },
+      { name: "workflow.handle", side: "acceptance", desc: "Регистрация определений воркфлоу" },
+      { name: "job.handle", side: "acceptance", desc: "Регистрация задач. Задачи self-only: без egress и без внешнего вызывающего" },
+      { name: "rpc.call", side: "egress", desc: "Вызов RPC других сервисов" },
+      { name: "event.publish", side: "egress", desc: "Публикация событий" },
+      { name: "workflow.run", side: "egress", desc: "Запуск воркфлоу на других сервисах" },
     ],
 
     capsDisable:
@@ -142,11 +142,11 @@ const T = {
     sdkP1:
       "SDK никогда не задаёт политику — это работа оператора. Он показывает то, что решает runtime. В первом снапшоте реестра runtime присылает PolicyEvaluation; SDK логирует каждое нарушение и эмитит событие policy_violation:",
     sdkP2:
-      "Для строгих окружений ставьте failOnPolicyViolation: true — любое предупреждение в первом снапшоте заставит start() остановить сервис (disconnected, reason начинается с «policy:») вместо работы в деградированном режиме.",
+      "Для строгих окружений превратите предупреждение в остановку: failOnPolicyViolation: true в Node, sb.WithFailOnPolicyViolation() в Go. Тогда любое предупреждение в первом снапшоте останавливает сервис вместо работы в деградированном режиме.",
     sdkP3:
-      "Последнюю оценку можно прочитать в любой момент через sb.policyEvaluation() — она вернёт capabilities, ваши egress/acceptance-правила и warnings, либо null до первого снапшота.",
+      "Последнюю оценку можно прочитать в любой момент — sb.policyEvaluation() в Node, c.PolicyEvaluation() в Go. Она вернёт capabilities и warnings; до первого снапшота она пустая.",
     sdkRuntimeErr:
-      "Заденённый вызов реджектится в рантайме: sb.rpc.call бросает RpcAccessDeniedError, sb.workflow.start — WorkflowAccessDeniedError. Заденённая публикация — fire-and-forget в локальный outbox, поэтому исключения нет: строка outbox помечается failed, а policy_violation эмитится с denySide: 'self_egress'.",
+      "Заденённый вызов отклоняется в рантайме: Node бросает RpcAccessDeniedError / WorkflowAccessDeniedError, Go возвращает ошибку, совпадающую с sb.ErrAccessDenied. Заденённая публикация — fire-and-forget в локальный outbox, поэтому на месте вызова ошибки нет: строка outbox помечается failed, а нарушение приходит с denySide 'self_egress'.",
 
     exampleTitle: "Пример: ключ payments с ограничениями",
     exampleP1:
@@ -188,6 +188,40 @@ sb.on("disconnected", ({ reason, error }) => {
 
 await sb.start();`;
 
+const KEY_CONSTRUCT_GO = `c, err := sb.New(
+	"localhost:14445", // gRPC control plane
+	serviceKey,        // the sb.<...> string from the dashboard
+)
+if err != nil {
+	log.Fatal(err)
+}
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`;
+
+const POLICY_VIOLATION_GO = `c.OnPolicyViolation(func(v sb.PolicyViolation) {
+	// v.Declaration: "rpc.call" | "rpc.handle" | "event.publish"
+	//              | "event.handle" | "workflow.run" | "workflow.handle"
+	// v.Value:       "payments/charge" | "orders.*" | ...
+	// v.DenySide:    "capability" | "self_egress" | "self_acceptance" | "peer_acceptance"
+	// v.Reason:      human-readable explanation from the runtime
+	log.Println("policy:", v.Declaration, v.Value, v.Reason)
+})`;
+
+const FAIL_ON_GO = `c, err := sb.New(url, key, sb.WithFailOnPolicyViolation())
+if err != nil {
+	log.Fatal(err)
+}
+
+c.OnDisconnected(func(cause error) {
+	log.Println("policy violations on start:", cause)
+	os.Exit(1)
+})
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}`;
+
 export function PageServiceKeys() {
   const { locale } = useDocLocale();
   const t = T[locale];
@@ -203,7 +237,7 @@ export function PageServiceKeys() {
       <H3 id="bootstrap-key">{t.keyTitle}</H3>
       <P>{t.keyP1}</P>
       <P>{t.keyP2}</P>
-      <MultiCodeBlock code={{ ts: KEY_CONSTRUCT }} />
+      <MultiCodeBlock code={{ ts: KEY_CONSTRUCT, go: KEY_CONSTRUCT_GO }} />
       <Callout type="info">{t.keyCallout}</Callout>
 
       <H3 id="capability-flags">{t.capsTitle}</H3>
@@ -227,9 +261,9 @@ export function PageServiceKeys() {
 
       <H3 id="sdk-violations">{t.sdkTitle}</H3>
       <P>{t.sdkP1}</P>
-      <MultiCodeBlock code={{ ts: POLICY_VIOLATION }} />
+      <MultiCodeBlock code={{ ts: POLICY_VIOLATION, go: POLICY_VIOLATION_GO }} />
       <P>{t.sdkP2}</P>
-      <MultiCodeBlock code={{ ts: FAIL_ON }} />
+      <MultiCodeBlock code={{ ts: FAIL_ON, go: FAIL_ON_GO }} />
       <P>{t.sdkP3}</P>
       <Callout type="warning">{t.sdkRuntimeErr}</Callout>
 

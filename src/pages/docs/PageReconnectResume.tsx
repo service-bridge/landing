@@ -43,12 +43,13 @@ const T = {
         handler graph. Completed steps are not re-executed.
       </>,
       <>
-        In-flight RPC calls fail fast during the gap; retry them with{" "}
-        <Mono>CallOpts.retry</Mono> or an <Mono>idempotencyKey</Mono>.
+        In-flight RPC calls fail fast during the gap. The caller's own attempt
+        budget retries them, and an idempotency key makes a write-RPC safe to
+        retry.
       </>,
     ],
     resumeTip:
-      "You observe the cycle through events: reconnecting fires before each attempt, connected fires on the next Welcome. Subscribe with sb.on(...) to drive your own health checks.",
+      "You observe the cycle through callbacks: reconnecting fires before each attempt, connected fires on the next Welcome. Subscribe with sb.on(...) in Node or c.OnReconnecting / c.OnConnected in Go to drive your own health checks.",
     resumeCode: `sb.on("reconnecting", ({ attempt, delayMs, reason }) => {
   console.warn(\`reconnect #\${attempt} in \${delayMs}ms — \${reason}\`);
 });
@@ -61,20 +62,42 @@ sb.on("disconnected", ({ reason }) => {
   // reason === "exhausted" means reconnectAttempts ran out and the SDK stopped.
   console.error(\`disconnected: \${reason}\`);
 });`,
+    resumeCodeGo: `c.OnReconnecting(func(attempt int, cause error) {
+	log.Printf("reconnect #%d — %v", attempt, cause)
+})
+
+c.OnConnected(func(id sb.Identity) {
+	log.Printf("session up again: %s", id.SessionID)
+})
+
+c.OnDisconnected(func(cause error) {
+	// Reached once a capped reconnect ladder runs out of attempts.
+	log.Printf("disconnected: %v", cause)
+})`,
 
     backoffTitle: "Backoff strategy",
     backoffP1:
-      "Reconnect uses a fixed interval, not exponential backoff. After a drop the SDK waits reconnectIntervalMs, then tries again, up to reconnectAttempts times.",
+      "Node reconnects on a fixed interval, not exponential backoff: after a drop it waits reconnectIntervalMs, then tries again, up to reconnectAttempts times. Go walks a jittered ladder instead — 1s, 5s, 15s, 30s, 60s by default, with the last rung repeating forever and every rung randomised so a fleet does not reconnect in lockstep.",
     backoffP2:
-      "When the attempt counter passes reconnectAttempts, the SDK emits disconnected with reason \"exhausted\" and calls stop() on itself. Set reconnectAttempts to 0 for an unlimited retry loop that never gives up.",
+      "In Node, once the attempt counter passes reconnectAttempts the SDK emits disconnected with reason \"exhausted\" and calls stop() on itself; set reconnectAttempts to 0 for an unlimited retry loop. Go never gives up by default — WithReconnectAttempts(n) is what caps it, and a service that quits mid rolling restart is a service that needs a human.",
     backoffParams: {
-      interval: "Delay between reconnect attempts.",
+      interval: "Fixed delay between reconnect attempts.",
       attempts: 'Max attempts before disconnected{reason:"exhausted"} + auto-stop. 0 = unlimited.',
+      ladder: "Reconnect delays. The last rung repeats forever and every rung is jittered.",
+      goAttempts: "Cap on consecutive reconnect attempts. 0, the default, keeps retrying forever.",
     },
     backoffCode: `const sb = new ServiceBridge("localhost:14445", key, {
   reconnectIntervalMs: 3000, // wait 3s between attempts
   reconnectAttempts: 0,      // 0 = retry forever, never auto-stop
 });`,
+    backoffCodeGo: `c, err := sb.New("localhost:14445", key,
+	// A jittered ladder; the last rung repeats forever.
+	sb.WithReconnectLadder(time.Second, 5*time.Second, 15*time.Second, 30*time.Second, time.Minute),
+	sb.WithReconnectAttempts(0), // 0 = never give up — already the Go default
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     backoffNote:
       "Certificate rotation is a separate, scheduled path: the SDK runs RefreshCert ~30 min before the leaf expires (certRefreshLeadMs, 1_800_000 ms default) and adds random jitter of up to ±5 min (certRefreshJitterMs, 300_000 ms default) to spread renewals across clients. That jitter applies to cert refresh, not to the reconnect loop — reconnect stays a fixed-interval retry.",
 
@@ -125,12 +148,13 @@ sb.on("disconnected", ({ reason }) => {
         выполняются повторно.
       </>,
       <>
-        RPC-вызовы «в полёте» быстро падают на время разрыва; повторяйте их через{" "}
-        <Mono>CallOpts.retry</Mono> или <Mono>idempotencyKey</Mono>.
+        RPC-вызовы «в полёте» быстро падают на время разрыва. Их повторяет
+        собственный бюджет попыток вызывающего, а ключ идемпотентности делает
+        пишущий RPC безопасным для повтора.
       </>,
     ],
     resumeTip:
-      "Цикл виден через события: reconnecting срабатывает перед каждой попыткой, connected — на следующем Welcome. Подпишитесь через sb.on(...), чтобы строить собственные health-проверки.",
+      "Цикл виден через колбэки: reconnecting срабатывает перед каждой попыткой, connected — на следующем Welcome. Подпишитесь через sb.on(...) в Node или c.OnReconnecting / c.OnConnected в Go, чтобы строить собственные health-проверки.",
     resumeCode: `sb.on("reconnecting", ({ attempt, delayMs, reason }) => {
   console.warn(\`reconnect #\${attempt} через \${delayMs}ms — \${reason}\`);
 });
@@ -143,20 +167,42 @@ sb.on("disconnected", ({ reason }) => {
   // reason === "exhausted" — попытки закончились, SDK остановлен.
   console.error(\`disconnected: \${reason}\`);
 });`,
+    resumeCodeGo: `c.OnReconnecting(func(attempt int, cause error) {
+	log.Printf("reconnect #%d — %v", attempt, cause)
+})
+
+c.OnConnected(func(id sb.Identity) {
+	log.Printf("сессия снова поднята: %s", id.SessionID)
+})
+
+c.OnDisconnected(func(cause error) {
+	// Сюда попадаем, когда ограниченная лестница переподключений исчерпала попытки.
+	log.Printf("disconnected: %v", cause)
+})`,
 
     backoffTitle: "Стратегия backoff",
     backoffP1:
-      "Переподключение использует фиксированный интервал, а не экспоненциальный backoff. После разрыва SDK ждёт reconnectIntervalMs, затем пробует снова — до reconnectAttempts раз.",
+      "Node переподключается с фиксированным интервалом, а не по экспоненциальному backoff: после разрыва ждёт reconnectIntervalMs и пробует снова — до reconnectAttempts раз. Go вместо этого идёт по лестнице с джиттером — по умолчанию 1с, 5с, 15с, 30с, 60с, последняя ступень повторяется вечно, и каждая рандомизируется, чтобы флот не переподключался синхронно.",
     backoffP2:
-      "Когда счётчик попыток превышает reconnectAttempts, SDK эмитит disconnected с reason \"exhausted\" и вызывает stop() сам на себе. Поставьте reconnectAttempts в 0, чтобы получить бесконечный цикл повторов, который никогда не сдаётся.",
+      "В Node, когда счётчик попыток превышает reconnectAttempts, SDK эмитит disconnected с reason \"exhausted\" и вызывает stop() сам на себе; reconnectAttempts: 0 даёт бесконечный цикл повторов. Go по умолчанию не сдаётся — ограничивает его WithReconnectAttempts(n), потому что сервис, сдавшийся посреди rolling restart, — это сервис, которому нужен человек.",
     backoffParams: {
-      interval: "Задержка между попытками переподключения.",
+      interval: "Фиксированная задержка между попытками переподключения.",
       attempts: 'Макс. попыток до disconnected{reason:"exhausted"} + авто-stop. 0 = без лимита.',
+      ladder: "Задержки переподключения. Последняя ступень повторяется вечно, каждая идёт с джиттером.",
+      goAttempts: "Лимит подряд идущих попыток. 0 — значение по умолчанию — повторять вечно.",
     },
     backoffCode: `const sb = new ServiceBridge("localhost:14445", key, {
   reconnectIntervalMs: 3000, // ждать 3с между попытками
   reconnectAttempts: 0,      // 0 = повторять вечно, без авто-остановки
 });`,
+    backoffCodeGo: `c, err := sb.New("localhost:14445", key,
+	// Лестница с джиттером; последняя ступень повторяется вечно.
+	sb.WithReconnectLadder(time.Second, 5*time.Second, 15*time.Second, 30*time.Second, time.Minute),
+	sb.WithReconnectAttempts(0), // 0 = не сдаваться — в Go это и есть значение по умолчанию
+)
+if err != nil {
+	log.Fatal(err)
+}`,
     backoffNote:
       "Ротация сертификата — это отдельный плановый путь: SDK запускает RefreshCert примерно за 30 минут до истечения leaf (certRefreshLeadMs, по умолчанию 1_800_000 ms) и добавляет случайный jitter до ±5 минут (certRefreshJitterMs, по умолчанию 300_000 ms), чтобы размазать обновления по клиентам. Этот jitter относится к ротации cert'а, а не к циклу переподключения — переподключение остаётся повтором с фиксированным интервалом.",
 
@@ -199,28 +245,40 @@ export function PageReconnectResume() {
         ))}
       </ul>
       <Callout type="tip">{t.resumeTip}</Callout>
-      <MultiCodeBlock code={{ ts: t.resumeCode }} />
+      <MultiCodeBlock code={{ ts: t.resumeCode, go: t.resumeCodeGo }} />
 
       <H2 id="backoff">{t.backoffTitle}</H2>
       <P>{t.backoffP1}</P>
       <ParamTable
         rows={[
           {
-            name: "reconnectIntervalMs",
-            type: "number",
+            name: "reconnectIntervalMs (Node)",
+            type: "number (ms)",
             default: "3000",
             desc: t.backoffParams.interval,
           },
           {
-            name: "reconnectAttempts",
+            name: "reconnectAttempts (Node)",
             type: "number",
             default: "3",
             desc: t.backoffParams.attempts,
           },
+          {
+            name: "WithReconnectLadder (Go)",
+            type: "...time.Duration",
+            default: "1s, 5s, 15s, 30s, 60s",
+            desc: t.backoffParams.ladder,
+          },
+          {
+            name: "WithReconnectAttempts (Go)",
+            type: "int",
+            default: "0",
+            desc: t.backoffParams.goAttempts,
+          },
         ]}
       />
       <P>{t.backoffP2}</P>
-      <MultiCodeBlock code={{ ts: t.backoffCode }} />
+      <MultiCodeBlock code={{ ts: t.backoffCode, go: t.backoffCodeGo }} />
       <Callout type="info">{t.backoffNote}</Callout>
 
       <H2 id="position-update">{t.positionTitle}</H2>
@@ -230,7 +288,7 @@ export function PageReconnectResume() {
           { name: "event outbox", type: "SQLite", default: "—", desc: t.positionTable.outbox },
           { name: "workflow run", type: "runtime", default: "—", desc: t.positionTable.workflow },
           { name: "job lease", type: "leaseEpoch", default: "—", desc: t.positionTable.job },
-          { name: "idempotencyKey", type: "CallOpts", default: '""', desc: t.positionTable.idempotency },
+          { name: "idempotency key", type: "call option", default: '""', desc: t.positionTable.idempotency },
         ]}
       />
       <Callout type="info">{t.positionCallout}</Callout>

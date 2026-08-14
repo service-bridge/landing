@@ -23,13 +23,13 @@ const T = {
     configP1:
       "There are no zone, region, or weight knobs to set. Load balancing is on by default and applies to every multi-instance call. The only call-level lever is the transport mode, which decides how the chosen instance is reached, not which instance is chosen.",
     configTransportRows: [
-      { name: '"auto"', type: "default", default: "—", desc: "Direct mTLS to the instance if its endpoint is known, otherwise proxy through the runtime." },
-      { name: '"direct"', type: "transport", default: "—", desc: "Caller connects to the instance over mTLS; fails if the instance has no call endpoint." },
-      { name: '"proxy"', type: "transport", default: "—", desc: "Call is forwarded through the runtime Invoke path." },
+      { name: '"auto"', type: "Node default", default: "—", desc: "Direct mTLS to the instance if its endpoint is known, otherwise proxy through the runtime. Node only — Go has no auto mode." },
+      { name: '"direct" · TransportDirect', type: "Go default", default: "—", desc: "Caller connects to the instance over mTLS; fails if the instance has no call endpoint." },
+      { name: '"proxy" · TransportProxy', type: "transport", default: "—", desc: "Call is forwarded through the runtime Invoke path." },
     ],
     configP2Before: "Set it per call via",
-    configP2After: ", or globally via",
-    configP2End: "on the constructor.",
+    configP2After: " (sb.WithTransport in Go), or for every call at construction via",
+    configP2End: " (sb.WithCallDefaults in Go).",
     configCb: "Circuit-breaker and health-hint thresholds are internal constants, not user settings:",
     cbRows: [
       { name: "window", type: "constant", default: "10s", desc: "Sliding window the breaker measures error rate over (10 buckets of 1s)." },
@@ -48,7 +48,7 @@ const T = {
     fallbackP3After:
       ". If the runtime itself is unreliable the hint goes stale and the caller's local circuit breaker carries the routing decision instead.",
     fallbackWarn:
-      "If every instance is filtered out — no endpoint, all breakers OPEN, all hinted unhealthy — the call throws NoLiveInstanceError. That is a real signal that the target service has no reachable instance, not something to silence.",
+      "If every instance is filtered out — no endpoint, all breakers OPEN, all hinted unhealthy — the call fails: NoLiveInstanceError in Node, an error matching sb.ErrNoLiveInstance in Go. That is a real signal that the target service has no reachable instance, not something to silence.",
 
     multiTitle: "Multi-Runtime",
     multiP1:
@@ -78,13 +78,13 @@ const T = {
     configP1:
       "Нет настроек зоны, региона или весов. Балансировка включена по умолчанию и применяется к каждому вызову с несколькими инстансами. Единственный рычаг на уровне вызова — режим транспорта, и он решает, как добраться до выбранного инстанса, а не какой инстанс выбрать.",
     configTransportRows: [
-      { name: '"auto"', type: "default", default: "—", desc: "Прямой mTLS к инстансу, если его endpoint известен, иначе proxy через runtime." },
-      { name: '"direct"', type: "transport", default: "—", desc: "Вызывающий идёт к инстансу по mTLS; падает, если у инстанса нет call-endpoint." },
-      { name: '"proxy"', type: "transport", default: "—", desc: "Вызов проходит через путь Invoke в runtime." },
+      { name: '"auto"', type: "дефолт Node", default: "—", desc: "Прямой mTLS к инстансу, если его endpoint известен, иначе proxy через runtime. Только Node — в Go режима auto нет." },
+      { name: '"direct" · TransportDirect', type: "дефолт Go", default: "—", desc: "Вызывающий идёт к инстансу по mTLS; падает, если у инстанса нет call-endpoint." },
+      { name: '"proxy" · TransportProxy', type: "transport", default: "—", desc: "Вызов проходит через путь Invoke в runtime." },
     ],
     configP2Before: "Задаётся на вызов через",
-    configP2After: ", либо глобально через",
-    configP2End: "в конструкторе.",
+    configP2After: " (sb.WithTransport в Go), либо сразу для всех вызовов при создании клиента через",
+    configP2End: " (sb.WithCallDefaults в Go).",
     configCb: "Пороги circuit breaker и health-подсказок — внутренние константы, не пользовательские настройки:",
     cbRows: [
       { name: "окно", type: "constant", default: "10s", desc: "Скользящее окно, по которому breaker считает долю ошибок (10 корзин по 1s)." },
@@ -103,7 +103,7 @@ const T = {
     fallbackP3After:
       ". Если сам runtime ненадёжен, подсказка устаревает, и решение о маршрутизации берёт на себя локальный circuit breaker вызывающей стороны.",
     fallbackWarn:
-      "Если отфильтрованы все инстансы — нет endpoint, все breaker в OPEN, все помечены нездоровыми — вызов бросает NoLiveInstanceError. Это настоящий сигнал, что у целевого сервиса нет достижимого инстанса, а не то, что нужно глушить.",
+      "Если отфильтрованы все инстансы — нет endpoint, все breaker в OPEN, все помечены нездоровыми — вызов падает: NoLiveInstanceError в Node, ошибка, совпадающая с sb.ErrNoLiveInstance, в Go. Это настоящий сигнал, что у целевого сервиса нет достижимого инстанса, а не то, что нужно глушить.",
 
     multiTitle: "Несколько runtime",
     multiP1:
@@ -150,6 +150,33 @@ const res = await sb.rpc.call("payments", "charge", { amount: 100 });
 
 // Force a transport mode for a single call.
 await sb.rpc.call("payments", "charge", { amount: 100 }, { transport: "direct" });`,
+          go: `c, err := sb.New("localhost:14445", key,
+	// Every call that does not override it goes direct — the Go default.
+	sb.WithCallDefaults(sb.WithTransport(sb.TransportDirect)),
+)
+if err != nil {
+	log.Fatal(err)
+}
+
+if err := c.Start(ctx); err != nil {
+	log.Fatal(err)
+}
+
+// Picks one healthy instance of "payments" via Power-of-Two-Choices.
+res, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge", &paymentpb.ChargeRequest{AmountCents: 100})
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(res.GetTransactionId())
+
+// Force a transport mode for a single call.
+if _, err := sb.Call[*paymentpb.ChargeRequest, *paymentpb.ChargeReply](
+	ctx, c, "payments", "charge", &paymentpb.ChargeRequest{AmountCents: 100},
+	sb.WithTransport(sb.TransportProxy),
+); err != nil {
+	log.Fatal(err)
+}`,
         }}
       />
       <P>{t.configCb}</P>
