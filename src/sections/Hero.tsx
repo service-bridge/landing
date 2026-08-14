@@ -1,5 +1,14 @@
 import { motion } from "framer-motion";
-import { Activity, ArrowRight, Check, Container, Copy, ShieldCheck, Zap } from "lucide-react";
+import {
+  Activity,
+  ArrowRight,
+  Check,
+  Container,
+  Copy,
+  ShieldCheck,
+  Sparkles,
+  Zap,
+} from "lucide-react";
 import { useState } from "react";
 import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
@@ -152,7 +161,28 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.27 }}
+          className="mt-6 flex justify-center"
+        >
+          <a
+            href="#ai-skill"
+            className="group inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface/60 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:border-white/[0.12] hover:text-foreground"
+          >
+            <Sparkles className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+            <span>
+              Your AI agent already knows this SDK —{" "}
+              <span className="text-foreground/80 group-hover:text-foreground">
+                install the skill
+              </span>
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:translate-x-0.5" />
+          </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.32 }}
           className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-2xs text-muted-foreground/70"
         >
           <span className="flex items-center gap-1.5">

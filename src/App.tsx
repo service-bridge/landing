@@ -37,6 +37,7 @@ const HomeBelowFold = lazy(() =>
 
 const NAV_LINKS = [
   { label: "Why", href: "#replaces" },
+  { label: "AI Skill", href: "#ai-skill" },
   { label: "Architecture", href: "#architecture" },
   { label: "Get Started", href: "#start" },
 ] as const;

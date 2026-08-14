@@ -48,9 +48,9 @@ export function HomeBelowFold({ onDocs }: { onDocs: () => void }) {
   return (
     <>
       <UseCasesSection />
-      <TraceFlowSection />
       <CodeSection />
       <AiSkillSection />
+      <TraceFlowSection />
       <ArchitectureSection />
 
       <MidCta onDocs={onDocs} />
