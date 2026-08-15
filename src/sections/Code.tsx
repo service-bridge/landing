@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fadeInUp } from "../components/animations";
+import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { cn } from "../lib/utils";
 import { Badge } from "../ui/Badge";
 import { highlightCode } from "../ui/CodeBlock";
