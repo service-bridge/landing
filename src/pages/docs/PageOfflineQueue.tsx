@@ -213,7 +213,7 @@ export function PageOfflineQueue() {
 
       <H2 id="behavior">{t.behaviorTitle}</H2>
 
-      <H3>{t.flowTitle}</H3>
+      <H3 id="publish-flow">{t.flowTitle}</H3>
       <ul className="list-decimal pl-5 space-y-1 text-sm text-muted-foreground my-3">
         <li>{t.flowStep1}</li>
         <li>{t.flowStep2}</li>
@@ -225,10 +225,10 @@ export function PageOfflineQueue() {
 
       <Callout type="info">{t.calloutPersist}</Callout>
 
-      <H3>{t.crashTitle}</H3>
+      <H3 id="crash-recovery">{t.crashTitle}</H3>
       <P>{t.crashP}</P>
 
-      <H3>{t.backoffTitle}</H3>
+      <H3 id="retry-backoff">{t.backoffTitle}</H3>
       <P>{t.backoffP}</P>
 
       <H2 id="config">{t.configTitle}</H2>
@@ -244,7 +244,7 @@ export function PageOfflineQueue() {
       />
       <MultiCodeBlock code={{ ts: t.configCode, go: t.configCodeGo }} />
 
-      <H3>{t.fullTitle}</H3>
+      <H3 id="outbox-full">{t.fullTitle}</H3>
       <P>{t.fullP}</P>
       <MultiCodeBlock code={{ ts: t.fullCode, go: t.fullCodeGo }} />
 

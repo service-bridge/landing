@@ -124,7 +124,7 @@ export function PageReliability() {
       <H2 id="guarantees">{t.guaranteesTitle}</H2>
       <P>{t.guaranteesP}</P>
 
-      <H3>{t.eventsTitle}</H3>
+      <H3 id="events-at-least-once">{t.eventsTitle}</H3>
       <P>{t.eventsP1}</P>
       <P>{t.eventsP2}</P>
       <MultiCodeBlock
@@ -172,7 +172,7 @@ if err != nil {
         }}
       />
 
-      <H3>{t.rpcTitle}</H3>
+      <H3 id="rpc-retries">{t.rpcTitle}</H3>
       <P>{t.rpcP1}</P>
       <MultiCodeBlock
         code={{
@@ -216,7 +216,7 @@ if err != nil {
 }`,
         }}
       />
-      <H3>{t.retryHead}</H3>
+      <H3 id="retry-defaults">{t.retryHead}</H3>
       <ParamTable
         rows={[
           { name: "maxAttempts", type: "number", default: "3", desc: t.retryMaxAttempts },
@@ -233,17 +233,17 @@ if err != nil {
       <H2 id="outage">{t.outageTitle}</H2>
       <P>{t.outageP}</P>
 
-      <H3>{t.outageEventsTitle}</H3>
+      <H3 id="outage-events">{t.outageEventsTitle}</H3>
       <P>{t.outageEventsP}</P>
       <Callout type="warning">
         {t.outageEventsWarn1} <Mono>fireAndForget: true</Mono> /{" "}
         <Mono>sb.WithFireAndForget()</Mono> {t.outageEventsWarn2}
       </Callout>
 
-      <H3>{t.outageRpcTitle}</H3>
+      <H3 id="outage-rpc">{t.outageRpcTitle}</H3>
       <P>{t.outageRpcP}</P>
 
-      <H3>{t.outageWorkflowTitle}</H3>
+      <H3 id="outage-workflows">{t.outageWorkflowTitle}</H3>
       <P>{t.outageWorkflowP}</P>
       <P>
         {t.outageWorkflowWait1} <Mono>wait_event</Mono> / <Mono>wait_signal</Mono>{" "}

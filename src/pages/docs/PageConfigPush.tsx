@@ -184,7 +184,7 @@ log.Println("policy warnings:", len(policy.Warnings))`,
         }}
       />
 
-      <H3>{t.rowCaptureName}</H3>
+      <H3 id="capture-modes">{t.rowCaptureName}</H3>
       <P>{t.captureP}</P>
       <Callout type="info">{t.captureNote}</Callout>
 
