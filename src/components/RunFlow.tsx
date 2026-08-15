@@ -186,7 +186,7 @@ export function TraceFlowSection() {
             name: template.name,
             service: template.service,
             type: template.type,
-            status: "running",
+            status: "running" as TraceStatus,
             startedAt: new Date(),
             durationMs: null,
           },

@@ -1,4 +1,4 @@
-import { Callout, DocCodeBlock, H2, H3, Mono, P, PageHeader, ParamTable } from "../../ui/DocComponents";
+import { Callout, DocCodeBlock, H2, H3, P, PageHeader, ParamTable } from "../../ui/DocComponents";
 import { useDocLocale } from "../../lib/locale-context";
 
 const T = {

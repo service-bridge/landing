@@ -187,7 +187,13 @@ func main() {
   },
 ] as const;
 
-type Framework = { id: string; label: string; lang: "ts" | "go"; filename: string; code: string };
+type Framework = {
+  id: FrameworkId;
+  label: string;
+  lang: "ts" | "go";
+  filename: string;
+  code: string;
+};
 
 type FrameworkId = (typeof TS_TABS)[number]["id"] | (typeof GO_TABS)[number]["id"];
 

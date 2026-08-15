@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useDocLocale } from "../lib/locale-context";
 import { cn } from "../lib/utils";
 import { CodePanel } from "./CodePanel";

@@ -126,7 +126,6 @@ func main() {
 
 type NodeStatus = "success" | "running" | "pending";
 type NodeType = "rpc" | "event" | "sleep";
-type WaveKind = "normal" | "parallel" | "fan-in" | "conditional" | "sleep";
 
 interface WaveRow {
   tag: string | null;
