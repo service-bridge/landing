@@ -19,6 +19,31 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Every deploy renames the bundles and deletes the previous ones, while
+      // this document stays in the browser cache for ten minutes. A visitor who
+      // returns inside that window asks for a bundle that is already gone and
+      // gets a blank page — nothing renders, because the whole page is that
+      // bundle. Reloading past the cache is the only way out of it, and the
+      // flag keeps a genuinely broken deploy from reloading in a loop.
+      (function () {
+        var KEY = "sb-stale-bundle-reload";
+        addEventListener(
+          "error",
+          function (e) {
+            var el = e.target;
+            if (!el || (el.tagName !== "SCRIPT" && el.tagName !== "LINK")) return;
+            if (sessionStorage.getItem(KEY)) return;
+            sessionStorage.setItem(KEY, "1");
+            location.reload();
+          },
+          true,
+        );
+        addEventListener("load", function () {
+          sessionStorage.removeItem(KEY);
+        });
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
