@@ -24,24 +24,27 @@
       // this document stays in the browser cache for ten minutes. A visitor who
       // returns inside that window asks for a bundle that is already gone and
       // gets a blank page — nothing renders, because the whole page is that
-      // bundle. Reloading past the cache is the only way out of it, and the
-      // flag keeps a genuinely broken deploy from reloading in a loop.
+      // bundle. Reloading past the cache is the only way out of it. Only
+      // same-origin /assets/ failures count: a blocked font or an extension
+      // must not trigger a reload. The 10s window is shared with
+      // ChunkErrorBoundary so a broken deploy can never loop.
       (function () {
-        var KEY = "sb-stale-bundle-reload";
+        var KEY = "sb-chunk-reload-ts";
+        var PREFIX = location.origin + "/assets/";
         addEventListener(
           "error",
           function (e) {
             var el = e.target;
-            if (!el || (el.tagName !== "SCRIPT" && el.tagName !== "LINK")) return;
-            if (sessionStorage.getItem(KEY)) return;
-            sessionStorage.setItem(KEY, "1");
+            if (!el) return;
+            var url = el.tagName === "SCRIPT" ? el.src : el.tagName === "LINK" ? el.href : "";
+            if (!url || url.indexOf(PREFIX) !== 0) return;
+            var last = Number(sessionStorage.getItem(KEY) || 0);
+            if (Date.now() - last < 10000) return;
+            sessionStorage.setItem(KEY, String(Date.now()));
             location.reload();
           },
           true,
         );
-        addEventListener("load", function () {
-          sessionStorage.removeItem(KEY);
-        });
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
