@@ -310,7 +310,14 @@ export function MultiCodeBlock({
   return (
     <CodePanel>
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/50 px-3 py-2">
-        <TabStrip size="sm" items={available} active={displayLang} onChange={setLang} />
+        <div className="flex min-w-0 items-center gap-2">
+          <TabStrip size="sm" items={available} active={displayLang} onChange={setLang} />
+          {displayFilename && (
+            <span className="truncate font-mono text-xs text-muted-foreground">
+              {displayFilename}
+            </span>
+          )}
+        </div>
         <CopyButton text={displayCode} />
       </div>
 
