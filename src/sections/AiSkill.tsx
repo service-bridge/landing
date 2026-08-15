@@ -6,6 +6,7 @@ import { fadeInUp } from "../components/animations";
 import { Button } from "../ui/button";
 import { CopyButton } from "../ui/CopyButton";
 import { Eyebrow } from "../ui/Eyebrow";
+import { SdkLangSwitch } from "../ui/SdkLangSwitch";
 import { Section } from "../ui/Section";
 import { TabStrip } from "../ui/Tabs";
 
@@ -77,7 +78,10 @@ export function AiSkillSection() {
       <motion.div variants={fadeInUp} className="mt-10 md:mt-12">
         <div className="rounded-2xl border border-surface-border bg-code overflow-hidden">
           <div className="border-b border-surface-border bg-code-chrome px-3 py-2 flex items-center justify-between">
-            <TabStrip size="sm" items={tabs} active={tab} onChange={setTab} />
+            <div className="flex min-w-0 items-center gap-2">
+              <SdkLangSwitch />
+              <TabStrip size="sm" items={tabs} active={tab} onChange={setTab} />
+            </div>
             <CopyButton text={cmd} />
           </div>
           <pre className="p-4 text-xs font-mono text-muted-foreground overflow-x-auto leading-relaxed">

@@ -12,6 +12,7 @@ import {
 import { useState } from "react";
 import { type SdkLang, useSdkLang } from "../lib/language-context";
 import { Button } from "../ui/button";
+import { SdkLangSwitch } from "../ui/SdkLangSwitch";
 import { Section } from "../ui/Section";
 
 const HERO_STATS = [
@@ -23,12 +24,6 @@ const HERO_STATS = [
 // The install line follows the language the reader picked anywhere on the
 // site: showing a bun command to someone reading Go examples is the first
 // thing that tells them this SDK is not for them.
-const SDK_LABEL: Record<SdkLang, string> = {
-  ts: "Node SDK",
-  go: "Go SDK",
-  py: "Python SDK",
-};
-
 const SDK_INSTALL_CMD: Record<SdkLang, string> = {
   ts: "bun add service-bridge",
   go: "go get github.com/service-bridge/sdk/go",
@@ -112,9 +107,7 @@ export function HeroSection({ onDocs }: { onDocs?: () => void }) {
 
           <div className="flex w-full max-w-3xl flex-col gap-2 rounded-lg border border-surface-border bg-surface overflow-hidden">
             <div className="flex items-center justify-between border-b border-surface-border px-3 py-2">
-              <span className="type-caption font-mono text-muted-foreground">
-                {SDK_LABEL[lang] ?? SDK_LABEL.ts}
-              </span>
+              <SdkLangSwitch />
               <span className="type-caption text-muted-foreground/50">Install SDK</span>
             </div>
             <button
