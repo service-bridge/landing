@@ -25,6 +25,10 @@ SB_DIR="${SB_DIR:-${HOME}/servicebridge}"
 # or the image is fully overridden.
 SB_IMAGE="${SB_IMAGE:-${SB_REPO}:${SB_VERSION:-edge}}"
 
+# Companion image with native sb CLI binaries for every host platform,
+# published by the same release under the runtime tag + "-cli".
+SB_CLI_IMAGE="${SB_CLI_IMAGE:-${SB_IMAGE}-cli}"
+
 # Host-published ports. The runtime always listens on 14444/14445 inside the
 # container; these only remap the host side, so several instances can coexist.
 SB_HTTP_PORT="${SB_HTTP_PORT:-14444}"
@@ -88,46 +92,70 @@ wait_until_ready() {
   warn "Runtime did not report ready yet — check: docker compose logs -f service-bridge"
 }
 
-# Put the sb CLI on the host PATH, version-matched to the runtime just pulled.
-# On a Linux host the in-image binary runs natively, so we copy it. On macOS /
-# Windows (Docker Desktop) the Linux binary can't run on the host, so we install
-# a tiny wrapper that runs sb inside the container instead — same binary, always
-# consistent. No sudo: falls back to SB_DIR/bin when /usr/local/bin isn't writable.
+# sb binaries inside the CLI image are keyed by host platform: /dist/sb-<os>-<arch>[.exe]
+host_platform() {
+  local os arch
+  case "$(uname -s)" in
+    Darwin)               os=darwin ;;
+    Linux)                os=linux ;;
+    MINGW*|MSYS*|CYGWIN*) os=windows ;;
+    *) return 1 ;;
+  esac
+  case "$(uname -m)" in
+    arm64|aarch64) arch=arm64 ;;
+    x86_64|amd64)  arch=amd64 ;;
+    *) return 1 ;;
+  esac
+  echo "${os}-${arch}"
+}
+
+# Put the native sb CLI on the host PATH, version-matched to the runtime just
+# pulled: the release publishes a companion image (<runtime tag>-cli) carrying
+# sb binaries for every supported host platform; copy out the one matching this
+# host. No sudo: falls back to /opt/homebrew/bin (macOS) or SB_DIR/bin when
+# /usr/local/bin isn't writable.
 install_cli() {
-  local dest dir cid
+  local platform dir dest cid ext=""
+  platform="$(host_platform)" || {
+    warn "No prebuilt sb CLI for $(uname -s)/$(uname -m) — skipping"
+    return 0
+  }
+  case "$platform" in windows-*) ext=".exe" ;; esac
+
   if [ -w /usr/local/bin ]; then
     dir=/usr/local/bin
+  elif [ -d /opt/homebrew/bin ] && [ -w /opt/homebrew/bin ]; then
+    dir=/opt/homebrew/bin
   else
     dir="${SB_DIR}/bin"
     mkdir -p "$dir"
   fi
-  dest="${dir}/sb"
+  dest="${dir}/sb${ext}"
 
-  cid="$(docker create "$SB_IMAGE" 2>/dev/null)" || { warn "Could not stage sb CLI"; return 0; }
+  docker pull -q "$SB_CLI_IMAGE" >/dev/null 2>&1 \
+    || { warn "Could not pull sb CLI image ${SB_CLI_IMAGE} — skipping"; return 0; }
+  cid="$(docker create "$SB_CLI_IMAGE" 2>/dev/null)" \
+    || { warn "Could not stage sb CLI"; return 0; }
   local copied=""
-  if docker cp "${cid}:/usr/local/bin/sb" "$dest" 2>/dev/null; then
+  if docker cp "${cid}:/dist/sb-${platform}${ext}" "$dest" 2>/dev/null; then
     chmod +x "$dest"
     copied=1
   fi
   docker rm -f "$cid" >/dev/null 2>&1 || true
+  docker rmi "$SB_CLI_IMAGE" >/dev/null 2>&1 || true
 
   if [ -z "$copied" ]; then
-    warn "This image has no sb CLI (older version) — skipping"
+    warn "No sb binary for ${platform} in ${SB_CLI_IMAGE} — skipping"
     return 0
   fi
 
-  # If the copied binary can't run on this host (different OS/arch), replace it
-  # with a wrapper that execs sb inside the running container.
   if ! "$dest" version >/dev/null 2>&1; then
-    cat > "$dest" <<WRAPPER
-#!/usr/bin/env sh
-# sb CLI wrapper: runs the in-container binary, always version-matched.
-exec docker compose -f "${SB_DIR}/docker-compose.yml" exec -T service-bridge /usr/local/bin/sb "\$@"
-WRAPPER
-    chmod +x "$dest"
+    warn "Installed sb binary does not run on this host — removing ${dest}"
+    rm -f "$dest"
+    return 0
   fi
 
-  ok "Installed CLI: ${dest}"
+  ok "Installed CLI: ${dest} ($("$dest" version))"
   case ":${PATH}:" in
     *":${dir}:"*) ;;
     *) info "Add to PATH:  export PATH=\"${dir}:\$PATH\"" ;;

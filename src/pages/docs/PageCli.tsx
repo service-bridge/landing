@@ -17,13 +17,13 @@ const T = {
     description:
       "sb is a command-line client for the runtime. It talks to the UI gateway API over the same port as the dashboard (14444), logs in once, and renders every result as a table or, with -o json, as machine-readable protojson for AI agents.",
     intro:
-      "There is no separate install. sb ships inside the runtime Docker image at /usr/local/bin/sb, built from the same source and stamped with the same version. Install or update the runtime and you get a matching sb.",
+      "The one-line runtime installer puts a native sb binary on your PATH — prebuilt for macOS, Linux and Windows, built from the same source as the runtime and stamped with the same version. Install or update the runtime and you get a matching sb.",
 
     installTitle: "Run it",
     installP1:
-      "If the runtime runs in Docker, exec into the container. The CLI is already on the PATH:",
+      "Run it directly. When the gateway is not on the local default, point at it with --addr or the SB_ADDR environment variable:",
     installP2:
-      "If you have the host binary on your machine instead, run it directly. Point it at the gateway with --addr or the SB_ADDR environment variable when it is not on the local default:",
+      "The runtime image also carries a Linux build at /usr/local/bin/sb — exec into the container when the host has no CLI:",
     installCheck:
       "Confirm the CLI and the runtime agree on version — both come from the same build:",
 
@@ -118,13 +118,13 @@ const T = {
     description:
       "sb — командный клиент рантайма. Ходит в API UI-gateway по тому же порту, что и дашборд (14444), логинится один раз и рендерит результат таблицей либо, с -o json, машиночитаемым protojson для AI-агентов.",
     intro:
-      "Отдельной установки нет. sb едет внутри Docker-образа рантайма по пути /usr/local/bin/sb, собран из того же исходника и проштампован той же версией. Установили или обновили рантайм — получили совпадающий sb.",
+      "Однострочный установщик рантайма кладёт нативный бинарь sb на ваш PATH — собран заранее под macOS, Linux и Windows из того же исходника, что и рантайм, и проштампован той же версией. Установили или обновили рантайм — получили совпадающий sb.",
 
     installTitle: "Запуск",
     installP1:
-      "Если рантайм работает в Docker, зайдите внутрь контейнера — CLI уже в PATH:",
+      "Запускайте напрямую. Когда gateway не на локальном дефолте, укажите его через --addr или переменную окружения SB_ADDR:",
     installP2:
-      "Если у вас вместо этого хост-бинарь, запускайте его напрямую. Когда gateway не на локальном дефолте, укажите его через --addr или переменную окружения SB_ADDR:",
+      "Внутри образа рантайма дополнительно лежит Linux-сборка по пути /usr/local/bin/sb — зайдите в контейнер, если на хосте нет CLI:",
     installCheck:
       "Сверьте версию CLI и рантайма — обе из одной сборки:",
 
@@ -269,9 +269,9 @@ export function PageCli() {
 
       <H2 id="run">{t.installTitle}</H2>
       <P>{t.installP1}</P>
-      <DocCodeBlock code={RUN_DOCKER} lang="bash" />
-      <P>{t.installP2}</P>
       <DocCodeBlock code={RUN_HOST} lang="bash" />
+      <P>{t.installP2}</P>
+      <DocCodeBlock code={RUN_DOCKER} lang="bash" />
       <P>{t.installCheck}</P>
       <DocCodeBlock code={CHECK} lang="bash" />
 
