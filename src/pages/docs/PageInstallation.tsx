@@ -33,7 +33,7 @@ const T = {
     afterInstallP1Mid: "and SDKs reach the gRPC control plane at",
     afterInstallP1After: ".",
     afterInstallP2:
-      "There is no default login. Open the dashboard and the Setup flow walks you through creating the first admin account. After that, every knob lives in the web UI under /settings — ports, retention, timeouts, TLS, payload capture, alerts. You never touch a config file.",
+      "The dashboard binds to loopback by default. Complete initial setup locally or through an SSH tunnel. For remote access, use an HTTPS proxy that preserves Host and set SERVICEBRIDGE_TRUSTED_PROXY_CIDRS to its exact direct peer CIDRs. There is no default login. Open the dashboard and the Setup flow walks you through creating the first admin account. After that, every knob lives in the web UI under /settings — ports, retention, timeouts, TLS, payload capture, alerts. Trusted proxy CIDRs are an explicit deployment environment setting.",
     caCallout:
       "The runtime is stateless — it keeps no files, all state (including its self-signed CA) lives in Postgres. SDKs receive the CA inside their bootstrap key, so there are no certificate files to manage and nothing to export.",
 
@@ -49,7 +49,7 @@ const T = {
     step2CalloutMid: "for HTTP and the UI, and",
     step2CalloutAfter: "for the gRPC control plane.",
     pgCallout:
-      "Point the runtime at a different database with the -pg-url flag, the only flag it takes. Everything else is configured live in the dashboard, never on the command line.",
+      "Point the runtime at a different database with the -pg-url flag, for normal startup. The -migrate flag applies database migrations without serving traffic; trusted proxy CIDRs are configured through the deployment environment. Other runtime settings live in the dashboard.",
 
     manageTitle: "Manage after install",
     manageP: "Run these from the install directory:",
@@ -79,7 +79,7 @@ const T = {
     afterInstallP1Mid: "а SDK ходят в gRPC плоскость управления на",
     afterInstallP1After: ".",
     afterInstallP2:
-      "Логина по умолчанию нет. Откройте панель — флоу Setup проведёт через создание первой учётки администратора. После этого все настройки живут в веб-интерфейсе на /settings: порты, retention, таймауты, TLS, захват payload, алерты. Конфиг-файлы трогать не нужно.",
+      "Панель по умолчанию доступна только на loopback. Выполните первичную настройку локально или через SSH-туннель. Для удалённого доступа используйте HTTPS-прокси с сохранением Host и задайте SERVICEBRIDGE_TRUSTED_PROXY_CIDRS только для CIDR его непосредственных соединений. Логина по умолчанию нет. Откройте панель — флоу Setup проведёт через создание первой учётки администратора. После этого все настройки живут в веб-интерфейсе на /settings: порты, retention, таймауты, TLS, захват payload, алерты. Доверенные прокси задаются отдельно переменной окружения развёртывания.",
     caCallout:
       "Рантайм stateless — не держит файлов, всё состояние (включая само-подписанный CA) живёт в Postgres. SDK получают CA прямо из своего bootstrap-ключа, поэтому никаких сертификат-файлов вести и выгружать не нужно.",
 
@@ -95,7 +95,7 @@ const T = {
     step2CalloutMid: "для HTTP и UI, и",
     step2CalloutAfter: "для gRPC плоскости управления.",
     pgCallout:
-      "Указать другую базу можно флагом -pg-url — единственным, который принимает рантайм. Всё остальное настраивается вживую в панели, а не в командной строке.",
+      "Указать другую базу можно флагом -pg-url при обычном запуске. Флаг -migrate применяет миграции без запуска сервера; доверенные прокси задаются окружением развёртывания. Остальные настройки runtime доступны в панели.",
 
     manageTitle: "Управление после установки",
     manageP: "Команды выполняются из директории установки:",
@@ -171,7 +171,7 @@ SB_IMAGE=ghcr.io/service-bridge/service-bridge:edge bash <(curl -fsSL https://se
       postgres:
         condition: service_healthy
     ports:
-      - "14444:14444"
+      - "127.0.0.1:14444:14444"
       - "14445:14445"
     networks:
       - service-bridge-internal

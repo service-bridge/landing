@@ -12,6 +12,8 @@
 #   SB_VERSION=<exact tag>      pin an exact version (e.g. 2.0.0-alpha)
 #   SB_IMAGE=<full ref>         fully override the image reference
 #   SB_DIR=/opt/servicebridge   install directory
+#   SB_HTTP_BIND=127.0.0.1       dashboard host binding; use a TLS proxy for remote access
+#   SB_TRUSTED_PROXY_CIDRS=     explicitly trusted direct proxy peers
 
 set -euo pipefail
 
@@ -32,6 +34,8 @@ SB_CLI_IMAGE="${SB_CLI_IMAGE:-${SB_IMAGE}-cli}"
 # Host-published ports. The runtime always listens on 14444/14445 inside the
 # container; these only remap the host side, so several instances can coexist.
 SB_HTTP_PORT="${SB_HTTP_PORT:-14444}"
+SB_HTTP_BIND="${SB_HTTP_BIND:-127.0.0.1}"
+SB_TRUSTED_PROXY_CIDRS="${SB_TRUSTED_PROXY_CIDRS:-}"
 SB_GRPC_PORT="${SB_GRPC_PORT:-14445}"
 SB_URL="http://localhost:${SB_HTTP_PORT}"
 
@@ -197,12 +201,14 @@ services:
 
   service-bridge:
     image: ${SB_IMAGE}
+    environment:
+      SERVICEBRIDGE_TRUSTED_PROXY_CIDRS: "${SB_TRUSTED_PROXY_CIDRS}"
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "${SB_HTTP_PORT}:14444"
+      - "${SB_HTTP_BIND}:${SB_HTTP_PORT}:14444"
       - "${SB_GRPC_PORT}:14445"
     networks:
       - service-bridge-internal

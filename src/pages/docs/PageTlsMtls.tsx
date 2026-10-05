@@ -12,9 +12,9 @@ const T = {
     autoTitle: "Auto-generated CA",
     autoP1: "On first access the runtime generates a self-signed CA (EC P-256) and stores it in Postgres — a single row in the runtime_ca table holding the certificate and private key as DER:",
     autoP2: "The runtime never writes the CA to disk: there is no certs/ volume and nothing to configure. On later starts it reads the same row back from Postgres and reuses it, so the container stays stateless and can be recreated freely. Postgres is the single source of truth for the CA.",
-    autoP3: "The CA private key never leaves the runtime process — only the CA certificate (DER) is handed out, embedded in every service key. The gRPC listener uses a server certificate signed by this CA, cached once at startup, with TLS 1.3 as the minimum version.",
+    autoP3: "The CA private key is stored in Postgres and loaded into the runtime; protect database access and backups accordingly. SDKs receive only the CA certificate (DER), embedded in every service key. The gRPC listener uses a server certificate signed by this CA, cached once at startup, with TLS 1.3 as the minimum version.",
     autoKeyP: "A service key is a string with an",
-    autoKeyP2: "prefix that carries the runtime address, the key id, a secret, and the embedded CA certificate. That embedded CA is the trust root the SDK pins to — so the very first connection is already verified, with nothing to configure.",
+    autoKeyP2: "prefix that carries the key id, a secret, and the embedded CA certificate. The runtime address is configured separately. That embedded CA is the trust root the SDK pins to — so the very first connection is already verified, with nothing to configure.",
 
     provTitle: "SDK gRPC provisioning",
     provP: "When you call",
@@ -55,8 +55,8 @@ const T = {
       </>,
       <>
         <strong className="text-foreground">Worker ↔ worker (direct RPC):</strong> full mutual TLS.
-        Each side verifies the other's leaf chains up to the same CA. Hostname checks are off by
-        design — trust comes from the chain, since leaf SANs are SPIFFE URIs, not DNS names.
+        Each side verifies the CA chain and the exact expected SPIFFE service/instance identity.
+        Runtime channels require the distinct spiffe://service-bridge/runtime identity.
       </>,
       <>
         <strong className="text-foreground">Runtime → worker:</strong> the runtime presents its
@@ -77,9 +77,9 @@ const T = {
     autoTitle: "Автосгенерированный CA",
     autoP1: "При первом обращении runtime генерирует самоподписанный CA (EC P-256) и хранит его в Postgres — одна строка в таблице runtime_ca с сертификатом и приватным ключом в DER:",
     autoP2: "Runtime никогда не пишет CA на диск: нет volume certs/ и нечего настраивать. При последующих запусках он перечитывает ту же строку из Postgres и переиспользует её, поэтому контейнер остаётся stateless и его можно свободно пересоздавать. Postgres — единственный источник истины по CA.",
-    autoP3: "Приватный ключ CA никогда не покидает процесс runtime — наружу отдаётся только сертификат CA (DER), встроенный в каждый service key. gRPC-листенер использует серверный сертификат, подписанный этим CA, закешированный один раз при старте, с TLS 1.3 как минимальной версией.",
+    autoP3: "Приватный ключ CA хранится в Postgres и загружается runtime; защищайте доступ к базе и её резервным копиям. SDK получает только сертификат CA (DER), встроенный в каждый service key. gRPC-листенер использует серверный сертификат, подписанный этим CA, закешированный один раз при старте, с TLS 1.3 как минимальной версией.",
     autoKeyP: "Service key — это строка с префиксом",
-    autoKeyP2: ", которая несёт адрес runtime, id ключа, секрет и встроенный сертификат CA. Этот встроенный CA — корень доверия, к которому SDK привязывается (pin), поэтому самое первое соединение уже проверено и ничего настраивать не нужно.",
+    autoKeyP2: ", которая несёт id ключа, секрет и встроенный сертификат CA. Адрес runtime задаётся отдельно. Этот встроенный CA — корень доверия, к которому SDK привязывается (pin), поэтому самое первое соединение уже проверено и ничего настраивать не нужно.",
 
     provTitle: "Провижининг gRPC в SDK",
     provP: "При вызове",
@@ -120,7 +120,7 @@ const T = {
       </>,
       <>
         <strong className="text-foreground">Воркер ↔ воркер (прямой RPC):</strong> полный взаимный
-        TLS. Каждая сторона проверяет, что leaf другой стороны выстраивается в цепочку до того же CA.
+        TLS. Каждая сторона проверяет цепочку CA и ожидаемую SPIFFE-идентичность сервиса/инстанса. Каналы к runtime требуют отдельную идентичность spiffe://service-bridge/runtime.
         Проверка hostname отключена осознанно — доверие даёт цепочка, так как SAN у leaf — это SPIFFE
         URI, а не DNS-имена.
       </>,
@@ -147,7 +147,7 @@ export function PageTlsMtls() {
       <P>{t.autoP1}</P>
       <DocCodeBlock lang="sql" code={`-- runtime_ca: one row, id = 1
 -- cert_der   bytea   CA certificate (DER)
--- key_der    bytea   CA private key  (DER, never leaves the runtime)
+-- key_der    bytea   CA private key  (DER, stored in Postgres)
 SELECT cert_der, key_der FROM runtime_ca WHERE id = 1;`} />
       <P>{t.autoP2}</P>
       <P>{t.autoP3}</P>
@@ -196,7 +196,7 @@ log.Println(id.SessionID, id.ServiceID, id.ServiceName, id.InstanceID)`,
       <P>
         {t.provLeafP} <Mono>1 hour</Mono>. {t.provLeafP2} <Mono>Control.RefreshCert</Mono>{" "}
         {t.provLeafP3}{" "}
-        <Mono>spiffe://servicebridge/service/&lt;serviceId&gt;/instance/&lt;instanceId&gt;</Mono>.
+        <Mono>spiffe://service-bridge/service/&lt;serviceId&gt;/instance/&lt;instanceId&gt;</Mono>.
       </P>
       <Callout type="info">
         {t.provCallout} <Mono>sb.start()</Mono>.
