@@ -78,7 +78,7 @@ const T = {
 
     wildcardTitle: "Wildcard depth",
     wildcardP:
-      "A subscription pattern may use AMQP-style wildcards, and the runtime routes on it. Node has no client-side matcher: it dispatches an incoming delivery to the handler whose pattern equals the event name exactly. Go also matches the pattern locally, so a family subscription reaches the handler under the concrete name the publisher used.",
+      "A subscription pattern may use AMQP-style wildcards, and the runtime routes on it. Both Node and Go match the concrete event name against registered patterns locally, so wildcard subscriptions reach the matching handlers. Multiple matching handlers share one delivery acknowledgment.",
     wildcardStar: "matches exactly one segment.",
     wildcardHash: "matches zero or more segments.",
     wildcardCombine:
@@ -154,7 +154,7 @@ const T = {
 
     wildcardTitle: "Глубина wildcard",
     wildcardP:
-      "Шаблон подписки может использовать wildcard в стиле AMQP, и runtime маршрутизирует по нему. В Node клиентского matcher'а нет: входящая доставка диспатчится обработчику, чей pattern точно равен имени события. Go дополнительно сопоставляет шаблон локально, поэтому подписка на семейство доходит до обработчика под конкретным именем, которое использовал издатель.",
+      "Шаблон подписки может использовать wildcard в стиле AMQP, и runtime маршрутизирует по нему. Node и Go локально сопоставляют конкретное имя события с зарегистрированными шаблонами, поэтому wildcard-подписки вызывают подходящие обработчики. Несколько подходящих обработчиков используют одно подтверждение доставки.",
     wildcardStar: "совпадает ровно с одним сегментом.",
     wildcardHash: "совпадает с нулём или более сегментов.",
     wildcardCombine:

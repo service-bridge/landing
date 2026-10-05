@@ -138,7 +138,7 @@ const T = {
     defSteps: "The step graph.",
     defRetry: "Default retry policy for steps that do not set their own.",
     defMaxParallelism:
-      "Max steps the runner dispatches concurrently; 0 = unlimited.",
+      "Maximum concurrent steps across the whole run. Default (0): 64; maximum: 1024.",
     defTimeoutSec: "Wall-clock timeout for the whole run, in seconds.",
   },
   ru: {
@@ -265,7 +265,7 @@ const T = {
     defSteps: "Граф шагов.",
     defRetry: "Политика ретраев по умолчанию для шагов без своей.",
     defMaxParallelism:
-      "Сколько шагов раннер запускает параллельно; 0 = без ограничения.",
+      "Число параллельных шагов во всём запуске. По умолчанию (0): 64; максимум: 1024.",
     defTimeoutSec: "Таймаут всего запуска по wall-clock, в секундах.",
   },
 };
@@ -418,6 +418,7 @@ func main() {
       <P>{t.handleDefP}</P>
       <ParamTable
         rows={[
+          { name: "version", type: "string", desc: locale === "ru" ? "Версия обработчика; обязательна для local closures. Сохраняйте старую версию до завершения её runs." : "Handler version; required for local closures. Keep old versions registered until their runs finish." },
           { name: "input", type: "object (JSON Schema)", desc: t.defInput },
           { name: "steps", type: "Step[]", desc: t.defSteps },
           { name: "retry", type: "Partial<RetryOpts>", desc: t.defRetry },
@@ -487,6 +488,7 @@ func main() {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("order.fulfillment", {
+  version: "v1",
   input: { type: "object", properties: { orderId: { type: "string" } } },
   steps: [
     {
@@ -522,6 +524,7 @@ func main() {
   ],
 });`,
           go: `err := c.Workflow.Handle("order.fulfillment", wf.Definition{
+	Version: "v1",
 	Input: map[string]any{
 		"type":       "object",
 		"properties": map[string]any{"orderId": map[string]any{"type": "string"}},
@@ -573,6 +576,7 @@ if err != nil {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("onboarding", {
+  version: "v1",
   steps: [
     {
       id: "create_user",
@@ -609,6 +613,7 @@ if err != nil {
   ],
 });`,
           go: `err := c.Workflow.Handle("onboarding", wf.Definition{
+	Version: "v1",
 	Steps: []wf.Step{
 		wf.Call{
 			Control: wf.Control{ID: "create_user"},
@@ -652,6 +657,7 @@ if err != nil {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("manual.approval", {
+  version: "v1",
   steps: [
     {
       id: "submit",
@@ -679,6 +685,7 @@ if err != nil {
   ],
 });`,
           go: `err := c.Workflow.Handle("manual.approval", wf.Definition{
+	Version: "v1",
 	Steps: []wf.Step{
 		wf.Call{
 			Control: wf.Control{ID: "submit"},
@@ -715,6 +722,7 @@ if err != nil {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("order.fulfillment", {
+  version: "v1",
   steps: [
     {
       id: "reserve",
@@ -745,6 +753,7 @@ if err != nil {
   ],
 });`,
           go: `err := c.Workflow.Handle("order.fulfillment", wf.Definition{
+	Version: "v1",
 	Steps: []wf.Step{
 		wf.Call{
 			Control: wf.Control{ID: "reserve"},
@@ -787,6 +796,7 @@ if err != nil {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("order.post_purchase", {
+  version: "v1",
   steps: [
     {
       id: "fulfillment",
@@ -806,6 +816,7 @@ if err != nil {
   ],
 });`,
           go: `err := c.Workflow.Handle("order.post_purchase", wf.Definition{
+	Version: "v1",
 	Steps: []wf.Step{
 		wf.SubWorkflow{
 			Control:  wf.Control{ID: "fulfillment"},
@@ -833,6 +844,7 @@ if err != nil {
       <MultiCodeBlock
         code={{
           ts: `sb.workflow.handle("trial.expiry", {
+  version: "v1",
   steps: [
     {
       id: "remind",
@@ -859,6 +871,7 @@ if err != nil {
   ],
 });`,
           go: `err := c.Workflow.Handle("trial.expiry", wf.Definition{
+	Version: "v1",
 	Steps: []wf.Step{
 		wf.Call{
 			Control: wf.Control{ID: "remind"},
